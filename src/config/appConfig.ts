@@ -22,7 +22,7 @@ const AppConfig = {
         awsRegion: process.env.S3_REGION
     },
     db: {
-        mongo_url: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/mds-food'
+        mongo_url: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/nilab_market'
     },
     monnify: {
         baseUrl: process.env.MONNIFY_API_URL as string,

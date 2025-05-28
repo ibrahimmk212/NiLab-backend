@@ -1,0 +1,24 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const main_1 = __importDefault(require("./main"));
+const users_1 = __importDefault(require("./users"));
+const customers_1 = __importDefault(require("./customers"));
+const vendors_1 = __importDefault(require("./vendors"));
+const riders_1 = __importDefault(require("./riders"));
+const admin_1 = __importDefault(require("./admin"));
+const auth_1 = __importDefault(require("../../middlewares/auth"));
+const constants_1 = require("../../../constants");
+const webhooks_1 = __importDefault(require("./webhooks"));
+const router = (0, express_1.Router)();
+router.use('/', main_1.default);
+router.use('/webhook', webhooks_1.default);
+router.use('/customers', auth_1.default.authenticate, auth_1.default.checkRoles(constants_1.ROLE.USER), customers_1.default);
+router.use('/vendor', auth_1.default.isVendor, vendors_1.default);
+router.use('/riders', riders_1.default);
+router.use('/admin', auth_1.default.isAdmin, admin_1.default);
+router.use('/users', users_1.default);
+exports.default = router;
