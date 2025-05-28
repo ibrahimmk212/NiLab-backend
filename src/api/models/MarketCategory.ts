@@ -29,7 +29,7 @@ const marketCategorySchema = new Schema<Category>(
 marketCategorySchema.pre('save', function (next) {
     this.slug = slugify(this.name);
     next();
-});
+})
 const CategoryModel = mongoose.model<Category>('Category', marketCategorySchema);
 
 export default CategoryModel;
