@@ -7,6 +7,7 @@ export interface Product extends Document {
     description: string;
     vendor: mongoose.Types.ObjectId;
     category: mongoose.Types.ObjectId;
+    marketCategory: mongoose.Types.ObjectId;
     subcategory: mongoose.Types.ObjectId;
     ratings: number;
     images: string;
@@ -26,6 +27,11 @@ const productSchema = new Schema<Product>(
             ref: 'Category',
             required: true
         },
+        marketCategory: {
+            type: Schema.Types.ObjectId,
+            ref: 'MarketCategory',
+            required: true
+        },
         subcategory: {
             type: Schema.Types.ObjectId,
             ref: 'Subcategory',
@@ -39,6 +45,7 @@ const productSchema = new Schema<Product>(
     {
         timestamps: true,
         toJSON: {
+            
             virtuals: true
         },
         toObject: {
@@ -49,6 +56,7 @@ const productSchema = new Schema<Product>(
 
 productSchema.post('save', async (product) => {
     const category = product.category;
+    const marketCategory = product.marketCategory;
     const vendorId = product.vendor;
 
     const vendor = await mongoose

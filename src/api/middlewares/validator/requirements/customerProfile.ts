@@ -65,7 +65,7 @@ const customerProfileRequirement = {
     otp: [body('otp').isString().isLength({ min: 4 })],
 
     login: [
-        body('phone').isString(),
+        body('email').isString(),
         body('password').isString().isLength({ min: 5 })
     ],
 

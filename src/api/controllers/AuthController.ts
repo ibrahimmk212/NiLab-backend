@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import AuthService from '../services/AuthService';
-import { LoginType, SignUpType, VendorSignUpType, VerifyOTP } from '../types/auth';
+import {
+    LoginType,
+    SignUpType,
+    VendorSignUpType,
+    VerifyOTP
+} from '../types/auth';
 import { STATUS } from '../../constants';
 import { asyncHandler } from '../middlewares/handlers/async';
 import JWT from '../../utils/jwt';
@@ -11,7 +16,7 @@ import AdminService from '../services/AdminService';
 class AuthController {
     login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
         const payload: LoginType = req.body;
-        console.log(payload)
+        console.log(payload);
         const { token, user } = await AuthService.login(payload);
 
         res.status(STATUS.OK).send({
@@ -40,10 +45,10 @@ class AuthController {
             let phone = req.body.phone;
             const countryCode = req.body.countryCode;
 
-            if(countryCode === "234" || countryCode === "+234"){
-                if(phone.length < 11 && !phone.startsWith('0')){
+            if (countryCode === '234' || countryCode === '+234') {
+                if (phone.length < 11 && !phone.startsWith('0')) {
                     phone = `0${phone}`;
-                }           
+                }
             }
 
             const token = await AuthService.verifyPhone(countryCode, phone);
@@ -76,7 +81,7 @@ class AuthController {
 
     customerSignUp = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const payload: SignUpType = req.body;
+            const payload= req.body;
 
             payload.role = 'user';
 
@@ -99,7 +104,7 @@ class AuthController {
 
     vendorSignUp = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            let payload: VendorSignUpType = req.body;
+            const payload: VendorSignUpType = req.body;
             payload.role = 'vendor';
 
             const user = await AuthService.vendorSignUp(payload);
@@ -217,7 +222,8 @@ class AuthController {
                 role: 'admin',
                 userId: user._id
             });
-            const token = await JWT.signToken(user.id);
+
+            const token = await JWT.signToken(user._id.toString());
 
             res.status(STATUS.CREATED).send({
                 success: true,

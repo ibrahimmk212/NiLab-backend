@@ -22,14 +22,13 @@ class AuthService implements IAuthService {
         // }
         // console.log(payload.phone)
 
-        let user = await UserRepository.findUserByEmailOrPhone(payload.phone, payload.phone);
+        const user = await UserRepository.findUserByEmail(payload.email || '');
   
 
         if (!user) {
             throw new Error('Invalid credentials, check your phone number again.');
         }
 
-        console.log(user);
         const isValid = await user.matchPassword(payload.password);
 
         if (!isValid) {
@@ -208,8 +207,8 @@ class AuthService implements IAuthService {
             throw Error('Invalid token');
         }
 
-        // payload.email = savedData?.email;
-        payload.phoneNumber = savedData?.phoneNumber;
+        payload.email = savedData?.email;
+        // payload.phoneNumber = savedData?.phoneNumber;
         delete payload?.token;
         // const hashedPassword = bcrypt.hashSync(
         //     payload.password,
