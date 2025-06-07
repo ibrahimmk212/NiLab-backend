@@ -24,31 +24,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const productSchema = new mongoose_1.Schema({
+const helpers_1 = require("../../utils/helpers");
+const vendorCategorySchema = new mongoose_1.Schema({
     name: { type: String, required: true },
-    price: { type: Number, required: true },
-    available: { type: Boolean, default: true },
+    slug: { type: String, required: false },
     description: { type: String, required: true },
-    vendor: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Vendor', required: true },
-    category: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Category',
-        required: true
-    },
-    marketCategory: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'MarketCategory',
-        required: true
-    },
-    subcategory: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: 'Subcategory',
-        required: false
-    },
-    ratings: { type: Number, default: 0 },
-    images: [{ type: String }],
-    thumbnail: { type: String },
-    status: { type: String, required: false, default: 'available' }
+    thumbnail: { type: String, required: false }
 }, {
     timestamps: true,
     toJSON: {
@@ -58,16 +39,9 @@ const productSchema = new mongoose_1.Schema({
         virtuals: true
     }
 });
-productSchema.post('save', async (product) => {
-    const category = product.category;
-    const marketCategory = product.marketCategory;
-    const vendorId = product.vendor;
-    const vendor = await mongoose_1.default
-        .model('Vendor')
-        .findById(vendorId)
-        .populate('categories');
-    // check if this product category exists on in vendor profile.
-    // if not exists, add
+vendorCategorySchema.pre('save', function (next) {
+    this.slug = (0, helpers_1.slugify)(this.name);
+    next();
 });
-const ProductModel = mongoose_1.default.model('Product', productSchema);
-exports.default = ProductModel;
+const VendorCategoryModel = mongoose_1.default.model('VendorCategory', vendorCategorySchema);
+exports.default = VendorCategoryModel;

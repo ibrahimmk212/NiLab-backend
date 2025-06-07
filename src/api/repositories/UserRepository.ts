@@ -14,27 +14,18 @@ class UserRepository {
 
     // Create a Customer User
     async createCustomerUser(data: Partial<User>): Promise<any> {
-        let user, wallet;
-        try {
-            // Create User
-            user = await UserModel.create(data);
-            if (!user) throw new Error('Failed to create user');
+        // Create User
+        const user = await UserModel.create(data);
+        if (!user) throw new Error('Failed to create user');
 
-            const userId = user._id;
+        const userId = user._id;
 
-            // Create Wallet
-            wallet = await WalletModel.create({ userId });
-            if (!wallet) throw new Error('Failed to create wallet');
+        // Create Wallet
+        const wallet = await WalletModel.create({ userId });
+        if (!wallet) throw new Error('Failed to create wallet');
 
-            return { user, wallet };
-        } catch (error) {
-            // Rollback logic
-            // if (wallet) await WalletModel.deleteOne({ _id: wallet._id });
-            // if (user) await UserModel.deleteOne({ _id: user._id });
-            throw error;
-        }
+        return { user, wallet };
     }
-
     // Create Vendor Account
     async createVendorUser(userData: VendorSignUpType) {
         let user, vendor, wallet;

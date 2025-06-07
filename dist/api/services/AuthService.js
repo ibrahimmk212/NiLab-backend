@@ -13,11 +13,10 @@ class AuthService {
         //     payload.phone = `0${payload.phone}`;
         // }
         // console.log(payload.phone)
-        let user = await UserRepository_1.default.findUserByEmailOrPhone(payload.phone, payload.phone);
+        const user = await UserRepository_1.default.findUserByEmail(payload.email || '');
         if (!user) {
             throw new Error('Invalid credentials, check your phone number again.');
         }
-        console.log(user);
         const isValid = await user.matchPassword(payload.password);
         if (!isValid) {
             throw new Error('Invalid credentials, check your password again.');
@@ -143,8 +142,8 @@ class AuthService {
         if (!savedData) {
             throw Error('Invalid token');
         }
-        // payload.email = savedData?.email;
-        payload.phoneNumber = savedData === null || savedData === void 0 ? void 0 : savedData.phoneNumber;
+        payload.email = savedData === null || savedData === void 0 ? void 0 : savedData.email;
+        // payload.phoneNumber = savedData?.phoneNumber;
         payload === null || payload === void 0 ? true : delete payload.token;
         // const hashedPassword = bcrypt.hashSync(
         //     payload.password,

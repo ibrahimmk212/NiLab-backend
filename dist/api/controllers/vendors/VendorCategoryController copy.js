@@ -5,11 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../../../constants");
 const async_1 = require("../../middlewares/handlers/async");
-const VendorCategoryService_1 = __importDefault(require("../../services/VendorCategoryService"));
+const CategoryService_1 = __importDefault(require("../../services/CategoryService"));
 class VendorCategoryController {
     constructor() {
         this.getAll = (0, async_1.asyncHandler)(async (req, res, next) => {
-            const product = await VendorCategoryService_1.default.getAll();
+            const product = await CategoryService_1.default.getAll();
             res.status(constants_1.STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',
@@ -18,7 +18,7 @@ class VendorCategoryController {
         });
         this.getSingle = (0, async_1.asyncHandler)(async (req, res, next) => {
             const { id } = req.params;
-            const product = await VendorCategoryService_1.default.find(id);
+            const product = await CategoryService_1.default.find(id);
             res.status(constants_1.STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',

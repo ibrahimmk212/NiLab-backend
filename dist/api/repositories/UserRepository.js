@@ -15,25 +15,16 @@ class UserRepository {
     }
     // Create a Customer User
     async createCustomerUser(data) {
-        let user, wallet;
-        try {
-            // Create User
-            user = await User_1.default.create(data);
-            if (!user)
-                throw new Error('Failed to create user');
-            const userId = user._id;
-            // Create Wallet
-            wallet = await Wallet_1.default.create({ userId });
-            if (!wallet)
-                throw new Error('Failed to create wallet');
-            return { user, wallet };
-        }
-        catch (error) {
-            // Rollback logic
-            // if (wallet) await WalletModel.deleteOne({ _id: wallet._id });
-            // if (user) await UserModel.deleteOne({ _id: user._id });
-            throw error;
-        }
+        // Create User
+        const user = await User_1.default.create(data);
+        if (!user)
+            throw new Error('Failed to create user');
+        const userId = user._id;
+        // Create Wallet
+        const wallet = await Wallet_1.default.create({ userId });
+        if (!wallet)
+            throw new Error('Failed to create wallet');
+        return { user, wallet };
     }
     // Create Vendor Account
     async createVendorUser(userData) {
@@ -107,7 +98,6 @@ class UserRepository {
         const user = await User_1.default.findOne({ email }).select('+password');
         return user;
     }
-    // Find a user by email
     async findUserByEmailOrPhone(email, phone) {
         let prefixNumber = phone;
         if (phone.startsWith('0')) {

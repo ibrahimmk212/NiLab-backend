@@ -58,7 +58,7 @@ const customerProfileRequirement = {
     ],
     otp: [(0, express_validator_1.body)('otp').isString().isLength({ min: 4 })],
     login: [
-        (0, express_validator_1.body)('phone').isString(),
+        (0, express_validator_1.body)('email').isString(),
         (0, express_validator_1.body)('password').isString().isLength({ min: 5 })
     ],
     setPin: [(0, express_validator_1.body)('pin').isString().isLength({ min: 4 })]

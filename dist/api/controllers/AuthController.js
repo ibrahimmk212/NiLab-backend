@@ -35,7 +35,7 @@ class AuthController {
         this.phoneVerify = (0, async_1.asyncHandler)(async (req, res) => {
             let phone = req.body.phone;
             const countryCode = req.body.countryCode;
-            if (countryCode === "234" || countryCode === "+234") {
+            if (countryCode === '234' || countryCode === '+234') {
                 if (phone.length < 11 && !phone.startsWith('0')) {
                     phone = `0${phone}`;
                 }
@@ -75,7 +75,7 @@ class AuthController {
             });
         });
         this.vendorSignUp = (0, async_1.asyncHandler)(async (req, res) => {
-            let payload = req.body;
+            const payload = req.body;
             payload.role = 'vendor';
             const user = await AuthService_1.default.vendorSignUp(payload);
             if (!user) {
@@ -156,7 +156,7 @@ class AuthController {
                 role: 'admin',
                 userId: user._id
             });
-            const token = await jwt_1.default.signToken(user.id);
+            const token = await jwt_1.default.signToken(user._id.toString());
             res.status(constants_1.STATUS.CREATED).send({
                 success: true,
                 message: 'Signed up successfully',

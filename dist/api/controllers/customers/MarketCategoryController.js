@@ -6,9 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../../../constants");
 const async_1 = require("../../middlewares/handlers/async");
 const VendorCategoryService_1 = __importDefault(require("../../services/VendorCategoryService"));
-class VendorCategoryController {
+class MarketCategoryController {
     constructor() {
-        this.getAll = (0, async_1.asyncHandler)(async (req, res, next) => {
+        this.getAll = (0, async_1.asyncHandler)(async (req, res) => {
             const product = await VendorCategoryService_1.default.getAll();
             res.status(constants_1.STATUS.OK).send({
                 success: true,
@@ -16,7 +16,7 @@ class VendorCategoryController {
                 data: product
             });
         });
-        this.getSingle = (0, async_1.asyncHandler)(async (req, res, next) => {
+        this.getSingle = (0, async_1.asyncHandler)(async (req, res) => {
             const { id } = req.params;
             const product = await VendorCategoryService_1.default.find(id);
             res.status(constants_1.STATUS.OK).send({
@@ -27,4 +27,4 @@ class VendorCategoryController {
         });
     }
 }
-exports.default = new VendorCategoryController();
+exports.default = new MarketCategoryController();
