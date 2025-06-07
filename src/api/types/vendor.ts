@@ -5,6 +5,7 @@ export type CreateVendorType = {
     address?: string;
     description?: string;
     userId: mongoose.Types.ObjectId;
+    vendorCategoryId: mongoose.Types.ObjectId;
     email: string;
     phone: string;
     logo?: string;

@@ -25,7 +25,7 @@ router.use(
 
 router.use('/vendor', auth.isVendor, vendorsRouter);
 router.use('/riders', ridersRouter);
-router.use('/admin', auth.isAdmin, adminsRouter);
+router.use('/admins', auth.isAdmin, adminsRouter);
 
 router.use('/users', usersRouter);
 export default router;

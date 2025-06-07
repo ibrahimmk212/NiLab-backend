@@ -20,6 +20,7 @@ export interface Vendor extends Document {
     address: string;
     description: string;
     userId: mongoose.Types.ObjectId;
+    vendorCategoryId: mongoose.Types.ObjectId;
     email: string;
     phone: string;
     ratings: number;
@@ -42,6 +43,7 @@ const vendorSchema = new Schema<Vendor>(
         address: { type: String, required: true },
         description: { type: String, required: false },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        vendorCategoryId: { type: Schema.Types.ObjectId, ref: 'VendorCategory', required: true },
         email: {
             type: String,
             required: [true, 'email is required'],

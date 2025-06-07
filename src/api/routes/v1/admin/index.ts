@@ -10,6 +10,7 @@ import adminNotificationRouter from './notifications';
 import adminTransactionRouter from './transactions';
 import adminOrderRouter from './orders';
 import adminWaitlistRouter from './waitlist';
+import adminVendorCategoryRouter from './vendorCategories';
 
 const adminsRouter: Router = Router();
 
@@ -21,6 +22,7 @@ adminsRouter.use('/riders', adminRidersRouter);
 adminsRouter.use('/dispatches', adminDispatchRouter);
 adminsRouter.use('/collections', collectionRouter);
 adminsRouter.use('/categories', adminCategoryRouter);
+adminsRouter.use('/vendor-categories', adminVendorCategoryRouter);
 adminsRouter.use('/configurations', configurationRouter);
 adminsRouter.use('/notifications', adminNotificationRouter);
 adminsRouter.use('/transactions', adminTransactionRouter);

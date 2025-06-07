@@ -43,6 +43,7 @@ class AdminVendorController {
                 address: payload.address,
                 description: payload?.description ?? '',
                 userId: user._id,
+                vendorCategoryId: payload.vendorCategoryId,
                 email: payload.email,
                 phone: payload.phone,
                 logo: payload.logo ?? '',

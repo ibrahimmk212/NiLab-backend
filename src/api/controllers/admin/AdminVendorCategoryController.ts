@@ -45,11 +45,7 @@ class AdminVendorCategoryController {
         }
     );
     getAll = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
+        async (req: Request, res: Response): Promise<void> => {
             const product = await VendorCategoryService.getAll();
             res.status(STATUS.OK).send({
                 success: true,
@@ -59,13 +55,16 @@ class AdminVendorCategoryController {
         }
     );
     getSingle = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
+        async (req: Request, res: Response): Promise<void> => {
             const { id } = req.params;
             const product = await VendorCategoryService.find(id);
+            if (!product) {
+                res.status(STATUS.NOT_FOUND).send({
+                    success: false,
+                    message: 'Category not found',
+                    data: product
+                });
+            }
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Category fetched successfully',

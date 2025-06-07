@@ -104,7 +104,8 @@ class AuthController {
 
     vendorSignUp = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const payload: VendorSignUpType = req.body;
+            const payload: any = req.body;
+            // const payload: VendorSignUpType = req.body;
             payload.role = 'vendor';
 
             const user = await AuthService.vendorSignUp(payload);

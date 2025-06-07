@@ -3,17 +3,19 @@ import { Validate, Requirements } from '../../../middlewares/validator';
 import productRequirement from '../../../middlewares/validator/requirements/product';
 import AdminVendorCategoryController from '../../../controllers/admin/AdminVendorCategoryController';
 
-const adminCategoryRouter: Router = Router();
-adminCategoryRouter.post(
+const adminVendorCategoryRouter: Router = Router();
+adminVendorCategoryRouter.post(
     '/create',
     Validate(productRequirement.createCategory),
     AdminVendorCategoryController.create
 );
-adminCategoryRouter.put(
+adminVendorCategoryRouter.put(
     '/:id',
     // Validate(productRequirement.),
     AdminVendorCategoryController.update
 );
-adminCategoryRouter.get('/all', AdminVendorCategoryController.getAll);
-adminCategoryRouter.get('/:id', AdminVendorCategoryController.getSingle);
-export default adminCategoryRouter;
+adminVendorCategoryRouter.get('/', AdminVendorCategoryController.getAll);
+adminVendorCategoryRouter.put('/', AdminVendorCategoryController.update);
+adminVendorCategoryRouter.post('/', AdminVendorCategoryController.create);
+adminVendorCategoryRouter.get('/:id', AdminVendorCategoryController.getSingle);
+export default adminVendorCategoryRouter;
