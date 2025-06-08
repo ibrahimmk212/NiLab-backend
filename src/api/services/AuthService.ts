@@ -150,6 +150,7 @@ class AuthService implements IAuthService {
         //     payload.password,
         //     appConfig.app.hashSalt
         // );
+        console.log("saved Data", savedData)
         const user = savedData.purpose === "email-verify" ?
             await UserRepository.findUserByKey('phoneNumber', payload.phoneNumber) :
             await UserRepository.findUserByKey('email', payload.email)
@@ -160,7 +161,7 @@ class AuthService implements IAuthService {
         return await UserRepository.createVendorUser({
             ...payload,
             email: payload.email,
-            phoneNumber: savedData.phoneNumber,
+            // phoneNumber: savedData.phoneNumber,
             password: payload.password
         });
     }

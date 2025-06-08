@@ -22,7 +22,7 @@ export interface Vendor extends Document {
     userId: mongoose.Types.ObjectId;
     vendorCategoryId: mongoose.Types.ObjectId;
     email: string;
-    phone: string;
+    phoneNumber: string;
     ratings: number;
     categories: [];
     logo: string;
@@ -60,7 +60,7 @@ const vendorSchema = new Schema<Vendor>(
                 required: true
             }
         ],
-        phone: { type: String, required: true },
+        phoneNumber: { type: String, required: true },
         ratings: { type: Number, default: 0 },
         logo: { type: String },
         banner: { type: String },

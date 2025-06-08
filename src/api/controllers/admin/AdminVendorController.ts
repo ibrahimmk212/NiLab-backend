@@ -21,7 +21,7 @@ class AdminVendorController {
             if (findUser) {
                 throw Error('Manager account already exist');
             }
-            const tempPassword = generateRandomNumbers(6).toString(); // '123456';
+            const tempPassword = '123456' //generateRandomNumbers(6).toString(); // '123456';
 
             console.log(tempPassword);
             const user = await UserService.createUser({
@@ -45,7 +45,7 @@ class AdminVendorController {
                 userId: user._id,
                 vendorCategoryId: payload.vendorCategoryId,
                 email: payload.email,
-                phone: payload.phone,
+                phoneNumber: payload.phoneNumber,
                 logo: payload.logo ?? '',
                 banner: payload.banner ?? '',
                 lat: payload.lat,
