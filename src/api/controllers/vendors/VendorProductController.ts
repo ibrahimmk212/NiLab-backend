@@ -48,7 +48,7 @@ class VendorProductController {
             const newProduct = await ProductService.create({
                 ...body,
                 vendor: vendor.id,
-                marketCategoryId: req.vendor.marketCategoryId
+                marketCategory: req.vendor.marketCategoryId
             });
             if (!newProduct) {
                 throw Error('Failed to create Product');
