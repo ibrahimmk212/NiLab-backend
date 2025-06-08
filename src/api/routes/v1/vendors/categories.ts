@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { Validate } from '../../../middlewares/validator';
-import VendorCategoryController from '../../../controllers/vendors/VendorCategoryController';
+import VendorCategoryController from '../../../controllers/vendors/MarketCategoryController';
 
 
 const vendorCategoryRouter: Router = Router();

@@ -1,14 +1,14 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { slugify } from '../../utils/helpers';
 
-export interface VendorCategory extends Document {
+export interface MarketCategory extends Document {
     name: string;
     slug?: string;
     description: string;
     thumbnail?: string;
 }
 
-const vendorCategorySchema = new Schema<VendorCategory>(
+const MarketCategorySchema = new Schema<MarketCategory>(
     {
         name: { type: String, required: true },
         slug: { type: String, required: false },
@@ -26,10 +26,10 @@ const vendorCategorySchema = new Schema<VendorCategory>(
     }
 );
 
-vendorCategorySchema.pre('save', function (next) {
+MarketCategorySchema.pre('save', function (next) {
     this.slug = slugify(this.name);
     next();
 })
-const VendorCategoryModel = mongoose.model<VendorCategory>('VendorCategory', vendorCategorySchema);
+const MarketCategoryModel = mongoose.model<MarketCategory>('MarketCategory', MarketCategorySchema);
 
-export default VendorCategoryModel;
+export default MarketCategoryModel;

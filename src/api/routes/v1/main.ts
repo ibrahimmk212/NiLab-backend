@@ -6,6 +6,8 @@ import waitlistRouter from './public/waitlist';
 import FileController from '../../controllers/FileController';
 import { upload } from '../../../utils/multer';
 import fileRouter from './file';
+import marketCategoryRouter from './public/marketCategories';
+import productRouter from './public/products';
 
 const mainRouter: Router = Router();
 
@@ -63,6 +65,12 @@ mainRouter.use('/waitlists', waitlistRouter);
 
 // file upload
 mainRouter.use('/file', fileRouter);
+
+// market category
+mainRouter.use(`/market-categories`, marketCategoryRouter)
+
+// products
+mainRouter.use(`/products`, productRouter)
 
 // generate admin
 // mainRouter.get('/generate-admin', Auth);

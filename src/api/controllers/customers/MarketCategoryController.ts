@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
-import MarketCategoryService from '../../services/VendorCategoryService';
+import MarketCategoryService from '../../services/MarketCategoryService';
 
 class MarketCategoryController {
     getAll = asyncHandler(

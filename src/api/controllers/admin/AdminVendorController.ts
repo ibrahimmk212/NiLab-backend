@@ -21,7 +21,7 @@ class AdminVendorController {
             if (findUser) {
                 throw Error('Manager account already exist');
             }
-            const tempPassword = '123456' //generateRandomNumbers(6).toString(); // '123456';
+            const tempPassword = '123456'; //generateRandomNumbers(6).toString(); // '123456';
 
             console.log(tempPassword);
             const user = await UserService.createUser({
@@ -43,7 +43,7 @@ class AdminVendorController {
                 address: payload.address,
                 description: payload?.description ?? '',
                 userId: user._id,
-                vendorCategoryId: payload.vendorCategoryId,
+                marketCategoryId: payload.vendorCategoryId,
                 email: payload.email,
                 phoneNumber: payload.phoneNumber,
                 logo: payload.logo ?? '',
@@ -62,11 +62,7 @@ class AdminVendorController {
         }
     );
     getAll = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
+        async (req: Request, res: Response): Promise<void> => {
             const vendors = await VendorService.getAll();
             res.status(STATUS.OK).send({
                 success: true,

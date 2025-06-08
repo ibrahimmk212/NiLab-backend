@@ -10,7 +10,7 @@ import adminNotificationRouter from './notifications';
 import adminTransactionRouter from './transactions';
 import adminOrderRouter from './orders';
 import adminWaitlistRouter from './waitlist';
-import adminVendorCategoryRouter from './vendorCategories';
+import adminVendorCategoryRouter from './marketCategories';
 
 const adminsRouter: Router = Router();
 
