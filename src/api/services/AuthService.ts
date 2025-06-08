@@ -1,7 +1,12 @@
 import UserRepository from '../repositories/UserRepository';
 import { User } from '../models/User';
 import JWT from '../../utils/jwt';
-import { LoginType, SignUpType, VendorSignUpType, VerifyOTP } from '../types/auth';
+import {
+    LoginType,
+    SignUpType,
+    VendorSignUpType,
+    VerifyOTP
+} from '../types/auth';
 import appConfig from '../../config/appConfig';
 import bcrypt from 'bcrypt';
 
@@ -23,10 +28,11 @@ class AuthService implements IAuthService {
         // console.log(payload.phone)
 
         const user = await UserRepository.findUserByEmail(payload.email || '');
-  
 
         if (!user) {
-            throw new Error('Invalid credentials, check your phone number again.');
+            throw new Error(
+                'Invalid credentials, check your phone number again.'
+            );
         }
 
         const isValid = await user.matchPassword(payload.password);
@@ -63,9 +69,12 @@ class AuthService implements IAuthService {
         return token;
     }
 
-    async verifyPhone(countryCode: string, phone: string): Promise<string | undefined> {
-        if(countryCode === "234" || countryCode === "+234"){
-            if(phone.length === 11 && phone.startsWith('0')){
+    async verifyPhone(
+        countryCode: string,
+        phone: string
+    ): Promise<string | undefined> {
+        if (countryCode === '234' || countryCode === '+234') {
+            if (phone.length === 11 && phone.startsWith('0')) {
                 phone = phone.slice(1);
             }
         }
@@ -95,11 +104,12 @@ class AuthService implements IAuthService {
             return;
         }
         const purpose =
-            payload.purpose === 'email-verify' || payload.purpose === "phone-verify"
+            payload.purpose === 'email-verify' ||
+            payload.purpose === 'phone-verify'
                 ? 'signup'
                 : payload.purpose === 'forgot-password'
-                    ? 'reset-password'
-                    : 'none';
+                ? 'reset-password'
+                : 'none';
 
         console.log(purpose);
         const token = await JWT.signTempToken({
@@ -132,8 +142,6 @@ class AuthService implements IAuthService {
     }
 
     async vendorSignUp(payload: VendorSignUpType): Promise<any | null> {
-
-
         const savedData = await JWT.verifyTempToken(
             payload?.token as string,
             'signup'
@@ -141,34 +149,31 @@ class AuthService implements IAuthService {
         if (!savedData) {
             throw Error('Invalid token');
         }
-        console.log("payload", payload)
-
-        // payload.email = savedData?.email;
-        // payload.phoneNumber = savedData?.phoneNumber;
-        delete payload?.token;
-        // const hashedPassword = bcrypt.hashSync(
-        //     payload.password,
-        //     appConfig.app.hashSalt
-        // );
-        console.log("saved Data", savedData)
-        const user = savedData.purpose === "email-verify" ?
-            await UserRepository.findUserByKey('phoneNumber', payload.phoneNumber) :
-            await UserRepository.findUserByKey('email', payload.email)
+        console.log('payload', payload);
+        console.log('saved Data', savedData);
+        const user =
+            savedData.purpose === 'email-verify'
+                ? await UserRepository.findUserByKey(
+                      'phoneNumber',
+                      payload.phoneNumber
+                  )
+                : await UserRepository.findUserByKey('email', savedData.email);
         if (user)
-            throw Error(savedData.purpose === "email-verify" ? "Phone already exists" : "Email already exists")
+            throw Error(
+                savedData.purpose === 'email-verify'
+                    ? 'Phone already exists'
+                    : 'Email already exists'
+            );
         // TODO check Vendors email address, if exists.
         // TODO check Vendors phone address, if exists.
         return await UserRepository.createVendorUser({
             ...payload,
-            email: payload.email,
-            // phoneNumber: savedData.phoneNumber,
+            email: savedData.email,
             password: payload.password
         });
     }
 
     async RiderSignUp(payload: VendorSignUpType): Promise<any | null> {
-
-
         const savedData = await JWT.verifyTempToken(
             payload?.token as string,
             'signup'
@@ -184,11 +189,19 @@ class AuthService implements IAuthService {
         //     payload.password,
         //     appConfig.app.hashSalt
         // );
-        const user = savedData.purpose === "email-verify" ?
-            await UserRepository.findUserByKey('phoneNumber', savedData.phoneNumber) :
-            await UserRepository.findUserByKey('email', savedData.email)
+        const user =
+            savedData.purpose === 'email-verify'
+                ? await UserRepository.findUserByKey(
+                      'phoneNumber',
+                      savedData.phoneNumber
+                  )
+                : await UserRepository.findUserByKey('email', savedData.email);
         if (user)
-            throw Error(savedData.purpose === "email-verify" ? "Phone already exists" : "Email already exists")
+            throw Error(
+                savedData.purpose === 'email-verify'
+                    ? 'Phone already exists'
+                    : 'Email already exists'
+            );
 
         return await UserRepository.createVendorUser({
             ...payload,
@@ -215,12 +228,20 @@ class AuthService implements IAuthService {
         //     payload.password,
         //     appConfig.app.hashSalt
         // );
-        const user = savedData.purpose === "email-verify" ?
-            await UserRepository.findUserByKey('phoneNumber', payload.phoneNumber) :
-            await UserRepository.findUserByKey('email', payload.email)
+        const user =
+            savedData.purpose === 'email-verify'
+                ? await UserRepository.findUserByKey(
+                      'phoneNumber',
+                      payload.phoneNumber
+                  )
+                : await UserRepository.findUserByKey('email', payload.email);
         if (user)
-            throw Error(savedData.purpose === "email-verify" ? "Phone already exists" : "Email already exists")
-        console.log("payloAS", {
+            throw Error(
+                savedData.purpose === 'email-verify'
+                    ? 'Phone already exists'
+                    : 'Email already exists'
+            );
+        console.log('payloAS', {
             ...payload,
             email: payload.email,
             password: payload.password
