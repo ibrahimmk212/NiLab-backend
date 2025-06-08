@@ -7,6 +7,7 @@ export interface Product extends Document {
     description: string;
     vendor: mongoose.Types.ObjectId;
     category: mongoose.Types.ObjectId;
+    marketCategory: mongoose.Types.ObjectId;
     subcategory: mongoose.Types.ObjectId;
     ratings: number;
     images: string;
@@ -24,6 +25,11 @@ const productSchema = new Schema<Product>(
         category: {
             type: Schema.Types.ObjectId,
             ref: 'Category',
+            required: true
+        },
+        marketCategory: {
+            type: Schema.Types.ObjectId,
+            ref: 'MarketCategory',
             required: true
         },
         subcategory: {
