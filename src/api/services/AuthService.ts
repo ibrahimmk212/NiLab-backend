@@ -9,6 +9,7 @@ import {
 } from '../types/auth';
 import appConfig from '../../config/appConfig';
 import bcrypt from 'bcrypt';
+import VendorRepository from '../repositories/VendorRepository';
 
 interface IAuthService {
     login(payload: LoginType): Promise<{ token: string; user: User }>;
@@ -21,7 +22,7 @@ interface IAuthService {
 }
 
 class AuthService implements IAuthService {
-    async login(payload: LoginType): Promise<{ token: string; user: User }> {
+    async login(payload: LoginType): Promise<{ token: string; user: User, vendor: any }> {
         // if (payload.phone.length < 11 && !payload.phone.startsWith('0')) {
         //     payload.phone = `0${payload.phone}`;
         // }
@@ -35,6 +36,9 @@ class AuthService implements IAuthService {
             );
         }
 
+        let vendor: any ={}
+        vendor = await VendorRepository.findByKey('vendorId', user.id);
+
         const isValid = await user.matchPassword(payload.password);
 
         if (!isValid) {
@@ -47,7 +51,7 @@ class AuthService implements IAuthService {
             throw new Error('Invalid token');
         }
 
-        return { token, user };
+        return { token, user, vendor: vendor };
     }
 
     async verifyEmail(email: string): Promise<string | undefined> {

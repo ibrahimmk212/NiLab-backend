@@ -16,13 +16,13 @@ import AdminService from '../services/AdminService';
 class AuthController {
     login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
         const payload: LoginType = req.body;
-        console.log(payload);
-        const { token, user } = await AuthService.login(payload);
+        const { token, user, vendor } = await AuthService.login(payload);
 
         res.status(STATUS.OK).send({
             message: 'Logged in successfully',
             success: true,
             data: user,
+            vendor: vendor,
             token: token
         });
     });

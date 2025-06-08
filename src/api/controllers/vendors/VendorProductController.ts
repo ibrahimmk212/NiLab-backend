@@ -21,7 +21,7 @@ class VendorProductController {
 
             if (!product) throw Error('Product Not found');
 
-            let file = req?.files?.file;
+            const file = req?.files?.file;
             if (!req?.files?.file) throw Error('File Not selected');
             file.name = `${Date.now()}_${file.name.replace(/ /g, '_')}`;
 
@@ -47,7 +47,8 @@ class VendorProductController {
 
             const newProduct = await ProductService.create({
                 ...body,
-                vendor: vendor.id
+                vendor: vendor.id,
+                marketCategoryId: req.vendor.marketCategoryId
             });
             if (!newProduct) {
                 throw Error('Failed to create Product');
