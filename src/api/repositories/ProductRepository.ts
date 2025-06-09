@@ -8,52 +8,42 @@ class ProductRepository {
     }
 
     async findProductById(productId: string): Promise<Product | null> {
-        return await ProductModel.findById(productId);
+        return await ProductModel.findById(productId).populate('vendor');
     }
+
     async getAll(): Promise<Product[] | null> {
-        return await ProductModel.find();
+        return await ProductModel.find().populate('vendor');
     }
 
     async searchProduct(query: any): Promise<Product[] | null> {
-       // keys
-         const keys = Object.keys(query);
-            // values
+        const keys = Object.keys(query);
         const values = Object.values(query);
         const search = keys.map((key, index) => {
             return { [key]: values[index] };
         });
-        return await ProductModel.find({ $or: search });
+        return await ProductModel.find({ $or: search }).populate('vendor');
     }
+
     async getAllByVendor(vendorId: string): Promise<Product[] | null> {
-        // const total = await OrderModel.countDocuments();
-        // const page = parseInt(data.page?.toString() || '1', 10);
-        // const limit = parseInt(data.limit?.toString() || `${total}`, 10);
-        // const startIndex = (page - 1) * limit;
-        // const endIndex = page * limit;
-
-        return await ProductModel.find({ vendor: vendorId });
-
-        // .skip(startIndex)
-        // .limit(limit)
+        return await ProductModel.find({ vendor: vendorId }).populate('vendor');
     }
 
     async getAllByCategory(categoryId: any): Promise<Product[] | null> {
-        return await ProductModel.find({ category: categoryId });
+        return await ProductModel.find({ category: categoryId }).populate('vendor');
     }
+
     async updateProduct(
         productId: string,
         updateData: Partial<Product>
     ): Promise<Product | null> {
         return await ProductModel.findByIdAndUpdate(productId, updateData, {
             new: true
-        });
+        }).populate('vendor');
     }
 
     async deleteProduct(productId: string): Promise<Product | null> {
-        return await ProductModel.findByIdAndDelete(productId, { new: true });
+        return await ProductModel.findByIdAndDelete(productId, { new: true }).populate('vendor');
     }
-
-    // Additional product-specific methods...
 }
 
 export default new ProductRepository();
