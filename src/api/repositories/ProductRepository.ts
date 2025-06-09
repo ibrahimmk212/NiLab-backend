@@ -8,11 +8,11 @@ class ProductRepository {
     }
 
     async findProductById(productId: string): Promise<Product | null> {
-        return await ProductModel.findById(productId).populate('vendor');
+        return await ProductModel.findById(productId)
     }
 
     async getAll(): Promise<Product[] | null> {
-        return await ProductModel.find().populate('vendor');
+        return await ProductModel.find()
     }
 
     async searchProduct(query: any): Promise<Product[] | null> {
