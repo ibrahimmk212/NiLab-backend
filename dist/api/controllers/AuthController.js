@@ -14,12 +14,12 @@ class AuthController {
     constructor() {
         this.login = (0, async_1.asyncHandler)(async (req, res) => {
             const payload = req.body;
-            console.log(payload);
-            const { token, user } = await AuthService_1.default.login(payload);
+            const { token, user, vendor } = await AuthService_1.default.login(payload);
             res.status(constants_1.STATUS.OK).send({
                 message: 'Logged in successfully',
                 success: true,
                 data: user,
+                vendor: vendor,
                 token: token
             });
         });
@@ -76,6 +76,7 @@ class AuthController {
         });
         this.vendorSignUp = (0, async_1.asyncHandler)(async (req, res) => {
             const payload = req.body;
+            // const payload: VendorSignUpType = req.body;
             payload.role = 'vendor';
             const user = await AuthService_1.default.vendorSignUp(payload);
             if (!user) {

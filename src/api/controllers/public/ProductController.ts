@@ -8,7 +8,6 @@ import { uploadFileToS3 } from '../../../utils/s3';
 import path from 'path';
 
 class ProductController {
-
     // createCategory = asyncHandler(
     //     async (
     //         req: Request | any,
@@ -37,12 +36,27 @@ class ProductController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            // TODO set pagination and filter
-            const products = await ProductService.getAll()
+            const {
+                page = '1',
+                limit = '10',
+                sortBy = 'createdAt',
+                sortOrder = 'desc',
+                search,
+                ...restFilters
+            } = req.query;
+
+            const result = await ProductService.getAll({
+                page: parseInt(page as string, 10),
+                limit: parseInt(limit as string, 10),
+                sortBy: sortBy as string,
+                sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
+                search: search as string,
+                filters: restFilters
+            });
             // TODO populate categories
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
-                data: products
+                data: result
             });
         }
     );
@@ -90,7 +104,6 @@ class ProductController {
             });
         }
     );
-
 }
 
 export default new ProductController();

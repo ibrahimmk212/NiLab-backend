@@ -29,6 +29,7 @@ const vendorSchema = new mongoose_1.Schema({
     address: { type: String, required: true },
     description: { type: String, required: false },
     userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    marketCategoryId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'MarketCategory', required: true },
     email: {
         type: String,
         required: [true, 'email is required'],
@@ -45,7 +46,7 @@ const vendorSchema = new mongoose_1.Schema({
             required: true
         }
     ],
-    phone: { type: String, required: true },
+    phoneNumber: { type: String, required: true },
     ratings: { type: Number, default: 0 },
     logo: { type: String },
     banner: { type: String },

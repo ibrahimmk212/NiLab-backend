@@ -25,7 +25,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const helpers_1 = require("../../utils/helpers");
-const marketCategorySchema = new mongoose_1.Schema({
+const MarketCategorySchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     slug: { type: String, required: false },
     description: { type: String, required: true },
@@ -39,9 +39,9 @@ const marketCategorySchema = new mongoose_1.Schema({
         virtuals: true
     }
 });
-marketCategorySchema.pre('save', function (next) {
+MarketCategorySchema.pre('save', function (next) {
     this.slug = (0, helpers_1.slugify)(this.name);
     next();
 });
-const CategoryModel = mongoose_1.default.model('Category', marketCategorySchema);
-exports.default = CategoryModel;
+const MarketCategoryModel = mongoose_1.default.model('MarketCategory', MarketCategorySchema);
+exports.default = MarketCategoryModel;

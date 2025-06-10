@@ -7,7 +7,6 @@ const UserService_1 = __importDefault(require("../../services/UserService"));
 const constants_1 = require("../../../constants");
 const async_1 = require("../../middlewares/handlers/async");
 const VendorService_1 = __importDefault(require("./../../services/VendorService"));
-const helpers_1 = require("../../../utils/helpers");
 class AdminVendorController {
     constructor() {
         this.create = (0, async_1.asyncHandler)(async (req, res, next) => {
@@ -17,7 +16,7 @@ class AdminVendorController {
             if (findUser) {
                 throw Error('Manager account already exist');
             }
-            const tempPassword = (0, helpers_1.generateRandomNumbers)(6).toString(); // '123456';
+            const tempPassword = '123456'; //generateRandomNumbers(6).toString(); // '123456';
             console.log(tempPassword);
             const user = await UserService_1.default.createUser({
                 role: constants_1.ROLE.VENDOR,
@@ -36,8 +35,9 @@ class AdminVendorController {
                 address: payload.address,
                 description: (_a = payload === null || payload === void 0 ? void 0 : payload.description) !== null && _a !== void 0 ? _a : '',
                 userId: user._id,
+                marketCategoryId: payload.vendorCategoryId,
                 email: payload.email,
-                phone: payload.phone,
+                phoneNumber: payload.phoneNumber,
                 logo: (_b = payload.logo) !== null && _b !== void 0 ? _b : '',
                 banner: (_c = payload.banner) !== null && _c !== void 0 ? _c : '',
                 lat: payload.lat,
@@ -51,7 +51,7 @@ class AdminVendorController {
                 data: newVendor
             });
         });
-        this.getAll = (0, async_1.asyncHandler)(async (req, res, next) => {
+        this.getAll = (0, async_1.asyncHandler)(async (req, res) => {
             const vendors = await VendorService_1.default.getAll();
             res.status(constants_1.STATUS.OK).send({
                 success: true,

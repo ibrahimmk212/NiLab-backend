@@ -25,3 +25,4 @@ export type UpdateProductType = {
     thumbnail?: string;
     status?: string;
 };
+

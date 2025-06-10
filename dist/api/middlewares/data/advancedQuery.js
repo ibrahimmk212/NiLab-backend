@@ -67,7 +67,7 @@ const advancedQuery = (model, populate) => async (req, res, next) => {
 const pagination = (model, populate) => async (req, res, next) => {
     var _a, _b;
     let query;
-    // Copy request query
+    // Copy request query8
     const reqQuery = Object.assign({}, req.query);
     // Fields to exclude
     const removeFields = ['select', 'sort', 'page', 'limit'];

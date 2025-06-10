@@ -10,41 +10,32 @@ class ProductRepository {
         return await product.save();
     }
     async findProductById(productId) {
-        return await Product_1.default.findById(productId);
+        return await Product_1.default.findById(productId).populate('vendor');
     }
     async getAll() {
-        return await Product_1.default.find();
+        return await Product_1.default.find().populate('vendor');
     }
     async searchProduct(query) {
-        // keys
         const keys = Object.keys(query);
-        // values
         const values = Object.values(query);
         const search = keys.map((key, index) => {
             return { [key]: values[index] };
         });
-        return await Product_1.default.find({ $or: search });
+        return await Product_1.default.find({ $or: search }).populate('vendor');
     }
     async getAllByVendor(vendorId) {
-        // const total = await OrderModel.countDocuments();
-        // const page = parseInt(data.page?.toString() || '1', 10);
-        // const limit = parseInt(data.limit?.toString() || `${total}`, 10);
-        // const startIndex = (page - 1) * limit;
-        // const endIndex = page * limit;
-        return await Product_1.default.find({ vendor: vendorId });
-        // .skip(startIndex)
-        // .limit(limit)
+        return await Product_1.default.find({ vendor: vendorId }).populate('vendor');
     }
     async getAllByCategory(categoryId) {
-        return await Product_1.default.find({ category: categoryId });
+        return await Product_1.default.find({ category: categoryId }).populate('vendor');
     }
     async updateProduct(productId, updateData) {
         return await Product_1.default.findByIdAndUpdate(productId, updateData, {
             new: true
-        });
+        }).populate('vendor');
     }
     async deleteProduct(productId) {
-        return await Product_1.default.findByIdAndDelete(productId, { new: true });
+        return await Product_1.default.findByIdAndDelete(productId, { new: true }).populate('vendor');
     }
 }
 exports.default = new ProductRepository();

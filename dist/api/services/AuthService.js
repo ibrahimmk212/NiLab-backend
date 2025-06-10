@@ -7,6 +7,7 @@ const UserRepository_1 = __importDefault(require("../repositories/UserRepository
 const jwt_1 = __importDefault(require("../../utils/jwt"));
 const appConfig_1 = __importDefault(require("../../config/appConfig"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const VendorRepository_1 = __importDefault(require("../repositories/VendorRepository"));
 class AuthService {
     async login(payload) {
         // if (payload.phone.length < 11 && !payload.phone.startsWith('0')) {
@@ -17,6 +18,8 @@ class AuthService {
         if (!user) {
             throw new Error('Invalid credentials, check your phone number again.');
         }
+        let vendor = {};
+        vendor = await VendorRepository_1.default.findByKey('vendorId', user.id);
         const isValid = await user.matchPassword(payload.password);
         if (!isValid) {
             throw new Error('Invalid credentials, check your password again.');
@@ -25,7 +28,7 @@ class AuthService {
         if (!token) {
             throw new Error('Invalid token');
         }
-        return { token, user };
+        return { token, user, vendor: vendor };
     }
     async verifyEmail(email) {
         const user = await UserRepository_1.default.findUserByKey('email', email);
@@ -43,7 +46,7 @@ class AuthService {
         return token;
     }
     async verifyPhone(countryCode, phone) {
-        if (countryCode === "234" || countryCode === "+234") {
+        if (countryCode === '234' || countryCode === '+234') {
             if (phone.length === 11 && phone.startsWith('0')) {
                 phone = phone.slice(1);
             }
@@ -68,7 +71,8 @@ class AuthService {
         if ((data === null || data === void 0 ? void 0 : data.otp) !== payload.otp) {
             return;
         }
-        const purpose = payload.purpose === 'email-verify' || payload.purpose === "phone-verify"
+        const purpose = payload.purpose === 'email-verify' ||
+            payload.purpose === 'phone-verify'
             ? 'signup'
             : payload.purpose === 'forgot-password'
                 ? 'reset-password'
@@ -101,22 +105,18 @@ class AuthService {
         if (!savedData) {
             throw Error('Invalid token');
         }
-        console.log("payload", payload);
-        // payload.email = savedData?.email;
-        // payload.phoneNumber = savedData?.phoneNumber;
-        payload === null || payload === void 0 ? true : delete payload.token;
-        // const hashedPassword = bcrypt.hashSync(
-        //     payload.password,
-        //     appConfig.app.hashSalt
-        // );
-        const user = savedData.purpose === "email-verify" ?
-            await UserRepository_1.default.findUserByKey('phoneNumber', payload.phoneNumber) :
-            await UserRepository_1.default.findUserByKey('email', payload.email);
+        console.log('payload', payload);
+        console.log('saved Data', savedData);
+        const user = savedData.purpose === 'email-verify'
+            ? await UserRepository_1.default.findUserByKey('phoneNumber', payload.phoneNumber)
+            : await UserRepository_1.default.findUserByKey('email', savedData.email);
         if (user)
-            throw Error(savedData.purpose === "email-verify" ? "Phone already exists" : "Email already exists");
+            throw Error(savedData.purpose === 'email-verify'
+                ? 'Phone already exists'
+                : 'Email already exists');
         // TODO check Vendors email address, if exists.
         // TODO check Vendors phone address, if exists.
-        return await UserRepository_1.default.createVendorUser(Object.assign(Object.assign({}, payload), { email: payload.email, phoneNumber: savedData.phoneNumber, password: payload.password }));
+        return await UserRepository_1.default.createVendorUser(Object.assign(Object.assign({}, payload), { email: savedData.email, password: payload.password }));
     }
     async RiderSignUp(payload) {
         const savedData = await jwt_1.default.verifyTempToken(payload === null || payload === void 0 ? void 0 : payload.token, 'signup');
@@ -130,11 +130,13 @@ class AuthService {
         //     payload.password,
         //     appConfig.app.hashSalt
         // );
-        const user = savedData.purpose === "email-verify" ?
-            await UserRepository_1.default.findUserByKey('phoneNumber', savedData.phoneNumber) :
-            await UserRepository_1.default.findUserByKey('email', savedData.email);
+        const user = savedData.purpose === 'email-verify'
+            ? await UserRepository_1.default.findUserByKey('phoneNumber', savedData.phoneNumber)
+            : await UserRepository_1.default.findUserByKey('email', savedData.email);
         if (user)
-            throw Error(savedData.purpose === "email-verify" ? "Phone already exists" : "Email already exists");
+            throw Error(savedData.purpose === 'email-verify'
+                ? 'Phone already exists'
+                : 'Email already exists');
         return await UserRepository_1.default.createVendorUser(Object.assign(Object.assign({}, payload), { email: payload.email, phoneNumber: savedData.phoneNumber, password: payload.password }));
     }
     async customerSignUp(payload) {
@@ -149,12 +151,14 @@ class AuthService {
         //     payload.password,
         //     appConfig.app.hashSalt
         // );
-        const user = savedData.purpose === "email-verify" ?
-            await UserRepository_1.default.findUserByKey('phoneNumber', payload.phoneNumber) :
-            await UserRepository_1.default.findUserByKey('email', payload.email);
+        const user = savedData.purpose === 'email-verify'
+            ? await UserRepository_1.default.findUserByKey('phoneNumber', payload.phoneNumber)
+            : await UserRepository_1.default.findUserByKey('email', payload.email);
         if (user)
-            throw Error(savedData.purpose === "email-verify" ? "Phone already exists" : "Email already exists");
-        console.log("payloAS", Object.assign(Object.assign({}, payload), { email: payload.email, password: payload.password }));
+            throw Error(savedData.purpose === 'email-verify'
+                ? 'Phone already exists'
+                : 'Email already exists');
+        console.log('payloAS', Object.assign(Object.assign({}, payload), { email: payload.email, password: payload.password }));
         return await UserRepository_1.default.createCustomerUser(Object.assign(Object.assign({}, payload), { email: payload.email, password: payload.password }));
     }
     async setPin(payload, pin) {

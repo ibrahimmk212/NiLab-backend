@@ -8,7 +8,7 @@ const async_1 = require("../../middlewares/handlers/async");
 const MarketCategoryService_1 = __importDefault(require("../../services/MarketCategoryService"));
 class MarketCategoryController {
     constructor() {
-        this.getAll = (0, async_1.asyncHandler)(async (req, res) => {
+        this.getAll = (0, async_1.asyncHandler)(async (req, res, next) => {
             const product = await MarketCategoryService_1.default.getAll();
             res.status(constants_1.STATUS.OK).send({
                 success: true,
@@ -16,7 +16,7 @@ class MarketCategoryController {
                 data: product
             });
         });
-        this.getSingle = (0, async_1.asyncHandler)(async (req, res) => {
+        this.getSingle = (0, async_1.asyncHandler)(async (req, res, next) => {
             const { id } = req.params;
             const product = await MarketCategoryService_1.default.find(id);
             res.status(constants_1.STATUS.OK).send({

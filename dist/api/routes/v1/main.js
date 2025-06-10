@@ -9,6 +9,8 @@ const validator_1 = require("../../middlewares/validator");
 const auth_1 = __importDefault(require("../../middlewares/auth"));
 const waitlist_1 = __importDefault(require("./public/waitlist"));
 const file_1 = __importDefault(require("./file"));
+const marketCategories_1 = __importDefault(require("./public/marketCategories"));
+const products_1 = __importDefault(require("./public/products"));
 const mainRouter = (0, express_1.Router)();
 mainRouter
     .route('/email-verify')
@@ -48,6 +50,10 @@ mainRouter.route('/create-admin').get(AuthController_1.default.createAdmin);
 mainRouter.use('/waitlists', waitlist_1.default);
 // file upload
 mainRouter.use('/file', file_1.default);
+// market category
+mainRouter.use(`/market-categories`, marketCategories_1.default);
+// products
+mainRouter.use(`/products`, products_1.default);
 // generate admin
 // mainRouter.get('/generate-admin', Auth);
 exports.default = mainRouter;
