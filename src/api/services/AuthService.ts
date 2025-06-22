@@ -3,6 +3,7 @@ import { User } from '../models/User';
 import JWT from '../../utils/jwt';
 import {
     LoginType,
+    RiderSignUpType,
     SignUpType,
     VendorSignUpType,
     VerifyOTP
@@ -177,7 +178,7 @@ class AuthService implements IAuthService {
         });
     }
 
-    async riderSignUp(payload: VendorSignUpType): Promise<any | null> {
+    async riderSignUp(payload: RiderSignUpType): Promise<any | null> {
         const savedData = await JWT.verifyTempToken(
             payload?.token as string,
             'signup'
@@ -201,10 +202,10 @@ class AuthService implements IAuthService {
                     : 'Email already exists'
             );
 
-        return await UserRepository.createVendorUser({
+        return await UserRepository.createRiderUser({
             ...payload,
-            email: payload.email,
-            phoneNumber: savedData.phoneNumber,
+            email: savedData.email,
+            phoneNumber: payload.phoneNumber,
             password: payload.password
         });
     }

@@ -4,27 +4,30 @@ export interface BankAccount {
     accountNumber: string;
     bankName: string;
     bankCode: string;
+    documents?: [];
 }
 
 export interface Rider extends Document {
-    name: string;
+    // name: string;
     userId: string;
     ratings: number;
     status: 'unverified' | 'verified' | 'suspended';
     available: boolean;
     bankAccount?: BankAccount;
+    documents?: [];
 }
 
 const riderSchema = new Schema<Rider>(
     {
-        name: { type: String, required: true },
+        // name: { type: String, required: true },
         ratings: { type: Number, default: 0 },
         status: { type: String, required: true, default: 'unverified' },
         available: {
             type: Boolean,
             required: true,
             default: false
-        }
+        },
+        documents: { type: Array, required: false },
     },
     {
         timestamps: true,

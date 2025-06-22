@@ -13,7 +13,7 @@ class RiderRepository {
     async updateRider(
         riderId: string,
         updateData: Partial<Rider>
-    ): Promise<Rider | null> {
+    ): Promise<Rider | null | any> {
         return await RiderModel.findByIdAndUpdate(riderId, updateData, {
             new: true
         });

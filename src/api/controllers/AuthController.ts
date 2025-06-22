@@ -106,7 +106,9 @@ class AuthController {
         async (req: Request, res: Response): Promise<void> => {
             const payload= req.body;
 
-            payload.role = 'user';
+            payload.role = 'rider';
+        console.log(payload)
+
 
             const user = await AuthService.riderSignUp(payload);
 

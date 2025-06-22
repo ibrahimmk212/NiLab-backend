@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import UserModel, { Address, User } from '../models/User';
 import VendorModel, { Vendor } from '../models/Vendor';
 import WalletModel, { Wallet } from '../models/Wallet';
-import { VendorSignUpType } from '../types/auth';
+import { RiderSignUpType, VendorSignUpType } from '../types/auth';
 import RiderModel from '../models/Rider';
 
 class UserRepository {
@@ -57,8 +57,8 @@ class UserRepository {
     }
 
     // Create Vendor Account
-    async createRiderUser(userData: VendorSignUpType) {
-        let user, vendor, wallet;
+    async createRiderUser(userData: RiderSignUpType) {
+        let user, rider, wallet;
         try {
             // Create User
             user = await UserModel.create(userData);
@@ -66,21 +66,21 @@ class UserRepository {
 
             const userId = user._id;
 
-            // Create Vendor
-            vendor = await RiderModel.create({ ...userData.vendor, userId });
-            if (!vendor) throw new Error('Failed to create vendor');
+            // Create Rider
+            rider = await RiderModel.create({ ...userData, userId });
+            if (!rider) throw new Error('Failed to create rider');
 
-            const vendorId = vendor._id;
+            const riderId = rider._id;
 
             // Create Wallet
-            wallet = await WalletModel.create({ vendorId });
+            wallet = await WalletModel.create({ riderId });
             if (!wallet) throw new Error('Failed to create wallet');
 
-            return { user, vendor, wallet };
+            return { user, rider, wallet };
         } catch (error) {
             // Rollback logic
             if (wallet) await WalletModel.deleteOne({ _id: wallet._id });
-            if (vendor) await VendorModel.deleteOne({ _id: vendor._id });
+            if (rider) await RiderModel.deleteOne({ _id: rider._id });
             if (user) await UserModel.deleteOne({ _id: user._id });
             throw error;
         }

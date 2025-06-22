@@ -62,7 +62,8 @@ class RiderService {
                 accountNumber: payload.accountNumber,
                 bankCode: payload.bankCode,
                 accountName: payload.accountName,
-                bankName: payload.bankName
+                bankName: payload.bankName,
+                // documents: []
             }
         });
     }

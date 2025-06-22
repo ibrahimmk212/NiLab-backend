@@ -41,6 +41,18 @@ export type VendorSignUpType = {
     vendor?: VendorType
 };
 
+export type RiderSignUpType = {
+    // name: string;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    phoneNumber: string;
+    password: string;
+    role: string;
+    token?: string;
+    documents?: []
+};
+
 export type ResetPasswordType = {
     password: string;
     otp: string;
