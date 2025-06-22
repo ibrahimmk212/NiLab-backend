@@ -29,6 +29,10 @@ mainRouter
     .post(Validate(Requirements.signup), AuthController.customerSignUp);
 
 mainRouter
+    .route('/rider/signup')
+    .post(Validate(Requirements.signup), AuthController.riderSignUp);
+
+    mainRouter
     .route('/vendor/signup')
     .post(AuthController.vendorSignUp);
 

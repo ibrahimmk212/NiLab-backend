@@ -177,7 +177,7 @@ class AuthService implements IAuthService {
         });
     }
 
-    async RiderSignUp(payload: VendorSignUpType): Promise<any | null> {
+    async riderSignUp(payload: VendorSignUpType): Promise<any | null> {
         const savedData = await JWT.verifyTempToken(
             payload?.token as string,
             'signup'
@@ -186,13 +186,7 @@ class AuthService implements IAuthService {
             throw Error('Invalid token');
         }
 
-        // payload.email = savedData?.email;
-        // payload.phoneNumber = savedData?.phoneNumber;
         delete payload?.token;
-        // const hashedPassword = bcrypt.hashSync(
-        //     payload.password,
-        //     appConfig.app.hashSalt
-        // );
         const user =
             savedData.purpose === 'email-verify'
                 ? await UserRepository.findUserByKey(

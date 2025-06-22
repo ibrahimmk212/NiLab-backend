@@ -102,6 +102,29 @@ class AuthController {
         }
     );
 
+    riderSignUp = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const payload= req.body;
+
+            payload.role = 'user';
+
+            const user = await AuthService.riderSignUp(payload);
+
+            if (!user) {
+                throw Error('User not created');
+            }
+
+            const token = await JWT.signToken(user.id);
+
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Signed up successfully',
+                data: user,
+                token
+            });
+        }
+    );
+
     vendorSignUp = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
             const payload: VendorSignUpType = req.body;
