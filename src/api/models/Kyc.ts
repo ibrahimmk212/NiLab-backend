@@ -1,11 +1,4 @@
 import mongoose, { Document, Schema } from 'mongoose';
-export interface BankAccount {
-    accountName: string;
-    accountNumber: string;
-    bankName: string;
-    bankCode: string;
-    documents?: [];
-}
 
 export interface Rider extends Document {
     // name: string;

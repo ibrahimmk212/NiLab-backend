@@ -37,7 +37,7 @@ class OrderController {
         const payload: CreateOrderType = req.body;
         payload.user = userdata.id;
         payload.code = generateRandomNumbers(6);
-        payload.reference = `ref${generateRandomNumbers(6)}${Date.now()}`
+        payload.reference = `ref${generateRandomNumbers(6)}${Date.now()}`;
         let paymentData: any = {};
         const totalAmount =
             payload.amount +
@@ -46,33 +46,28 @@ class OrderController {
             // TODO include tip
             payload.vat;
 
-        const vendor = await VendorService.get(payload.vendor.toString())
+        const vendor = await VendorService.get(payload.vendor.toString());
         if (!vendor) {
             return res.status(STATUS.BAD_REQUEST).send({
-                message: 'Vendor not found',
+                message: 'Vendor not found'
             });
         }
         if (payload.paymentType === 'wallet') {
-            const debitWallet = await WalletService.directDebitWallet(
-                {
-                    userId: userdata.id,
-                    amount: totalAmount,
-                    reference: payload.reference,
-                    // remark?: 
-                    transactionType: "order",
-                    transactionId: payload.reference
-                }
-            )
+            const debitWallet = await WalletService.directDebitWallet({
+                userId: userdata.id,
+                amount: totalAmount,
+                reference: payload.reference,
+                // remark?:
+                transactionType: 'order',
+                transactionId: payload.reference
+            });
 
             if (!debitWallet.success) {
                 return res.status(STATUS.BAD_REQUEST).send({
-                    message: debitWallet.message,
+                    message: debitWallet.message
                 });
-
             }
             payload.paymentCompleted = true;
-
-
         }
 
         const order = await OrderService.createOrder(payload);
@@ -132,9 +127,9 @@ class OrderController {
 
         // }
         let paymentRequest;
-        const generated_trx_ref = `ORDER_${currentTimestamp()}${userdata.id}`
+        const generated_trx_ref = `ORDER_${currentTimestamp()}${userdata.id}`;
         if (payload.paymentType === 'online') {
-             paymentData = {
+            paymentData = {
                 tx_ref: generated_trx_ref,
                 amount: `${totalAmount}`,
                 currency: 'NGN',
@@ -147,18 +142,15 @@ class OrderController {
                 customizations: {
                     title: 'NiLab Order Payment'
                 }
-            }
+            };
 
-            paymentRequest = await generateFlutterwavePaymentLink(paymentData)
+            paymentRequest = await generateFlutterwavePaymentLink(paymentData);
             // console.log(paymentRequest)
             order.paymentReference = paymentData.tx_ref;
-            if (paymentRequest.status !== "success") {
-                throw new Error(paymentRequest.message)
+            if (paymentRequest.status !== 'success') {
+                throw new Error(paymentRequest.message);
             }
             order.transactionReference = paymentData.tx_ref;
-
-
-
         }
         await order.save();
 
@@ -176,12 +168,15 @@ class OrderController {
             metaData: null
         });
 
-
         return res.status(STATUS.OK).send({
             message: 'Order created successfully',
-            data: {...order, vendor},
-            payment:{ ...paymentData, merchantName: vendor?.name, checkoutUrl: paymentRequest?.data?.link },
-            paymentRecord: payment,
+            data: { ...order, vendor },
+            payment: {
+                ...paymentData,
+                merchantName: vendor?.name,
+                checkoutUrl: paymentRequest?.data?.link
+            },
+            paymentRecord: payment
             // paymentRequest: payload.paymentType === 'online' ? paymentRequest : null
         });
     });
@@ -248,81 +243,77 @@ class OrderController {
         const { userdata }: any = req;
         const order = await OrderService.getOrderById(orderId);
         let paymentData: any = {};
+        let paymentRequest: any = {};
 
         if (!order) throw Error('Order not found!');
+        if (order.user.toString() !== userdata.id)
+            throw Error('You can only checkout your own order');
 
-        // if (!order.paymentCompleted && order.paymentType !== 'cash') {
-        //     // if (order.transactionReference) {
-        //     //     return res.status(STATUS.OK).json({
-        //     //         success: true,
-        //     //         message: 'Proceed to payment',
-        //     //         data: {
-        //     //             transactionReference: order.transactionReference
-        //     //         }
-        //     //     });
-        //     // } else {
-        //     const totalAmount =
-        //         order.amount + order.deliveryFee + order.serviceFee + order.vat;
-        //     const monnifyToken = await Monnify.genToken();
+        if (order.paymentCompleted)
+            throw Error('You have already completed payment for this order');
+        if (order.deliveryAccepted === false)
+            throw Error(
+                'You cannot checkout an order that has not been accepted for delivery'
+            );
+        if (order.completed) {
+            return res.status(STATUS.BAD_REQUEST).send({
+                message: 'This order has already been completed'
+            });
+        }
+        const generated_trx_ref = `ORDER_${currentTimestamp()}${userdata.id}`;
+        if (order.paymentType === 'online') {
+            paymentData = {
+                tx_ref: generated_trx_ref,
+                amount: `${order.amount}`,
+                currency: 'NGN',
+                redirect_url: `${process.env.FLW_REDIRECT_URL}`,
+                customer: {
+                    email: userdata.email,
+                    name: `${userdata.firstName} ${userdata.lastName}`,
+                    phonenumber: userdata.phoneNumber
+                },
+                customizations: {
+                    title: 'NiLab Order Payment'
+                }
+            };
 
-        //     const reference = `ORDER_${currentTimestamp()}${userdata.id}`;
+            paymentRequest = await generateFlutterwavePaymentLink(paymentData);
+            // console.log(paymentRequest)
+            order.paymentReference = paymentData.tx_ref;
+            if (paymentRequest.status !== 'success') {
+                throw new Error(paymentRequest.message);
+            }
+            order.transactionReference = paymentData.tx_ref;
 
-        //     const paymentRequest = await Monnify.initiatePayment(
-        //         {
-        //             amount: totalAmount, //.amount,
-        //             customerName: `${userdata.firstName} ${userdata.lastName}`,
-        //             customerEmail: userdata.email,
-        //             paymentDescription: `Order Payment|${order.code}`,
-        //             // paymentReference: `${currentTimestamp()}`,
-        //             paymentReference: reference,
-        //             redirectUrl: '',
-        //             contractCode: appConfig.monnify.contractCode,
-        //             currencyCode: 'NGN',
-        //             paymentMethods: ['ACCOUNT_TRANSFER', 'CARD']
-        //         },
-        //         monnifyToken
-        //     );
+            await order.save();
+        }
 
-        //     paymentData.merchantName =
-        //         paymentRequest.responseBody?.merchantName;
-        //     paymentData.checkoutUrl = paymentRequest.responseBody?.checkoutUrl;
+        const payment = await PaymentService.createPayment({
+            userId: userdata.id,
+            vendorId: order.vendor,
+            orderId: order._id,
+            amount: order.amount,
+            url: paymentRequest?.redirect_url,
+            mode: 'online',
+            trx_ref: generated_trx_ref,
+            channel: 'flutterwave',
+            purpose: 'order',
+            status: 'pending',
+            metaData: null
+        });
 
-        //     if (order.paymentType === 'transfer') {
-        //         const transfer = await Monnify.payWithBankTransfer(
-        //             {
-        //                 transactionReference:
-        //                     paymentRequest.responseBody.transactionReference
-        //             },
-        //             monnifyToken
-        //         );
-        //         paymentData.bankName = transfer.responseBody?.bankName;
-        //         paymentData.accountName = transfer.responseBody?.accountName;
-        //         paymentData.accountNumber =
-        //             transfer.responseBody?.accountNumber;
-        //         paymentData.expiresOn = transfer.responseBody?.expiresOn;
-        //         paymentData.totalPayable = transfer.responseBody?.totalPayable;
-        //         paymentData.fee = transfer.responseBody?.fee;
-        //         paymentData.ussdPayment = transfer.responseBody?.ussdPayment;
-        //         // }
-        //         order.paymentReference = reference;
-        //         order.transactionReference =
-        //             paymentRequest.responseBody?.transactionReference;
+        const vendor = await VendorService.get(order.vendor.toString());
 
-        //         await order.save();
-
-        //         return res.status(STATUS.OK).json({
-        //             success: true,
-        //             message: 'Proceed to payment',
-        //             data: order,
-        //             payment: paymentData
-        //         });
-        //     }
-        // }
-
-        return res.status(STATUS.BAD_REQUEST).json({
-            success: false,
-            message:
-                'Invalid request: your order is either paid or pay on delivery'
+        return res.status(STATUS.OK).send({
+            message: 'Order created successfully',
+            data: { ...order, vendor },
+            payment: {
+                ...paymentData,
+                merchantName: vendor?.name,
+                checkoutUrl: paymentRequest?.data?.link
+            },
+            paymentRecord: payment
+            // paymentRequest: payload.paymentType === 'online' ? paymentRequest : null
         });
     });
 
