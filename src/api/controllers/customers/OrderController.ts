@@ -246,15 +246,15 @@ class OrderController {
         let paymentRequest: any = {};
 
         if (!order) throw Error('Order not found!');
-        if (order.user.toString() !== userdata.id)
-            throw Error('You can only checkout your own order');
+        // if (order.user.toString() !== userdata.id)
+        //     throw Error('You can only checkout your own order');
 
         if (order.paymentCompleted)
             throw Error('You have already completed payment for this order');
-        if (order.deliveryAccepted === false)
-            throw Error(
-                'You cannot checkout an order that has not been accepted for delivery'
-            );
+        // if (order.deliveryAccepted === false)
+        //     throw Error(
+        //         'You cannot checkout an order that has not been accepted for delivery'
+        //     );
         if (order.completed) {
             return res.status(STATUS.BAD_REQUEST).send({
                 message: 'This order has already been completed'
