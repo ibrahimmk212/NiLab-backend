@@ -302,18 +302,26 @@ class OrderController {
             metaData: null
         });
 
-        const vendor = await VendorService.get(order.vendor.toString());
+        const vendor = await VendorService.get(order.vendor._id.toString());
 
         return res.status(STATUS.OK).send({
             message: 'Order created successfully',
-            data: { ...order, vendor },
-            payment: {
-                ...paymentData,
-                merchantName: vendor?.name,
-                checkoutUrl: paymentRequest?.data?.link
-            },
-            paymentRecord: payment
-            // paymentRequest: payload.paymentType === 'online' ? paymentRequest : null
+            data: {
+                order,
+                payment: {
+                    ...paymentData,
+                    merchantName: vendor?.name,
+                    checkoutUrl: paymentRequest?.data?.link
+                },
+                paymentRecord: payment
+            }
+            // payment: {
+            //     ...paymentData,
+            //     // merchantName: vendor?.name,
+            //     checkoutUrl: paymentRequest?.data?.link
+            // },
+            // paymentRecord: payment
+            // // paymentRequest: payload.paymentType === 'online' ? paymentRequest : null
         });
     });
 
