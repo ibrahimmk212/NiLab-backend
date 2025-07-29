@@ -23,12 +23,24 @@ class RiderService {
         return rider;
     }
 
-    getRiders(): Promise<any[]> {
-        throw new Error('Method not implemented.');
+    async getRiders(): Promise<Rider[] | null> {
+        const riders = await RiderRepository.findRidersByOption({});
+
+        return riders;
     }
 
     async getRiderDetail(riderId: string): Promise<Rider> {
         const rider = await RiderRepository.findRiderById(riderId);
+
+        if (!rider) {
+            throw new Error('Rider not found');
+        }
+
+        return rider;
+    }
+
+    async getRiderByUserId(userId: string): Promise<Rider> {
+        const rider = await RiderRepository.findByKey('userId', userId);
 
         if (!rider) {
             throw new Error('Rider not found');
@@ -62,20 +74,19 @@ class RiderService {
                 accountNumber: payload.accountNumber,
                 bankCode: payload.bankCode,
                 accountName: payload.accountName,
-                bankName: payload.bankName,
-                // documents: []
+                bankName: payload.bankName
             }
         });
     }
-    async deleteRider(riderId: string): Promise<Rider | null> {
-        const rider = await RiderRepository.findRiderById(riderId);
+    // async deleteRider(riderId: string): Promise<Rider | null> {
+    //     const rider = await RiderRepository.findRiderById(riderId);
 
-        if (!rider) {
-            throw new Error('Rider not found');
-        }
+    //     if (!rider) {
+    //         throw new Error('Rider not found');
+    //     }
 
-        return RiderRepository.deleteRider(riderId);
-    }
+    //     return RiderRepository.deleteRider(riderId);
+    // }
 }
 
 export default new RiderService();

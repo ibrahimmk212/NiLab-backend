@@ -26,6 +26,16 @@ class DispatchRepository {
         );
     }
 
+    async removeDelivery(
+        dispatchId: string,
+        deliveryId: string
+    ): Promise<Dispatch | null> {
+        return await DispatchModel.findByIdAndUpdate(
+            dispatchId,
+            { $pop: { deliveries: { deliveryId } } },
+            { new: true }
+        );
+    }
     async getDispatchById(dispatchId: string): Promise<Dispatch | null> {
         return await DispatchModel.findById(dispatchId).populate('deliveries');
     }

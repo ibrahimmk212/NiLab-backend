@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import WalletService from '../services/WalletService';
 
 interface Location {
     type: string;
@@ -14,15 +15,15 @@ export interface BankAccount {
     accountName: string;
     accountNumber: string;
     bankName: string;
+    bankCode: string;
 }
 export interface Vendor extends Document {
     name: string;
     address: string;
     description: string;
     userId: mongoose.Types.ObjectId;
-    marketCategoryId: mongoose.Types.ObjectId;
     email: string;
-    phoneNumber: string;
+    phone: string;
     ratings: number;
     categories: [];
     logo: string;
@@ -43,7 +44,6 @@ const vendorSchema = new Schema<Vendor>(
         address: { type: String, required: true },
         description: { type: String, required: false },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        marketCategoryId: { type: Schema.Types.ObjectId, ref: 'MarketCategory', required: true },
         email: {
             type: String,
             required: [true, 'email is required'],
@@ -60,7 +60,7 @@ const vendorSchema = new Schema<Vendor>(
                 required: true
             }
         ],
-        phoneNumber: { type: String, required: true },
+        phone: { type: String, required: true },
         ratings: { type: Number, default: 0 },
         logo: { type: String },
         banner: { type: String },
@@ -79,7 +79,12 @@ const vendorSchema = new Schema<Vendor>(
         isAvailable: { type: Boolean, required: true, default: false },
         averageReadyTime: { type: Number, required: true, default: 54000000 }, // 15 minutes default
         acceptDelivery: { type: Boolean, required: true, default: false },
-        bankAccount: { type: Map, required: false, default: null },
+        bankAccount: {
+            accountName: String,
+            accountNumber: String,
+            bankName: String,
+            bankCode: String
+        },
         // lat: { type: Number },
         // lng: { type: Number },
         status: { type: String, required: false, default: 'inactive' }
@@ -134,6 +139,21 @@ vendorSchema.virtual('staffs', {
     foreignField: 'vendorId',
     justOne: false
 });
+
+vendorSchema.post('save', async function (vendor) {
+    try {
+        if (vendor.isNew) {
+            await WalletService.createWallet({
+                role: 'vendor',
+                owner: vendor.id
+            });
+        }
+    } catch (error: any) {
+        console.log(`Wallet not created: ${error.message}`);
+    }
+});
+
+vendorSchema.index({ name: 'text', description: 'text' });
 
 const VendorModel = mongoose.model<Vendor>('Vendor', vendorSchema);
 

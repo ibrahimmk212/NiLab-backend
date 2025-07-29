@@ -2,39 +2,26 @@ import { Router } from 'express';
 import AuthController from '../../controllers/AuthController';
 import { Validate, Requirements } from '../../middlewares/validator';
 import Auth from '../../middlewares/auth';
-import waitlistRouter from './public/waitlist';
-import FileController from '../../controllers/FileController';
-import { upload } from '../../../utils/multer';
-import fileRouter from './file';
-import marketCategoryRouter from './public/marketCategories';
-import productRouter from './public/products';
+import PromotionController from '../../controllers/customers/PromotionController';
 
 const mainRouter: Router = Router();
+
+mainRouter.get('/configurations', AuthController.getConfiguration);
+mainRouter
+    .route('/promotions/validate')
+    .post(PromotionController.validatePromotionCode);
 
 mainRouter
     .route('/email-verify')
     .post(Validate(Requirements.emailVerify), AuthController.emailVerify);
-
-
-mainRouter
-    .route('/phone-verify')
-    .post(AuthController.phoneVerify);
 
 mainRouter
     .route('/login')
     .post(Validate(Requirements.login), AuthController.login);
 
 mainRouter
-    .route('/customer/signup')
-    .post(Validate(Requirements.signup), AuthController.customerSignUp);
-
-mainRouter
-    .route('/rider/signup')
-    .post(Validate(Requirements.signup), AuthController.riderSignUp);
-
-    mainRouter
-    .route('/vendor/signup')
-    .post(AuthController.vendorSignUp);
+    .route('/signup')
+    .post(Validate(Requirements.signup), AuthController.signUp);
 
 mainRouter
     .route('/set-pin')
@@ -64,20 +51,14 @@ mainRouter
     .put(Validate(Requirements.updatePassword), AuthController.updatePassword);
 mainRouter.route('/create-admin').get(AuthController.createAdmin);
 
-// WAITLIST
-mainRouter.use('/waitlists', waitlistRouter);
+mainRouter
+    .route('/customer/signup')
+    .post(Validate(Requirements.signup), AuthController.customerSignUp);
 
-// file upload
-mainRouter.use('/file', fileRouter);
+mainRouter
+    .route('/rider/signup')
+    .post(Validate(Requirements.signup), AuthController.riderSignUp);
 
-// market category
-mainRouter.use(`/market-categories`, marketCategoryRouter)
-
-// products
-mainRouter.use(`/products`, productRouter)
-
-// generate admin
-// mainRouter.get('/generate-admin', Auth);
-
+mainRouter.route('/vendor/signup').post(AuthController.vendorSignUp);
 
 export default mainRouter;

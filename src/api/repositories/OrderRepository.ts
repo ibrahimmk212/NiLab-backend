@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import OrderModel, { Order } from '../models/Order';
 
 class OrderRepository {
@@ -23,19 +24,17 @@ class OrderRepository {
         vendorId: string,
         data: any
     ): Promise<Order[] | null> {
-        // const page = data?.page ?? 1;
-        // const limit = data?.limit ?? 10;
-
         const total = await OrderModel.countDocuments();
         const page = parseInt(data.page?.toString() || '1', 10);
         const limit = parseInt(data.limit?.toString() || `${total}`, 10);
         const startIndex = (page - 1) * limit;
         const endIndex = page * limit;
 
-        return await OrderModel.find({ vendor: vendorId })
-            .skip(startIndex)
-            .limit(limit)
-            .populate(this.populatedData).sort({ createdAt: -1 });
+        return await OrderModel.find({ vendor: vendorId, ...data.queryParams })
+            // .skip(startIndex)
+            // .limit(limit)
+            .sort({ createdAt: -1 })
+            .populate(this.populatedData);
     }
     async findAll(): Promise<Order[] | null> {
         // const total = await OrderModel.countDocuments();
@@ -46,12 +45,44 @@ class OrderRepository {
         // .skip(startIndex)
         // .limit(limit)
 
-        return await OrderModel.find().populate(this.populatedData).sort({ createdAt: -1 });
+        return await OrderModel.find()
+            .populate(this.populatedData)
+            .sort({ createdAt: -1 });
     }
-    async findOrderByCustomer(customerId: string): Promise<Order[] | null> {
-        return await OrderModel.find({ user: customerId }).populate(
-            this.populatedData
-        ).sort({ createdAt: -1 })
+    async findOrderByCustomer(
+        customerId: string,
+        limit = 10,
+        page = 1,
+        queryParams: any
+    ): Promise<any> {
+        const query = { user: customerId, ...queryParams };
+        const total = await OrderModel.countDocuments(query);
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+
+        const orders = await OrderModel.find(query)
+            .populate(this.populatedData)
+            .sort({ createdAt: -1 })
+            .skip(startIndex)
+            .limit(limit);
+
+        // Pagination results
+        const pagination: any = {};
+        if (endIndex < total) {
+            pagination.next = {
+                page: page + 1,
+                limit
+            };
+        }
+
+        if (startIndex > 0) {
+            pagination.prev = {
+                page: page - 1,
+                limit
+            };
+        }
+
+        return { orders, count: orders.length, pagination, total };
     }
     async updateOrder(
         orderId: string,
@@ -70,6 +101,305 @@ class OrderRepository {
     }
 
     // Additional order-specific methods...
+    async vendorAnalytics(
+        vendorId: string,
+        startDate: Date,
+        endDate: Date
+    ): Promise<any> {
+        // Assuming each order has a 'amount' and a 'createdAt' field, and 'vendor' to identify the vendor's orders
+        const threeMonthsBeforeStart = new Date(startDate);
+        threeMonthsBeforeStart.setMonth(startDate.getMonth() - 3);
+
+        const salesRevenue = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    vendor: new mongoose.Types.ObjectId(vendorId)
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    amount: { $sum: '$amount' }
+                }
+            }
+        ]);
+
+        const previousPeriodRevenue = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: {
+                        $gte: threeMonthsBeforeStart,
+                        $lte: startDate
+                    },
+                    vendor: new mongoose.Types.ObjectId(vendorId)
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    amount: { $sum: '$amount' }
+                }
+            }
+        ]);
+
+        const salesMargin =
+            ((salesRevenue[0]?.amount - previousPeriodRevenue[0]?.amount) /
+                previousPeriodRevenue[0]?.amount) *
+            100;
+        const ordersMargin =
+            ((salesRevenue[0]?.count - previousPeriodRevenue[0]?.count) /
+                previousPeriodRevenue[0]?.count) *
+            100;
+
+        const salesReport = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    vendor: new mongoose.Types.ObjectId(vendorId)
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: '%Y-%m-%d',
+                            date: '$createdAt'
+                        }
+                    },
+                    dailyRevenue: { $sum: '$amount' }
+                }
+            },
+            { $sort: { _id: 1 } } // Sorting by date ascending
+        ]);
+
+        const productsSoldByCategory = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    vendor: new mongoose.Types.ObjectId(vendorId)
+                }
+            },
+            { $unwind: '$products' }, // Assuming 'products' is the array of products in each order
+            {
+                $group: {
+                    _id: '$products.category',
+                    totalSold: { $sum: '$products.quantity' }
+                }
+            }
+            // Optional: Join with categories collection to replace categoryId with categoryName
+        ]);
+
+        // const topSellingProducts = await OrderModel.aggregate([
+        //     {
+        //         $match: {
+        //             createdAt: { $gte: startDate, $lte: endDate },
+        //             vendor: new mongoose.Types.ObjectId(vendorId)
+        //         }
+        //     },
+        //     { $unwind: '$products' },
+        //     {
+        //         $group: {
+        //             _id: '$products.product',
+        //             // id: '$products.product',
+        //             // name: '$products.name',
+        //             // price: '$products.price',
+        //             sold: { $sum: '$products.quantity' }
+        //         }
+        //     },
+        //     { $sort: { sold: -1 } }, // Sort by sold descending
+        //     { $limit: 5 } // Top 5 products
+        //     // Optional: Join with products collection to include product details
+        // ]);
+
+        const topSellingProducts = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate },
+                    vendor: new mongoose.Types.ObjectId(vendorId)
+                }
+            },
+            { $unwind: '$products' },
+            {
+                $group: {
+                    _id: '$products.name',
+                    totalQuantity: { $sum: '$products.quantity' },
+                    totalPrice: {
+                        $sum: {
+                            $multiply: ['$products.quantity', '$products.price']
+                        }
+                    }
+                }
+            },
+            { $sort: { totalQuantity: -1 } },
+            { $limit: 5 },
+            {
+                $project: {
+                    _id: 0,
+                    productName: '$_id',
+                    totalQuantity: 1,
+                    totalPrice: 1
+                }
+            }
+        ]);
+
+        return {
+            salesRevenue: salesRevenue[0] ?? {},
+            previousPeriodRevenue: previousPeriodRevenue[0] ?? {},
+            salesMargin: salesMargin ?? 0.0,
+            ordersMargin: ordersMargin ?? 0.0,
+            salesReport,
+            productsSoldByCategory,
+            topSellingProducts
+        };
+    }
+    async adminAnalytics(startDate: Date, endDate: Date): Promise<any> {
+        // Assuming each order has a 'amount' and a 'createdAt' field, and 'vendor' to identify the vendor's orders
+        const threeMonthsBeforeStart = new Date(startDate);
+        threeMonthsBeforeStart.setMonth(startDate.getMonth() - 3);
+
+        const salesRevenue = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    amount: { $sum: '$serviceFee' }
+                }
+            }
+        ]);
+
+        const previousPeriodRevenue = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: {
+                        $gte: threeMonthsBeforeStart,
+                        $lte: startDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    amount: { $sum: '$serviceFee' }
+                }
+            }
+        ]);
+
+        const salesMargin =
+            ((salesRevenue[0]?.amount - previousPeriodRevenue[0]?.amount) /
+                previousPeriodRevenue[0]?.amount) *
+            100;
+        const ordersMargin =
+            ((salesRevenue[0]?.count - previousPeriodRevenue[0]?.count) /
+                previousPeriodRevenue[0]?.count) *
+            100;
+
+        const salesReport = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: '%Y-%m-%d',
+                            date: '$createdAt'
+                        }
+                    },
+                    dailyRevenue: { $sum: '$serviceFee' }
+                }
+            },
+            { $sort: { _id: 1 } } // Sorting by date ascending
+        ]);
+
+        const productsSoldByCategory = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            // { $unwind: '$products' }, // Assuming 'products' is the array of products in each order
+            {
+                $group: {
+                    _id: '$orderType',
+                    count: { $sum: 1 }
+                }
+            }
+            // Optional: Join with categories collection to replace categoryId with categoryName
+        ]);
+
+        // const topSellingProducts = await OrderModel.aggregate([
+        //     {
+        //         $match: {
+        //             createdAt: { $gte: startDate, $lte: endDate },
+        //
+        //         }
+        //     },
+        //     { $unwind: '$products' },
+        //     {
+        //         $group: {
+        //             _id: '$products.product',
+        //             // id: '$products.product',
+        //             // name: '$products.name',
+        //             // price: '$products.price',
+        //             sold: { $sum: '$products.quantity' }
+        //         }
+        //     },
+        //     { $sort: { sold: -1 } }, // Sort by sold descending
+        //     { $limit: 5 } // Top 5 products
+        //     // Optional: Join with products collection to include product details
+        // ]);
+
+        const topSellingProducts = await OrderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            { $unwind: '$products' },
+            {
+                $group: {
+                    _id: '$products.name',
+                    totalQuantity: { $sum: '$products.quantity' },
+                    totalPrice: {
+                        $sum: {
+                            $multiply: ['$products.quantity', '$products.price']
+                        }
+                    }
+                }
+            },
+            { $sort: { totalQuantity: -1 } },
+            { $limit: 5 },
+            {
+                $project: {
+                    _id: 0,
+                    productName: '$_id',
+                    totalQuantity: 1,
+                    totalPrice: 1
+                }
+            }
+        ]);
+
+        return {
+            salesRevenue: salesRevenue[0] ?? {},
+            previousPeriodRevenue: previousPeriodRevenue[0] ?? {},
+            salesMargin: salesMargin ?? 0.0,
+            ordersMargin: ordersMargin ?? 0.0,
+            salesReport,
+            productsSoldByCategory,
+            topSellingProducts
+        };
+    }
 }
 
 export default new OrderRepository();

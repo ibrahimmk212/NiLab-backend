@@ -7,8 +7,6 @@ export interface Product extends Document {
     description: string;
     vendor: mongoose.Types.ObjectId;
     category: mongoose.Types.ObjectId;
-    marketCategory: mongoose.Types.ObjectId;
-    subcategory: mongoose.Types.ObjectId;
     ratings: number;
     images: string;
     thumbnail: string;
@@ -27,16 +25,6 @@ const productSchema = new Schema<Product>(
             ref: 'Category',
             required: true
         },
-        marketCategory: {
-            type: Schema.Types.ObjectId,
-            ref: 'MarketCategory',
-            required: true
-        },
-        subcategory: {
-            type: Schema.Types.ObjectId,
-            ref: 'Subcategory',
-            required: false
-        },
         ratings: { type: Number, default: 0 },
         images: [{ type: String }],
         thumbnail: { type: String },
@@ -45,7 +33,6 @@ const productSchema = new Schema<Product>(
     {
         timestamps: true,
         toJSON: {
-            
             virtuals: true
         },
         toObject: {
@@ -54,9 +41,16 @@ const productSchema = new Schema<Product>(
     }
 );
 
+// reverse populate favourites
+productSchema.virtual('favourites', {
+    ref: 'Favourite',
+    localField: '_id',
+    foreignField: 'product',
+    justOne: false
+});
+
 productSchema.post('save', async (product) => {
     const category = product.category;
-    const marketCategory = product.marketCategory;
     const vendorId = product.vendor;
 
     const vendor = await mongoose
@@ -68,6 +62,9 @@ productSchema.post('save', async (product) => {
 
     // if not exists, add
 });
+
+productSchema.index({ name: 'text', description: 'text' });
+
 const ProductModel = mongoose.model<Product>('Product', productSchema);
 
 export default ProductModel;

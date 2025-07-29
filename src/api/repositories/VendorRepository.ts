@@ -12,7 +12,7 @@ class VendorRepository {
     // Find a vendor by ID
     async findById(vendorId: string): Promise<Vendor | null> {
         return await VendorModel.findById({ _id: vendorId }).populate(
-            'products'
+            'products categories'
         );
     }
     async findByKey(key: string, value: string): Promise<Vendor | null> {
@@ -20,16 +20,36 @@ class VendorRepository {
     }
     // find vendors options
     async findVendorsByOption(
-        options: Record<string, unknown>
-    ): Promise<Vendor[] | null> {
-        return await VendorModel.find(options);
-    }
+        options: Record<string, unknown>,
+        limit = 10,
+        page = 1
+    ): Promise<any> {
+        const total = await VendorModel.countDocuments(options);
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
 
-    // find vendors by category
-    async findVendorsByCategory(categoryId: string): Promise<Vendor[] | null> {
-        return await VendorModel.find({ categories: categoryId }).populate(
-            'categories'
-        );
+        const vendors = await VendorModel.find(options)
+            .skip(startIndex)
+            .limit(limit)
+            .populate('categories');
+
+        // Pagination results
+        const pagination: any = {};
+        if (endIndex < total) {
+            pagination.next = {
+                page: page + 1,
+                limit
+            };
+        }
+
+        if (startIndex > 0) {
+            pagination.prev = {
+                page: page - 1,
+                limit
+            };
+        }
+
+        return { vendors, count: vendors.length, pagination, total };
     }
 
     // find nearby vendors
@@ -38,7 +58,7 @@ class VendorRepository {
         latitude: number,
         maxDistance: number
     ): Promise<Vendor[]> {
-        return await VendorModel.aggregate([
+        const vendors = await VendorModel.aggregate([
             {
                 $geoNear: {
                     near: { type: 'Point', coordinates: [longitude, latitude] },
@@ -46,27 +66,59 @@ class VendorRepository {
                     maxDistance: maxDistance,
                     spherical: true
                 }
+            },
+            {
+                $lookup: {
+                    from: 'categories', // The collection to join
+                    localField: 'categories', // Field from the vendors collection
+                    foreignField: '_id', // Field from the categories collection
+                    as: 'categories' // The array field to add to the result, containing the joined documents
+                }
             }
             // Optionally add other aggregation stages
         ]);
-
-        // VendorModel.find({
-        //     location: {
-        //         $nearSphere: {
-        //             $geometry: {
-        //                 type: 'Point',
-        //                 coordinates: [longitude, latitude]
-        //             },
-        //             $maxDistance: maxDistance
-        //         }
-        //     }
-        //     // status: 'active'
-        // });
+        return vendors;
     }
     // Find all vendor
     async findAllVendors(): Promise<Vendor[] | null> {
-        return await VendorModel.find().populate('categories');
+        const vendors = await VendorModel.find().populate('categories');
+
+        return vendors;
     }
+
+    async searchVendors(search: string, limit = 10, page = 1): Promise<any> {
+        const searchQuery =
+            search && search !== '' ? { $text: { $search: search } } : {};
+
+        const total = await VendorModel.countDocuments(searchQuery);
+
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+
+        const vendors = await VendorModel.find(searchQuery)
+            .skip(startIndex)
+            .limit(limit)
+            .populate('categories');
+
+        // Pagination results
+        const pagination: any = {};
+        if (endIndex < total) {
+            pagination.next = {
+                page: page + 1,
+                limit
+            };
+        }
+
+        if (startIndex > 0) {
+            pagination.prev = {
+                page: page - 1,
+                limit
+            };
+        }
+
+        return { vendors, count: vendors.length, pagination, total };
+    }
+
     // Update a vendor by ID
     async update(
         vendorId: string,

@@ -1,8 +1,21 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import {
+    generatePromotionCode,
+    generateRandomNumbers
+} from '../../utils/helpers';
 
 export interface Promotion extends Document {
-    vendorId: mongoose.Types.ObjectId;
+    vendor: mongoose.Types.ObjectId;
     discountPercentage: number;
+    discountAmount: number;
+    discountType: 'percentage' | 'amount';
+    title: string;
+    description: string;
+    code: string;
+    daysToExpire: number;
+    maxAmount: number;
+    eligibleAmount: number;
+    slots: number;
     startDate: Date;
     endDate: Date;
     isActive: boolean;
@@ -10,12 +23,22 @@ export interface Promotion extends Document {
 
 const promotionSchema = new Schema<Promotion>(
     {
-        vendorId: {
+        vendor: {
             type: Schema.Types.ObjectId,
             ref: 'Vendor',
-            required: true
+            required: false
         },
-        discountPercentage: { type: Number, required: true },
+        title: { type: String, required: true },
+        description: { type: String, required: false, default: '' },
+        code: { type: String, required: true },
+        discountType: { type: String, required: true },
+        slots: { type: Number, required: true },
+        discountPercentage: { type: Number, required: false },
+        discountAmount: { type: Number, required: false },
+
+        maxAmount: { type: Number, required: false },
+        eligibleAmount: { type: Number, required: true },
+        daysToExpire: { type: Number, required: true },
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
         isActive: { type: Boolean, default: true }

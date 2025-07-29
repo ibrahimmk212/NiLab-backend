@@ -8,17 +8,24 @@ riderDeliveryRouter.get('/histories', deliveryController.getMyDeliveries);
 riderDeliveryRouter.get('/active', deliveryController.getActiveDeliveries);
 riderDeliveryRouter.get('/available', deliveryController.availableDeliveries);
 riderDeliveryRouter.post(
-    'accept/:deliveryId',
+    '/accept/:deliveryId',
     deliveryController.acceptDelivery
 );
 // riderDeliveryRouter.get('route/:deliveryId');
+
+riderDeliveryRouter.get('/:deliveryId', deliveryController.getDeliveryById);
 riderDeliveryRouter.put(
-    'update-status/:deliveryId',
+    '/update-status/:deliveryId',
     deliveryController.updateDeliveryStatus
 );
 riderDeliveryRouter.post(
-    'confirm/:deliveryId',
+    '/confirm/:deliveryId',
     deliveryController.confirmDelivery
+);
+
+riderDeliveryRouter.post(
+    '/:deliveryId/accept-cash',
+    deliveryController.acceptCash
 );
 
 export default riderDeliveryRouter;

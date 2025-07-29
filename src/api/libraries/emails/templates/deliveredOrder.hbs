@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>Order Delivered</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #28a745;'>Order Delivered</h1>
+            </header>
+            <section>
+                <p>Hi {{name}},</p>
+                <p>We're happy to let you know that your order (#{{orderId}})
+                    has been delivered. We hope you enjoy your meal!</p>
+                <p>If you enjoyed your experience, please consider leaving us a
+                    review. Your feedback is very important to us.</p>
+                <a
+                    href='{{reviewLink}}'
+                    style='display: inline-block; background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'
+                >Leave a Review</a>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p>Thank you for choosing MDS Foods.</p>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

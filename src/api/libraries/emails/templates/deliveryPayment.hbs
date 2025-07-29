@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <title>Delivery Payment Receipt</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #28a745;'>Delivery Payment Receipt</h1>
+            </header>
+            <section>
+                <p>Hi {{riderName}},</p>
+                <p>This is your payment receipt for the delivery completed:</p>
+                <ul>
+                    <li><strong>Order ID:</strong> {{orderId}}</li>
+                    <li><strong>Date:</strong> {{date}}</li>
+                    <li><strong>Amount:</strong> ${{amount}}</li>
+                </ul>
+                <p>We appreciate your hard work and dedication. Thank you for
+                    delivering with MDS Foods!</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

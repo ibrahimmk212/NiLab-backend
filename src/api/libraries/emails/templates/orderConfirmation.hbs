@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <title>Order Confirmation</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #007BFF;'>Order Confirmation</h1>
+            </header>
+            <section>
+                <p>Hi {{name}},</p>
+                <p>Thank you for your order! We're preparing your food with care
+                    and will have it delivered to you soon.</p>
+                <h3>Order Details (#{{orderId}})</h3>
+                <ul>
+                    {{#each orderItems}}
+                        <li>{{name}} - Quantity: {{quantity}}</li>
+                    {{/each}}
+                </ul>
+                <p>Total: ${{total}}</p>
+                <p>Estimated delivery time: {{deliveryTime}}</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p>Thank you for choosing MDS Foods.</p>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

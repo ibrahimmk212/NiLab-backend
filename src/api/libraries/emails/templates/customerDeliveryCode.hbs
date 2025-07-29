@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>Delivery Confirmation Code</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #28a745;'>Your Order Is On Its Way!</h1>
+            </header>
+            <section>
+                <p>Hi {{customerName}},</p>
+                <p>Your order (#{{orderId}}) is on its way and will be arriving
+                    shortly. To ensure a smooth and secure delivery, please
+                    provide the following code to your delivery rider:</p>
+                <p
+                    style='text-align: center; font-size: 24px; margin: 20px; font-weight: bold;'
+                >{{deliveryCode}}</p>
+                <p>This code helps us verify that your order is delivered to you
+                    safely.</p>
+                <p>Thank you for choosing MDS Foods. Enjoy your meal!</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

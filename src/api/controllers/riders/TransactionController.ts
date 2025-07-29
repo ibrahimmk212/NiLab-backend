@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
+import TransactionService from '../../services/TransactionService';
 
 class TransactionController {
     getTransactions = asyncHandler(
@@ -9,19 +10,16 @@ class TransactionController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { advancedResults }: any = res;
+            const { rider }: any = req;
 
-            res.status(STATUS.OK).json(advancedResults);
-        }
-    );
-
-    createTransaction = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
-            throw Error('not implemented');
+            const transactions =
+                await TransactionService.getTransactionsByRider(rider.id);
+            // console.log(transactions);
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Transactions Fetchd successfully',
+                data: transactions
+            });
         }
     );
 
@@ -31,17 +29,18 @@ class TransactionController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            throw Error('not implemented');
-        }
-    );
+            const { rider }: any = req;
+            const { transactionId } = req.params;
 
-    updateTransaction = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
-            throw Error('not implemented');
+            const transaction = await TransactionService.getTransactionById(
+                transactionId
+            );
+            // console.log(transaction);
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Transaction Fetchd successfully',
+                data: transaction
+            });
         }
     );
 }

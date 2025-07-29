@@ -10,41 +10,97 @@ class ProductController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { categoryId, vendorId } = req.params;
+            const { vendorId } = req.params;
 
-            // check if categoryId exist, and then get products by category
-            if (categoryId) {
-                const products = await ProductService.getAllByCategory(
-                    categoryId
-                );
-                res.status(STATUS.OK).json({
-                    success: true,
-                    data: products
-                });
-                // check if categoryId exist, and then get products by category
-            } else if (vendorId) {
-                const products = await ProductService.getAllByVendor(vendorId);
-                res.status(STATUS.OK).json({
-                    success: true,
-                    data: products
-                });
-            } else {
-                const { advancedResults }: any = res;
-                res.status(STATUS.OK).json(advancedResults);
-            }
+            const { limit = 10, page = 1, search = '', category } = req.query;
+
+            const queryParams = { vendor: vendorId };
+
+            const { products, count, pagination, total } = category
+                ? await ProductService.getProductsByOption(
+                      {
+                          vendor: vendorId,
+                          category
+                      },
+                      Number(limit),
+                      Number(page)
+                  )
+                : await ProductService.searchProducts(
+                      search as string,
+                      Number(limit),
+                      Number(page),
+                      queryParams
+                  );
+
+            res.status(STATUS.OK).json({
+                success: true,
+                total,
+                count,
+                pagination,
+                data: products
+            });
         }
     );
 
-    search = asyncHandler(
+    searchProducts = asyncHandler(
         async (
             req: Request,
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const query = req.query;
-            const product = await ProductService.search(query);
-            res.status(STATUS.OK).send({
-                message: 'Products fetched successfully',
+            const { vendorId } = req.params;
+
+            const { limit = 10, page = 1, search = '', category } = req.query;
+
+            const queryParams = { vendor: vendorId };
+
+            const { products, count, pagination, total } = category
+                ? await ProductService.getProductsByOption(
+                      {
+                          vendor: vendorId,
+                          category
+                      },
+                      Number(limit),
+                      Number(page)
+                  )
+                : await ProductService.searchProducts(
+                      search as string,
+                      Number(limit),
+                      Number(page),
+                      queryParams
+                  );
+
+            res.status(STATUS.OK).json({
+                success: true,
+                total,
+                count,
+                pagination,
+                data: products
+            });
+        }
+    );
+
+    getProductById = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { userdata }: any = req;
+            const { productId } = req.params;
+
+            const product: any = await ProductService.findById(productId);
+            const favourites: [] = product.favourites;
+            product.favourite = false;
+
+            favourites.map((fav: any) => {
+                if (fav.user._id == userdata.id) {
+                    product.favourite = true;
+                }
+            });
+
+            res.status(STATUS.OK).json({
+                success: true,
                 data: product
             });
         }

@@ -44,12 +44,14 @@ class VendorProductController {
             next: NextFunction
         ): Promise<void> => {
             const { vendor, body } = req;
-            console.log(vendor)
 
             const newProduct = await ProductService.create({
                 ...body,
                 vendor: vendor.id,
-                marketCategory: vendor.marketCategoryId,
+                thumbnail:
+                    body.thumbnail ??
+                    'https://media.istockphoto.com/id/502474519/photo/homemade-grilled-barbecue-chicken.jpg?s=612x612&w=0&k=20&c=5wm-TATH7AH8n77VLfl3CY_CCGeP94TjqrsgB1rXpOg='
+                //TODO remove default
             });
             if (!newProduct) {
                 throw Error('Failed to create Product');
@@ -96,20 +98,6 @@ class VendorProductController {
             // TODO set pagination and filter
             const product = await ProductService.getAllByVendor(vendor.id);
             // TODO populate categories
-            res.status(STATUS.OK).send({
-                message: 'Products fetched successfully',
-                data: product
-            });
-        }
-    );
-    search = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
-            const query = req.query;
-            const product = await ProductService.search(query);
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
                 data: product
@@ -164,6 +152,31 @@ class VendorProductController {
                 success: true,
                 message: 'Product Updated Successfully',
                 data: newProduct
+            });
+        }
+    );
+
+    updateAvailability = asyncHandler(
+        async (
+            req: Request | any,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { vendor, body, params } = req;
+            const { id } = params;
+
+            const product = await ProductService.findById(id);
+
+            if (!product) {
+                throw Error('Product not found');
+            }
+
+            product.available = !product.available;
+            await product.save();
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Product Updated Successfully',
+                data: product
             });
         }
     );

@@ -14,12 +14,13 @@ const s3 = new AWS.S3();
 // The function to upload the file to AWS S3
 export async function uploadFileToS3(file: any, subFolder: any) {
     // Validate file type (allow images and PDFs)
-    if (
-        !file.mimetype.startsWith('image') &&
-        file.mimetype !== 'application/pdf'
-    ) {
-        throw Error('Please upload an image or PDF file');
-    }
+    // console.log(file, subFolder);
+    // if (
+    //     !file.mimetype.startsWith('image') &&
+    //     file.mimetype !== 'application/pdf'
+    // ) {
+    //     throw Error('Please upload an image or PDF file');
+    // }
 
     // check if file is not too large
     if (file.size > appConfig.app.maxFileSize) {
@@ -40,7 +41,7 @@ export async function uploadFileToS3(file: any, subFolder: any) {
     };
 
     try {
-        console.log(params)
+        console.log(params);
         const data = await s3.upload(params).promise();
 
         return {

@@ -4,6 +4,7 @@ import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 
 class AdminOrderController {
+    
     getAll = asyncHandler(
         async (
             req: Request,

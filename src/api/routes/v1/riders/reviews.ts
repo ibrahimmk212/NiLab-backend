@@ -9,12 +9,10 @@ const riderReviewRouter: Router = Router();
 
 riderReviewRouter
     .route('/')
-    .get(advancedQuery(ReviewModel), reviewController.getReviews)
-    .post(reviewController.createReview);
+    .get(advancedQuery(ReviewModel), reviewController.getReviews);
+// .post(reviewController.createReview);
 
-riderReviewRouter
-    .route('/reviewId')
-    .get(reviewController.getReviewDetails)
-    .put(reviewController.updateReview);
+riderReviewRouter.route('/reviewId').get(reviewController.getReviewDetails);
+// .put(reviewController.updateReview);
 
 export default riderReviewRouter;

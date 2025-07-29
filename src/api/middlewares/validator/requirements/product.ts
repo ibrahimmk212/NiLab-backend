@@ -21,7 +21,7 @@ const productRequirement = {
     ],
     getSingle: [param('id').isInt()],
     update: [
-        param('id').isString(),
+        param('id').isInt(),
         body('name').isString().optional({ nullable: true }),
         body('price').isNumeric().optional({ nullable: true }),
         body('available')
@@ -37,7 +37,8 @@ const productRequirement = {
         body('status').isString().optional({ nullable: true })
     ],
     updateStatus: [param('id').isString(), body('status').isString()],
-    deleteUser: [param('id').isInt()]
+    deleteUser: [param('id').isString()],
+    createFavourite: [body('vendorId').isString(), body('productId').isString()]
 };
 
 export default productRequirement;

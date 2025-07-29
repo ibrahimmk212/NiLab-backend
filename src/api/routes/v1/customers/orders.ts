@@ -10,6 +10,22 @@ customerOrderRouter
     .post(Validate(Requirements.createOrder), orderController.createOrder);
 
 customerOrderRouter
+    .route('/package')
+    // .get(orderController.getOrders)
+    .post(
+        Validate(Requirements.createPackageOrder),
+        orderController.createDeliveryOrder
+    );
+customerOrderRouter.post('/upload-file', orderController.upload);
+
+customerOrderRouter
+    .route('/:orderId/delivery')
+    .get(
+        Validate(Requirements.getOrderDetail),
+        orderController.getOrderDelivery
+    );
+
+customerOrderRouter
     .route('/:orderId')
     .get(Validate(Requirements.getOrderDetail), orderController.getOrderDetails)
     .put(

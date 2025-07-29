@@ -149,12 +149,17 @@ class WalletRepository {
         });
     }
 
-    async getWalletByUser(userId: string) {
-        return await WalletModel.findOne({ userId });
-    }
+    // async getWalletByUser(userId: string) {
+    //     return await WalletModel.findOne({ userId });
+    // }
 
     async getWalletByKey(key: string, value: any) {
+        console.log({ [key]: value });
         return await WalletModel.findOne({ [key]: value });
+    }
+
+    async getWalletByOwner(role: string, owner: any) {
+        return await WalletModel.findOne({ role, owner });
     }
 
     async deleteWallet(walletId: string): Promise<Wallet | null> {

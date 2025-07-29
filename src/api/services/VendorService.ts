@@ -15,6 +15,15 @@ class VendorService implements IVendorService {
     async create(payload: CreateVendorType): Promise<any> {
         return VendorRepository.createVendor(payload);
     }
+
+    async getByUserId(userId: string) {
+        const vendor = await VendorRepository.findByKey('userId', userId);
+        if (!vendor) {
+            throw new Error('Vendor not found');
+        }
+        return vendor;
+    }
+
     async getById(id: string) {
         const vendor = await VendorRepository.findById(id);
         if (!vendor) {
@@ -40,14 +49,21 @@ class VendorService implements IVendorService {
     }
     // find vendors options
     async getVendorsByOption(
-        options: Record<string, unknown>
-    ): Promise<Vendor[] | null> {
-        return await VendorRepository.findVendorsByOption(options);
+        options: Record<string, unknown>,
+        limit: number,
+        page: number
+    ): Promise<any> {
+        return await VendorRepository.findVendorsByOption(options, limit, page);
     }
 
-    async getVendorsByCategory(categoryId: string): Promise<Vendor[] | null> {
-        return await VendorRepository.findVendorsByCategory(categoryId);
+    async searchVendors(
+        search: string,
+        limit: number,
+        page: number
+    ): Promise<any> {
+        return await VendorRepository.searchVendors(search, limit, page);
     }
+
     async get(vendorId: string): Promise<any> {
         const vendor = await VendorRepository.findById(vendorId);
 

@@ -1,16 +1,16 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Favourite extends Document {
-    userId: mongoose.Types.ObjectId;
-    vendorId: mongoose.Types.ObjectId;
-    productId: mongoose.Types.ObjectId;
+    user: mongoose.Types.ObjectId;
+    vendor: mongoose.Types.ObjectId;
+    product: mongoose.Types.ObjectId;
 }
 
-const favoriteSchema = new Schema<Favourite>(
+const FavouriteSchema = new Schema<Favourite>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        vendorId: { type: Schema.Types.ObjectId, ref: 'Vendor' },
-        productId: { type: Schema.Types.ObjectId, ref: 'Product' }
+        user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        vendor: { type: Schema.Types.ObjectId, ref: 'Vendor' },
+        product: { type: Schema.Types.ObjectId, ref: 'Product' }
     },
     {
         timestamps: true,
@@ -23,6 +23,6 @@ const favoriteSchema = new Schema<Favourite>(
     }
 );
 
-const FavoriteModel = mongoose.model<Favourite>('Favorite', favoriteSchema);
+const FavouriteModel = mongoose.model<Favourite>('Favourite', FavouriteSchema);
 
-export default FavoriteModel;
+export default FavouriteModel;

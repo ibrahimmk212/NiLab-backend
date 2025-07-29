@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <title>Welcome to Our Team</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #007bff;'>Welcome to the MDS Foods Team!</h1>
+            </header>
+            <section>
+                <p>Dear {{staffName}},</p>
+                <p>You are now part of our esteemed team at
+                    {{vendorName}}. Here are your account details:</p>
+                <p><strong>Email:</strong> {{email}}</p>
+                <p><strong>Temporary Password:</strong>
+                    {{temporaryPassword}}</p>
+                <p>Please change your temporary password upon your first login.</p>
+                <a
+                    href='{{loginUrl}}'
+                    style='display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'
+                >Log In</a>
+                <p>We're excited to have you on board and look forward to
+                    achieving great things together!</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

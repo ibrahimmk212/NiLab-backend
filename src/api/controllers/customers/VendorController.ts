@@ -3,6 +3,7 @@ import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import VendorService from '../../../api/services/VendorService';
 import appConfig from '../../../config/appConfig';
+import { Vendor } from '../../models/Vendor';
 
 class VendorController {
     getVendors = asyncHandler(
@@ -12,28 +13,65 @@ class VendorController {
             next: NextFunction
         ): Promise<void> => {
             const { categoryId } = req.params;
+            const { limit = 10, page = 1, search = '', category } = req.query;
 
-            if (categoryId) {
-                const vendors = await VendorService.getVendorsByOption({
-                    categoryId
-                    // status: 'active'
-                });
+            const { vendors, count, pagination, total } = categoryId
+                ? await VendorService.getVendorsByOption(
+                      {
+                          //   categories: { $in: category }
+                          //   status: 'active'
+                      },
+                      Number(limit),
+                      Number(page)
+                  )
+                : await VendorService.searchVendors(
+                      search as string,
+                      Number(limit),
+                      Number(page)
+                  );
 
-                res.status(STATUS.OK).json({ success: true, data: vendors });
-            } else {
-                const { advancedResults }: any = res;
-
-                res.status(STATUS.OK).json(advancedResults);
-            }
+            res.status(STATUS.OK).json({
+                success: true,
+                total,
+                count,
+                pagination,
+                data: vendors
+            });
         }
     );
 
-    getVendorsByCategory = asyncHandler(
-        async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-            const { categoryId } = req.params;
-            const vendors = await VendorService.getVendorsByCategory(categoryId);
-            res.status(STATUS.OK).json({ success: true, data: vendors });
-        });
+    searchVendors = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { limit = 10, page = 1, search = '', category } = req.query;
+
+            const { vendors, count, pagination, total } = category
+                ? await VendorService.getVendorsByOption(
+                      {
+                          //   categories: { $in: category }
+                          //   status: 'active'
+                      },
+                      Number(limit),
+                      Number(page)
+                  )
+                : await VendorService.searchVendors(
+                      search as string,
+                      Number(limit),
+                      Number(page)
+                  );
+
+            res.status(STATUS.OK).json({
+                success: true,
+                total,
+                count,
+                pagination,
+                data: vendors
+            });
+        }
+    );
 
     getNearbyVendors = asyncHandler(
         async (
@@ -48,10 +86,11 @@ class VendorController {
             } = req.query;
 
             const vendors = await VendorService.getNearbyVendors(
-                Number(longitude),
                 Number(latitude),
+                Number(longitude),
                 Number(maxDistance)
             );
+            // vendors.map((vendor: Vendor) => vendor.populate('categories'));
             res.status(STATUS.OK).json({
                 success: true,
                 data: vendors

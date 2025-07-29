@@ -15,7 +15,7 @@ riderTransactionRouter
     );
 
 riderTransactionRouter
-    .route('/transactionId')
+    .route('/:transactionId')
     .get(transactionController.getTransactionDetails);
 
 export default riderTransactionRouter;

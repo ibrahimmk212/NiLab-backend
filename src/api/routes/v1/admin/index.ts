@@ -9,23 +9,30 @@ import configurationRouter from './configurations';
 import adminNotificationRouter from './notifications';
 import adminTransactionRouter from './transactions';
 import adminOrderRouter from './orders';
-import adminWaitlistRouter from './waitlist';
-import adminVendorCategoryRouter from './marketCategories';
+import AdminUserController from '../../../controllers/admin/AdminUserController';
+import AdminMainController from '../../../controllers/admin/AdminMainController';
+import adminRouter from './admins';
+import adminPromotionRouter from './promotions';
+import adminKycRouter from './kyc';
 
 const adminsRouter: Router = Router();
 
+adminsRouter.get('/', AdminMainController.currentUser);
 adminsRouter.use('/users', usersRouter);
-adminsRouter.use('/admins', adminCategoryRouter);
+adminsRouter.use('/admins', adminRouter);
 adminsRouter.use('/vendors', adminVendorRouter);
 adminsRouter.use('/orders', adminOrderRouter);
 adminsRouter.use('/riders', adminRidersRouter);
 adminsRouter.use('/dispatches', adminDispatchRouter);
 adminsRouter.use('/collections', collectionRouter);
 adminsRouter.use('/categories', adminCategoryRouter);
-adminsRouter.use('/vendor-categories', adminVendorCategoryRouter);
 adminsRouter.use('/configurations', configurationRouter);
 adminsRouter.use('/notifications', adminNotificationRouter);
 adminsRouter.use('/transactions', adminTransactionRouter);
-adminsRouter.use('/waitlists', adminWaitlistRouter);
+adminsRouter.use('/promotions', adminPromotionRouter);
+adminsRouter.use('/kyc', adminKycRouter);
+
+adminsRouter.post('/login', AdminUserController.login);
+adminsRouter.get('/dashboard', AdminMainController.dashboard);
 
 export default adminsRouter;

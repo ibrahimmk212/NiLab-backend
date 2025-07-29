@@ -101,7 +101,7 @@ export const pagination =
     async (req: Request, res: Response | any, next: NextFunction) => {
         let query;
 
-        // Copy request query8
+        // Copy request query
         const reqQuery: QueryOptions = { ...req.query };
 
         // Fields to exclude

@@ -5,15 +5,13 @@ export interface Category extends Document {
     name: string;
     slug?: string;
     description: string;
-    thumbnail?: string;
 }
 
 const categorySchema = new Schema<Category>(
     {
         name: { type: String, required: true },
         slug: { type: String, required: false },
-        description: { type: String, required: true },
-        thumbnail: { type: String, required: false }
+        description: { type: String, required: true }
     },
     {
         timestamps: true,

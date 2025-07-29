@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <title>Payment Receipt</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #007bff;'>Payment Receipt</h1>
+            </header>
+            <section>
+                <p>Hi {{customerName}},</p>
+                <p>Thank you for your order. This email is to confirm that we
+                    have received your payment.</p>
+                <h3>Receipt Details</h3>
+                <p><strong>Order Number:</strong> {{orderId}}</p>
+                <p><strong>Transaction Date:</strong> {{transactionDate}}</p>
+                <p><strong>Payment Method:</strong> {{paymentMethod}}</p>
+                <p><strong>Total Amount:</strong> ${{totalAmount}}</p>
+                <h3>Order Summary</h3>
+                <ul>
+                    {{#each orderItems}}
+                        <li>{{name}} - ${{price}} x {{quantity}}</li>
+                    {{/each}}
+                </ul>
+                <p><strong>Total Paid:</strong> ${{totalAmount}}</p>
+                <p>If you have any questions or concerns about your order,
+                    please don't hesitate to contact our support team.</p>
+                <p>Thank you for choosing MDS Foods!</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p>We look forward to serving you again.</p>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

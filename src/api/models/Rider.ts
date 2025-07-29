@@ -1,33 +1,48 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import WalletService from '../services/WalletService';
 export interface BankAccount {
     accountName: string;
     accountNumber: string;
     bankName: string;
     bankCode: string;
-    documents?: [];
 }
 
 export interface Rider extends Document {
-    // name: string;
-    userId: string;
+    name: string;
+    userId: mongoose.Types.ObjectId;
     ratings: number;
+    phone: string;
+    email: string;
+    city: string;
+    vehicle: string;
     status: 'unverified' | 'verified' | 'suspended';
     available: boolean;
+    gender: string;
     bankAccount?: BankAccount;
-    documents?: [];
 }
 
 const riderSchema = new Schema<Rider>(
     {
-        // name: { type: String, required: true },
+        name: { type: String, required: true },
+        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        phone: { type: String, required: false },
+        email: { type: String, required: false },
+        city: { type: String, required: false },
+        gender: { type: String, required: false, default: 'male' },
+        vehicle: { type: String, required: false },
         ratings: { type: Number, default: 0 },
-        status: { type: String, required: true, default: 'unverified' },
+        status: { type: String, required: true, default: 'verified' },
         available: {
             type: Boolean,
             required: true,
             default: false
         },
-        documents: { type: Array, required: false }
+        bankAccount: {
+            accountName: String,
+            accountNumber: String,
+            bankName: String,
+            bankCode: String
+        }
     },
     {
         timestamps: true,
@@ -70,6 +85,19 @@ riderSchema.virtual('transactions', {
     localField: '_id',
     foreignField: 'riderId',
     justOne: false
+});
+
+riderSchema.post('save', async function (rider) {
+    try {
+        if (rider.isNew) {
+            await WalletService.createWallet({
+                role: 'rider',
+                owner: rider.id
+            });
+        }
+    } catch (error: any) {
+        console.log(`Wallet not created: ${error.message}`);
+    }
 });
 
 const RiderModel = mongoose.model<Rider>('Rider', riderSchema);

@@ -36,6 +36,25 @@ class ProfileController {
             });
         }
     );
+    updateProfile = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const { userdata }: any = req;
+
+            const { firstName, lastName, phoneNumber } = req.body;
+
+            const user = await UserService.updateUser(userdata.id, {
+                firstName,
+                lastName,
+                phoneNumber
+            });
+
+            res.status(STATUS.OK).send({
+                success: true,
+                data: user,
+                message: 'Profile updated successfully'
+            });
+        }
+    );
 
     addNewAddress = asyncHandler(
         async (

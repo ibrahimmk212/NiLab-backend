@@ -11,7 +11,7 @@ class CategoryRepository {
     }
 
     async getAll(): Promise<Category[] | null> {
-        return await CategoryModel.find();
+        return await CategoryModel.find().sort({ name: 'asc' });
     }
     async updateCategory(
         categoryId: string,
@@ -27,8 +27,6 @@ class CategoryRepository {
             new: true
         });
     }
-
-    // Additional category-specific methods...
 }
 
 export default new CategoryRepository();

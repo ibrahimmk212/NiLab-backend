@@ -7,10 +7,8 @@ import ReviewModel from '../../../../api/models/Review';
 
 const customerReviewRouter: Router = Router();
 
-customerReviewRouter
-    .route('/')
-    .get(advancedQuery(ReviewModel), reviewController.getReviews)
-    .post(reviewController.createReview);
+customerReviewRouter.route('/').get(reviewController.getReviews);
+// .post(reviewController.createReview);
 
 customerReviewRouter
     .route('/reviewId')

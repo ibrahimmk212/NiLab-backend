@@ -2,25 +2,19 @@ import mongoose, { Document, Schema } from 'mongoose';
 import DispatchModel from './Dispatch';
 import { currentTimestamp } from './../../utils/helpers';
 import OrderRepository from '../repositories/OrderRepository';
+import { OrderAddress } from './Order';
+import UserService from '../services/UserService';
+import { sendPushNotification } from '../libraries/firebase';
 
 export interface Delivery extends Document {
-    orderId: mongoose.Types.ObjectId;
-    riderId?: mongoose.Types.ObjectId | null;
-    dispatchId: mongoose.Types.ObjectId | null;
-    deliveryCode: number;
+    order: mongoose.Types.ObjectId;
+    rider?: mongoose.Types.ObjectId | null;
+    dispatch: mongoose.Types.ObjectId | null;
+    deliveryCode: string;
+    deliveryFee: number;
     status: 'pending' | 'in-transit' | 'delivered' | 'canceled';
-    pickup: {
-        name: string; // e.g., "Home", "Office"
-        address: string; // Full address
-        lat: number;
-        long: number;
-    };
-    destination: {
-        name: string; // e.g., "Home", "Office"
-        address: string; // Full address
-        lat: number;
-        long: number;
-    };
+    pickup: OrderAddress;
+    destination: OrderAddress;
     senderDetails: {
         name: string;
         contactNumber: string;
@@ -37,27 +31,36 @@ export interface Delivery extends Document {
 
 const deliverySchema = new Schema(
     {
-        orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
-        riderId: { type: Schema.Types.ObjectId, ref: 'Rider', required: true },
+        order: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
+        rider: { type: Schema.Types.ObjectId, ref: 'Rider', required: false },
         package: {},
-        dispatchId: {
+        dispatch: {
             type: Schema.Types.ObjectId,
             ref: 'Dispatch',
-            required: true
+            required: false
         },
-        status: { type: String, required: true },
-        deliveryCode: { type: Number, required: true },
+        status: { type: String, required: true, default: 'pending' },
+        deliveryCode: { type: String, required: false },
+        deliveryFee: { type: Number, required: true },
         pickup: {
-            name: { type: String, required: true },
-            address: { type: String, required: true },
-            lat: { type: Number, required: true },
-            long: { type: Number, required: true }
+            coordinates: [Number],
+            street: String,
+            city: String,
+            state: String,
+            postcode: String,
+            buildingNumber: String,
+            label: String,
+            additionalInfo: String
         },
         destination: {
-            name: { type: String, required: true },
-            address: { type: String, required: true },
-            lat: { type: Number, required: true },
-            long: { type: Number, required: true }
+            coordinates: [Number],
+            street: String,
+            city: String,
+            state: String,
+            postcode: String,
+            buildingNumber: String,
+            label: String,
+            additionalInfo: String
         },
         receiverDetails: {
             name: { type: String, required: true },
@@ -68,7 +71,7 @@ const deliverySchema = new Schema(
             contactNumber: { type: String, required: true }
         },
         specialInstructions: { type: String },
-        estimatedDeliveryTime: { type: Date, required: true },
+        estimatedDeliveryTime: { type: Date, required: false },
         actualDeliveryTime: { type: Date }
         // Additional fields...
     },
@@ -80,19 +83,35 @@ deliverySchema.post('save', async function () {
     if (this.status === 'delivered') {
         const allDelivered =
             (await DeliveryModel.find({
-                dispatchId: this.dispatchId,
+                dispatch: this.dispatch,
                 status: { $ne: 'delivered' }
             }).countDocuments()) === 0;
         if (allDelivered) {
-            await DispatchModel.findByIdAndUpdate(this.dispatchId, {
+            await DispatchModel.findByIdAndUpdate(this.dispatch, {
                 status: 'completed',
                 endTime: currentTimestamp()
             });
         }
     } else if (this.status === 'in-transit') {
-        await OrderRepository.updateOrder(this.orderId.toString(), {
-            dispatchedAt: currentTimestamp()
-        });
+        const order = await OrderRepository.updateOrder(
+            this.order._id.toString(),
+            {
+                status: 'dispatched',
+                dispatchedAt: currentTimestamp()
+            }
+        );
+        if (order) {
+            const customer = await UserService.getUserDetail(
+                order?.user?._id.toString()
+            );
+            if (customer && customer.deviceToken) {
+                await sendPushNotification(
+                    customer.deviceToken,
+                    'Your food is on the way',
+                    `Dear ${customer.firstName}/nYour order has been dispatched to your destination.`
+                );
+            }
+        }
     }
 });
 
@@ -107,10 +126,10 @@ deliverySchema.statics.findForRider = async function (
 };
 
 deliverySchema.statics.updateStatusForDispatch = async function (
-    dispatchId,
+    dispatch,
     status
 ) {
-    return this.updateMany({ dispatchId }, { status });
+    return this.updateMany({ dispatch }, { status });
 };
 
 const DeliveryModel = mongoose.model<Delivery>('Delivery', deliverySchema);

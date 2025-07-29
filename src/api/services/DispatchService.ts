@@ -17,6 +17,9 @@ class DispatchService {
         );
     }
 
+    async removeDelivery(dispatchId: string, deliveryId: string) {
+        return await DispatchRepository.removeDelivery(dispatchId, deliveryId);
+    }
     async getDispatchById(dispatchId: string) {
         return await DispatchRepository.getDispatchById(dispatchId);
     }

@@ -1,13 +1,10 @@
+import monnify from '../libraries/monnify';
+import { Wallet } from '../models/Wallet';
 import WalletRepository from '../repositories/WalletRepository';
-type InitDebitType = {
-    userId: string;
-    amount: number;
-    reference: string;
-    remark?: string;
-    transactionType: string;
-    transactionId: string;
-};
+import { CreateWalletType, InitDebitType } from '../types/wallet';
+
 interface IWalletService {
+    createWallet(payload: CreateWalletType): Promise<any>;
     initDebitAccount(payload: InitDebitType): Promise<any>;
     confirmDebitAccount(payload: InitDebitType): Promise<any>;
     initCreditAccount(payload: InitDebitType): Promise<any>;
@@ -17,9 +14,80 @@ interface IWalletService {
 }
 
 class WalletService implements IWalletService {
+    async createWallet(payload: CreateWalletType): Promise<Wallet | any> {
+        const wallet = await WalletRepository.getWalletByOwner(
+            payload.role,
+            payload.owner
+        );
+
+        if (wallet) {
+            return false;
+        }
+
+        return await WalletRepository.createWallet({
+            role: payload.role,
+            owner: payload.owner
+        });
+    }
+    async getBanks(): Promise<any> {
+        const banks = await monnify.getBanks();
+
+        if (!banks.requestSuccessful) {
+            return {
+                success: false,
+                message: banks.responseMessage,
+                data: []
+            };
+        }
+        return {
+            success: true,
+            message: banks.responseMessage,
+            data: banks.responseBody
+        };
+    }
+
+    async bankEnquiry(data: {
+        accountNumber: string;
+        bankCode: string;
+    }): Promise<any> {
+        const account = await monnify.validateBankAccount(
+            data.accountNumber,
+            data.bankCode
+        );
+        if (!account.requestSuccessful) {
+            return {
+                success: false,
+                message: account.responseMessage,
+                data: {}
+            };
+        }
+        return {
+            success: true,
+            message: account.responseMessage,
+            data: account.responseBody
+        };
+    }
+    async getMyWallet(payload: CreateWalletType): Promise<Wallet | any> {
+        const wallet = await WalletRepository.getWalletByOwner(
+            payload.role,
+            payload.owner
+        );
+        if (!wallet) {
+            return await WalletRepository.createWallet({
+                role: payload.role,
+                owner: payload.owner
+            });
+        }
+
+        return wallet;
+    }
+
     async initDebitAccount(payload: InitDebitType): Promise<any> {
-        const { amount, userId } = payload;
-        const userWallet: any = await WalletRepository.getWalletByUser(userId);
+        const { amount, owner, role } = payload;
+        const userWallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
         if (!userWallet) {
             return {
                 success: false,
@@ -51,9 +119,11 @@ class WalletService implements IWalletService {
         };
     }
     async confirmDebitAccount(payload: InitDebitType): Promise<any> {
-        const { amount, userId } = payload;
-
-        const userWallet = await WalletRepository.getWalletByUser(userId);
+        const { amount, owner, role } = payload;
+        const userWallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
         if (!userWallet) return null;
 
         const updateWallet = await WalletRepository.debitLedger(
@@ -73,9 +143,12 @@ class WalletService implements IWalletService {
         };
     }
     async initCreditAccount(payload: InitDebitType): Promise<any> {
-        const { amount, userId } = payload;
+        const { amount, owner, role } = payload;
+        const userWallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
 
-        const userWallet = await WalletRepository.getWalletByUser(userId);
         if (!userWallet)
             return { success: false, message: 'Failed to fetch wallet' };
 
@@ -96,9 +169,12 @@ class WalletService implements IWalletService {
         };
     }
     async confirmCreditAccount(payload: InitDebitType): Promise<any> {
-        const { amount, userId } = payload;
+        const { amount, owner, role } = payload;
+        const userWallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
 
-        const userWallet = await WalletRepository.getWalletByUser(userId);
         if (!userWallet)
             return { success: false, message: 'Failed to fetch user wallet' };
 
@@ -119,9 +195,11 @@ class WalletService implements IWalletService {
         };
     }
     async fundWallet(payload: InitDebitType): Promise<any> {
-        const { amount, userId } = payload;
-
-        const wallet = await WalletRepository.getWalletByUser(userId);
+        const { amount, owner, role } = payload;
+        const wallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
 
         if (!wallet) return { success: false, message: 'Wallet not found' };
 
@@ -138,43 +216,25 @@ class WalletService implements IWalletService {
         };
     }
     async directDebitWallet(payload: InitDebitType): Promise<any> {
-        const { amount, userId } = payload;
+        const { amount, owner, role } = payload;
+        const wallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
 
-        try {
-            const wallet = await WalletRepository.getWalletByUser(userId);
-            if (!wallet) return {
-                success: false,
-                message: 'Wallet not found'
-            }
+        if (!wallet) return null;
 
-            if (wallet.balance < amount) {
-                return {
-                    success: false,
-                    message: 'Insufficient balance'
-                }
-            }
+        const updateWallet = await WalletRepository.debitFullBalance(
+            wallet?.id,
+            amount
+        );
+        if (!updateWallet)
+            return { success: false, message: 'Failed wallet debit' };
 
-
-
-            const updateWallet = await WalletRepository.debitFullBalance(
-                wallet?.id,
-                amount
-            );
-            if (!updateWallet)
-                return { success: false, message: 'Failed wallet debit' };
-
-            return {
-                success: true,
-                message: 'Wallet debited'
-            };
-        } catch (error: any) {
-
-            return {
-                success: false,
-                message: error.message || "Could not debit wallet"
-            }
-
-        }
+        return {
+            success: true,
+            message: 'Wallet debited'
+        };
     }
 }
 

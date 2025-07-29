@@ -25,13 +25,16 @@ export interface User extends Document {
     password: string;
     firstName: string;
     lastName: string;
+    gender: string;
     role: string;
     pin: string;
     phoneNumber: string;
-    countryCode: string;
     addresses: Address[];
+    kycStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected';
     resetPasswordToken: string;
     resetPasswordExpire: string;
+
+    deviceToken: string;
 
     getSignedJwtToken(): string;
     matchPassword(password: string): Promise<boolean>;
@@ -42,6 +45,7 @@ const userSchema = new Schema<User>(
     {
         firstName: { type: String, required: true },
         lastName: { type: String, required: false },
+        gender: { type: String, required: false, default: 'male' },
         email: {
             type: String,
             required: [true, 'email is required'],
@@ -64,9 +68,8 @@ const userSchema = new Schema<User>(
             minlength: [6, 'password must be at least 8 character']
         },
         phoneNumber: { type: String, required: true },
-        countryCode: { type: String, required: false },
         pin: { type: String, required: false },
-
+        deviceToken: { type: String, required: false },
         addresses: [
             {
                 type: { type: String, default: 'Point' },
@@ -81,6 +84,12 @@ const userSchema = new Schema<User>(
                 default: { type: Boolean, default: false }
             }
         ],
+        kycStatus: {
+            type: String,
+            enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+            required: true,
+            default: 'not_submitted'
+        },
         resetPasswordToken: String,
         resetPasswordExpire: Date
     },
@@ -94,6 +103,14 @@ const userSchema = new Schema<User>(
         }
     }
 );
+
+// reverse populate kyc
+userSchema.virtual('kyc', {
+    ref: 'Kyc',
+    localField: '_id',
+    foreignField: 'user',
+    justOne: true
+});
 
 // encrypt password
 userSchema.pre('save', async function (next) {

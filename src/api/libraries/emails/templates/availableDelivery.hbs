@@ -1,0 +1,29 @@
+<html>
+    <head>
+        <title>Delivery Request Available</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #007BFF;'>New Delivery Request!</h1>
+            </header>
+            <section>
+                <p>Hello,</p>
+                <p>There's a delivery request of
+                    {{orderType}}
+                    available near you:</p>
+                {{!-- <p><strong>Order :</strong> {{orderCode}}</p> --}}
+                <p><strong>Pick-up Location:</strong> {{pickupLocation}}</p>
+                <p><strong>Delivery Location:</strong> {{deliveryLocation}}</p>
+                <p>To accept this delivery, please log in to your rider app.</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p>Thank you for being a crucial part of MDS Foods delivery
+                    network!</p>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

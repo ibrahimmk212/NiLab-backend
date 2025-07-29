@@ -8,20 +8,24 @@ import customerTransactionRouter from './transactions';
 import customerOrderRouter from './orders';
 import { Validate, Requirements } from '../../../middlewares/validator';
 import ProfileController from '../../../controllers/customers/ProfileController';
-import customerWalletRouter from './wallets';
+import customerFavouriteRouter from './favourites';
+import customerPromotionRouter from './promotions';
 
 const customersRouter: Router = Router();
 
 // customersRouter.use('/products', customerProductRouter); only through reroute
 customersRouter.use('/orders', customerOrderRouter);
-customersRouter.use('/wallet', customerWalletRouter);
 customersRouter.use('/vendors', customerVendorRouter);
 customersRouter.use('/reviews', customerReviewRouter);
+customersRouter.use('/promotions', customerPromotionRouter);
 customersRouter.use('/categories', customerCategoryRouter);
 customersRouter.use('/notifications', customerNotificationRouter);
 customersRouter.use('/transactions', customerTransactionRouter);
-
-customersRouter.route('/profile').get(ProfileController.currentUser);
+customersRouter.use('/favourites', customerFavouriteRouter);
+customersRouter
+    .route('/profile')
+    .get(ProfileController.currentUser)
+    .put(Validate(Requirements.updateProfile), ProfileController.updateProfile);
 customersRouter
     .route('/update-password')
     .put(

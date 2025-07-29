@@ -12,14 +12,14 @@ interface IStaffService {
 
 class StaffService {
     async createStaff(payload: any): Promise<any> {
-        const staff = await StaffRepository.findStaffByKey(
-            'staffId',
-            payload.staffId
-        );
+        // const staff = await StaffRepository.findStaffByKey(
+        //     'staffId',
+        //     payload.staffId
+        // );
 
-        if (staff) {
-            throw new Error('Staff Already Exist');
-        }
+        // if (staff) {
+        //     throw new Error('Staff Already Exist');
+        // }
 
         // const hashedPassword = bcrypt.hashSync(payload.password, 5);
 

@@ -12,20 +12,20 @@ class StaffRepository {
     // Find a user by email
     async findStaffByKey(key: string, value: string): Promise<Staff | null> {
         return await StaffModel.findOne({ [key]: value }).populate({
-            path: 'vendor user',
-            select: ' -userId'
+            path: 'vendor user'
+            // select: ' -userId'
         });
     }
     async findAll(key: string, value: string): Promise<Staff[] | null> {
         return await StaffModel.find().populate({
-            path: 'vendor user',
-            select: ' -userId'
+            path: 'vendor user'
+            // select: ' -userId'
         });
     }
     async findAllByKey(key: string, value: string): Promise<Staff[] | null> {
         return await StaffModel.find({ [key]: value }).populate({
-            path: 'vendor user',
-            select: ' -userId'
+            path: 'user'
+            // select: ' -userId'
         });
     }
     async updateStaff(

@@ -7,24 +7,26 @@ class AdminRepository {
     }
 
     async findAdminById(adminId: string): Promise<Admin | null> {
-        return await AdminModel.findById(adminId);
+        return await AdminModel.findById(adminId).populate('userId');
     }
-
+    async findAdminByUserId(userId: string): Promise<Admin | null> {
+        return await AdminModel.findOne({ userId }).populate('userId');
+    }
     async updateAdmin(
         adminId: string,
         updateData: Partial<Admin>
     ): Promise<Admin | null> {
         return await AdminModel.findByIdAndUpdate(adminId, updateData, {
             new: true
-        });
+        }).populate('userId');
     }
     async getAll(): Promise<Admin[] | null> {
-        return await AdminModel.find();
+        return await AdminModel.find().sort({ name: 'asc' }).populate('userId');
     }
     async deleteAdmin(adminId: string): Promise<Admin | null> {
         return await AdminModel.findByIdAndDelete(adminId, {
             new: true
-        });
+        }).populate('userId');
     }
 
     // Additional admin-specific methods...

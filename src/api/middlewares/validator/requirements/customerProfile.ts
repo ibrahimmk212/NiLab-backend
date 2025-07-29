@@ -2,13 +2,21 @@ import { body, param } from 'express-validator';
 import { isValidObjectId } from 'mongoose';
 
 const customerProfileRequirement = {
-    updateProfile: [
+    completeProfile: [
         body('phoneNumber').isString().isLength({ min: 11, max: 13 }),
         body('firstName').isString().isLength({ min: 1 }),
         body('lastName').isString().optional({ nullable: true }),
         body('token').isString()
     ],
 
+    updateProfile: [
+        body('phoneNumber')
+            .isString()
+            .optional()
+            .isLength({ min: 11, max: 13 }),
+        body('firstName').isString().isLength({ min: 3 }).optional(),
+        body('lastName').isString().optional({ nullable: true })
+    ],
     updatePassword: [
         body('currentPassword').isString().isLength({ min: 5 }),
         body('newPassword').isString().isLength({ min: 5 })

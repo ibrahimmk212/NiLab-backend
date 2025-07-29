@@ -8,6 +8,8 @@ import AppConfig from './config/appConfig';
 import connectDB from './database';
 import { Server as socketServer } from 'socket.io';
 import http from 'http';
+import emails from './api/libraries/emails';
+import { sendPushNotification } from './api/libraries/firebase';
 
 const PORT = AppConfig.app.port;
 
@@ -21,13 +23,20 @@ function startServer(): Server {
         Logger.debug(
             `App ${AppConfig.app.name} with api version ${AppConfig.app.apiVersion} is starting`
         );
-        console.log(`Running on port ${PORT}`)
 
         const addr = server.address();
         const bind =
             typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr?.port;
 
         Logger.debug(`App is listening on ${bind}`);
+        // emails.welcomeEmail('muhd@mailinator.com', { name: 'Muhammad' });
+        // const userDeviceToken =
+        //     'e_sR2wd7QQ2CKpAeZWziU9:APA91bHQOA3K1im9RerKrq0k11jVs_FzKhV0oS2Ibj5OBhvaJOaCwMGAC20TmnCrPWR8GmJ4avGVIJ-MQ-WIXbk_zH-uYuXqZ_YGZL-LF8JsLlROIcqlTSgJbIAD3pwz5m5A8hp9DwLL'; // This token is obtained in the frontend when the user allows push notifications
+        // sendPushNotification(
+        //     userDeviceToken,
+        //     'Hello',
+        //     'This is a test notification'
+        // );
         connectDB();
     };
 
@@ -70,12 +79,12 @@ function startServer(): Server {
 
     const users: { [key: string]: User } = {};
 
-    console.log(io);
     io.on('connection', (socket) => {
         socket.on(
             'register',
             (userId: string, role: 'rider' | 'customer', orderId: string) => {
                 console.log('registering', userId);
+                console.log('registerd users', users);
                 users[socket.id] = { userId, role, orderId };
             }
         );
@@ -85,8 +94,10 @@ function startServer(): Server {
             (location: { lat: number; long: number }) => {
                 console.log('updating location', location);
                 const user = users[socket.id];
+                console.log(user);
                 if (user && user.role === 'rider') {
                     Object.keys(users).forEach((id) => {
+                        console.log(id);
                         if (
                             users[id].orderId === user.orderId &&
                             users[id].role === 'customer'

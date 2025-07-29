@@ -22,7 +22,6 @@ class UserService {
             throw new Error('phone must be unique');
         }
 
-        // const hashedPassword = bcrypt.hashSync(payload.password, 5);
 
         return UserRepository.createUser({
             ...payload,

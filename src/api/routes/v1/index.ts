@@ -8,7 +8,6 @@ import adminsRouter from './admin';
 import auth from '../../middlewares/auth';
 import { ROLE } from '../../../constants';
 import webhookRouter from './webhooks';
-import waitlistRouter from './public/waitlist';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -22,9 +21,8 @@ router.use(
     customersRouter
 );
 
-
-router.use('/vendor', auth.isVendor, vendorsRouter);
-router.use('/riders', ridersRouter);
+router.use('/vendor', vendorsRouter);
+router.use('/rider', ridersRouter);
 router.use('/admin', auth.isAdmin, adminsRouter);
 
 router.use('/users', usersRouter);

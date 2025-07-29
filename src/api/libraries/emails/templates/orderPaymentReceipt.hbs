@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <title>Order Payment Confirmation</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #28a745;'>Payment Received for Order #{{orderId}}</h1>
+            </header>
+            <section>
+                <p>Dear {{vendorName}},</p>
+                <p>This email confirms that we have received payment for the
+                    following order:</p>
+                <ul>
+                    {{#each orderItems}}
+                        <li>{{name}} - Quantity: {{quantity}}</li>
+                    {{/each}}
+                </ul>
+                <p>Total Amount: ${{totalAmount}}</p>
+                <p>Thank you for your continued partnership with MDS Foods.</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p>If you have any questions regarding this order, please
+                    contact us.</p>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

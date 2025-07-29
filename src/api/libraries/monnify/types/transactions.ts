@@ -51,3 +51,13 @@ export interface PayWithBankTransferResponse {
         productInformation: null | string; // Assuming it can be null or string, adjust based on actual API behavior
     };
 }
+
+export interface SingleTransferRequest {
+    amount: number;
+    reference: string;
+    narration: string;
+    destinationBankCode: string;
+    destinationAccountNumber: string;
+    currency: 'NGN';
+    sourceAccountNumber: string;
+}

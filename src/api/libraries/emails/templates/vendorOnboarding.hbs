@@ -1,0 +1,33 @@
+<html>
+    <head>
+        <title>Welcome to MDS Foods</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #4CAF50;'>Welcome Aboard!</h1>
+            </header>
+            <section>
+                <p>Dear {{vendorName}},</p>
+                <p>Welcome to MDS Foods! Your restaurant is now a valued part of
+                    our community. Here are your account details:</p>
+                <p><strong>Email:</strong> {{email}}</p>
+                <p><strong>Temporary Password:</strong>
+                    {{temporaryPassword}}</p>
+                <p>We strongly advise that you log in and change your temporary
+                    password at your earliest convenience.</p>
+                {{!-- <a
+                    href='{{loginUrl}}'
+                    style='display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'
+                >Log In</a> --}}
+                <p>If you have any questions, feel free to reach out to our
+                    support team.</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

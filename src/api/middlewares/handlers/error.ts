@@ -31,7 +31,7 @@ function errorHandler(
             : 'Something wrong!';
     }
 
-    res.status(422).send(response);
+    res.status(400).send(response);
 }
 
 export default errorHandler;

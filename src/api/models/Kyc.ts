@@ -1,26 +1,130 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import appConfig from '../../config/appConfig';
+import UserService from '../services/UserService';
 
-export interface Rider extends Document {
-    // name: string;
-    userId: string;
-    ratings: number;
-    status: 'unverified' | 'verified' | 'suspended';
-    available: boolean;
-    bankAccount?: BankAccount;
-    documents?: [];
+export interface Address {
+    address: string;
+    street: string;
+    city: string;
+    state: string;
+    postcode: string;
+    buildingNumber: string;
+    addressDocument: string;
+    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    message: string;
 }
 
-const riderSchema = new Schema<Rider>(
+export interface NextOfKin {
+    name: string;
+    phone: string;
+    address: string;
+    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    message: string;
+}
+
+export interface Guarantor {
+    name: string;
+    address: string;
+    phone: string;
+    identityDocument: string;
+    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    message: string;
+}
+
+export interface Identity {
+    identityType:
+        | 'nin'
+        | 'voters-card'
+        | 'driver-licence'
+        | 'e-passport'
+        | 'other';
+    identityNumber: string;
+    identityDocument: string;
+    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    message: string;
+}
+
+export interface Kyc extends Document {
+    address: Address;
+    identity: Identity;
+    passportUrl: string;
+    nextOfKin: NextOfKin;
+    guarantor: Guarantor;
+    user: mongoose.Types.ObjectId;
+    role: 'user' | 'vendor' | 'rider';
+    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    message: string;
+}
+
+const kycSchema = new Schema<Kyc>(
     {
-        // name: { type: String, required: true },
-        ratings: { type: Number, default: 0 },
-        status: { type: String, required: true, default: 'unverified' },
-        available: {
-            type: Boolean,
-            required: true,
-            default: false
+        passportUrl: { type: String, required: false },
+        address: {
+            address: { type: String, required: false },
+            buildingNumber: { type: String, required: false },
+            street: { type: String, required: false },
+            city: { type: String, required: false },
+            state: { type: String, required: false },
+            postcode: { type: String, required: false },
+            addressDocument: { type: String, required: false },
+            status: {
+                type: String,
+                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                default: 'not_submitted'
+            },
+            message: { type: String, required: false }
         },
-        documents: { type: Array, required: false }
+        identity: {
+            identityType: {
+                type: String,
+                enum: ['nin', 'voters-card', 'e-passport', 'other'],
+                required: false
+            },
+            identityNumber: { type: String, required: false },
+            identityDocument: { type: String, required: false },
+            status: {
+                type: String,
+                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                default: 'not_submitted'
+            },
+            message: { type: String, required: false }
+        },
+        nextOfKin: {
+            name: { type: String, required: false },
+            phone: { type: String, required: false },
+            address: { type: String, required: false },
+            status: {
+                type: String,
+                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                default: 'not_submitted'
+            },
+            message: { type: String, required: false }
+        },
+        guarantor: {
+            name: { type: String, required: false },
+            phone: { type: String, required: false },
+            address: { type: String, required: false },
+            identityDocument: { type: String, required: false },
+            status: {
+                type: String,
+                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                default: 'not_submitted'
+            },
+            message: { type: String, required: false }
+        },
+        user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        role: {
+            type: String,
+            enum: ['user', 'vendor', 'rider'],
+            required: true
+        },
+        message: { type: String, required: false },
+        status: {
+            type: String,
+            enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+            required: true,
+            default: 'not_submitted'
+        }
     },
     {
         timestamps: true,
@@ -33,38 +137,34 @@ const riderSchema = new Schema<Rider>(
     }
 );
 
-// reverse populate orders
-riderSchema.virtual('orders', {
-    ref: 'Order',
-    localField: '_id',
-    foreignField: 'riderId',
-    justOne: false
+// Update KYC status and user's KYC status
+kycSchema.pre('save', async function (next) {
+    if (!this.isModified()) return next();
+
+    if (
+        this.address.status === 'approved' &&
+        this.identity.status === 'approved' &&
+        this.nextOfKin.status === 'approved' &&
+        this.guarantor.status === 'approved'
+    ) {
+        this.status = 'approved';
+    } else {
+        this.status = 'pending';
+    }
+
+    if (this.isModified('address')) {
+        this.address.address = `${this.address.buildingNumber} ${this.address.street}, ${this.address.city}, ${this.address.state}.`;
+    }
+
+    const user = await UserService.getUserDetail(this.user.toString());
+    if (user && user.kycStatus !== this.status) {
+        user.kycStatus = this.status;
+        await user.save();
+    }
+
+    next();
 });
 
-// reverse populate dispatches
-riderSchema.virtual('dispatches', {
-    ref: 'Dispatch',
-    localField: '_id',
-    foreignField: 'riderId',
-    justOne: false
-});
+const KycModel = mongoose.model<Kyc>('Kyc', kycSchema);
 
-// reverse populate reviews
-riderSchema.virtual('reviews', {
-    ref: 'Review',
-    localField: '_id',
-    foreignField: 'riderId',
-    justOne: false
-});
-
-// reverse populate transactions
-riderSchema.virtual('transactions', {
-    ref: 'Transaction',
-    localField: '_id',
-    foreignField: 'riderId',
-    justOne: false
-});
-
-const RiderModel = mongoose.model<Rider>('Rider', riderSchema);
-
-export default RiderModel;
+export default KycModel;

@@ -50,7 +50,7 @@ reviewSchema.statics.getAverageRating = async function (vendorId) {
             }
         }
     ]);
-
+    console.log(obj);
     try {
         await mongoose.model('Vendor').findByIdAndUpdate(vendorId, {
             ratings: obj[0].averageRating

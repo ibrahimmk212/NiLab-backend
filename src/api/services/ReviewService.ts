@@ -10,12 +10,28 @@ class ReviewService {
         return await ReviewRepository.findReviewById(reviewId);
     }
 
-    async getReviewsByVendor(vendorId: string): Promise<Review[] | null> {
-        return await ReviewRepository.findReviewsByVendor(vendorId);
+    async getReviewsByVendor(
+        vendorId: string,
+        limit: number,
+        page: number
+    ): Promise<any> {
+        return await ReviewRepository.findReviewsByCustomer(
+            vendorId,
+            limit,
+            page
+        );
     }
 
-    async getReviewsByCustomer(customerId: string): Promise<Review[] | null> {
-        return await ReviewRepository.findReviewsByCustomer(customerId);
+    async getReviewsByCustomer(
+        customerId: string,
+        limit: number,
+        page: number
+    ): Promise<any> {
+        return await ReviewRepository.findReviewsByCustomer(
+            customerId,
+            limit,
+            page
+        );
     }
 
     async getReviewsByRider(riderId: string): Promise<Review[] | null> {

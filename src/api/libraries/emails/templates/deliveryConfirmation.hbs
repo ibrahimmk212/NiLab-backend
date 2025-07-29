@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <title>Delivery Status Update</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #FFA500;'>Delivery Status Update</h1>
+            </header>
+            <section>
+                <p>Hi {{name}},</p>
+                <p>Your order (#{{orderId}}) is on its way! Your rider,
+                    {{riderName}}, is currently
+                    {{riderStatus}}.</p>
+                <p>Estimated arrival time: {{arrivalTime}}</p>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p>We hope you enjoy your meal. Thank you for using MDS Foods.</p>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

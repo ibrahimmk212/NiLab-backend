@@ -6,12 +6,16 @@ import { Validate } from '../../../middlewares/validator';
 import VendorInfoController from '../../../controllers/vendors/VendorInfoController';
 import vendorRequirement from '../../../middlewares/validator/requirements/vendor';
 import vendorWalletRouter from './wallet';
-import vendorSubcategoryRouter from './subcategories';
-import vendorCategoryRouter from './categories';
+import auth from '../../../middlewares/auth';
+import vendorTransactionRouter from './transactions';
 
 const vendorsRouter: Router = Router();
-vendorsRouter.get('/', VendorInfoController.get);
-// vendorsRouter.get('/wallet', VendorInfoController.getWallet);
+vendorsRouter.post('/login', VendorInfoController.login);
+
+vendorsRouter.use(auth.isVendor);
+
+vendorsRouter.get('/', VendorInfoController.currentUser);
+vendorsRouter.get('/dashboard', VendorInfoController.dashboard);
 
 vendorsRouter.put(
     '/',
@@ -34,9 +38,9 @@ vendorsRouter.put(
 vendorsRouter.put('/banner', VendorInfoController.uploadBanner);
 
 vendorsRouter.use('/products', vendorProductRouter);
-vendorsRouter.use('/subcategories', vendorSubcategoryRouter);
-vendorsRouter.use('/categories', vendorCategoryRouter);
 vendorsRouter.use('/orders', vendorOrderRouter);
 vendorsRouter.use('/staffs', vendorStaffRouter);
 vendorsRouter.use('/wallet', vendorWalletRouter);
+vendorsRouter.use('/transactions', vendorTransactionRouter);
+
 export default vendorsRouter;

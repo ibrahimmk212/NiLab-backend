@@ -9,11 +9,8 @@ adminCategoryRouter.post(
     Validate(productRequirement.createCategory),
     AdminCategoryController.create
 );
-adminCategoryRouter.put(
-    '/:id',
-    // Validate(productRequirement.),
-    AdminCategoryController.update
-);
 adminCategoryRouter.get('/all', AdminCategoryController.getAll);
 adminCategoryRouter.get('/:id', AdminCategoryController.getSingle);
+adminCategoryRouter.put('/:id', AdminCategoryController.update);
+
 export default adminCategoryRouter;

@@ -23,27 +23,6 @@ class AdminCategoryController {
             });
         }
     );
-
-    update = asyncHandler(
-        async (
-            req: Request | any,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
-            const { id } = req.params;
-            const updated = await CategoryService.update(id, req.body);
-            if (!updated)
-                res.status(STATUS.BAD_REQUEST).send({
-                    success: false,
-                    message: 'Failed to update Product'
-                });
-            res.status(STATUS.CREATED).send({
-                success: true,
-                message: 'Product Updated Successfully.',
-                data: updated
-            });
-        }
-    );
     getAll = asyncHandler(
         async (
             req: Request,
@@ -70,6 +49,27 @@ class AdminCategoryController {
                 success: true,
                 message: 'Categories fetched successfully',
                 data: product
+            });
+        }
+    );
+
+    update = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { id } = req.params;
+            const { name, description } = req.body;
+            // const product = await CategoryService.find(id);
+            const category = await CategoryService.update(id, {
+                name,
+                description
+            });
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Categories updated successfully',
+                data: category
             });
         }
     );

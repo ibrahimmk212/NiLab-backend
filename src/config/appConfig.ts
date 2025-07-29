@@ -22,7 +22,7 @@ const AppConfig = {
         awsRegion: process.env.S3_REGION
     },
     db: {
-        mongo_url: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/nilab_market'
+        mongo_url: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/mds-food'
     },
     monnify: {
         baseUrl: process.env.MONNIFY_API_URL as string,
@@ -31,6 +31,16 @@ const AppConfig = {
         accessToken: '',
         contractCode: process.env.CONTRACT_CODE as string,
         walletNumber: process.env.WALLET_NUMBER as string
+    },
+    nodemailer: {
+        service: process.env.SMTP_SERVICE,
+        port: process.env.SMTP_PORT,
+
+        user: process.env.SMTP_EMAIL,
+        pass: process.env.SMTP_PASSWORD,
+
+        fromName: process.env.FROM_NAME,
+        fromEmail: process.env.FROM_EMAIL
     }
 };
 

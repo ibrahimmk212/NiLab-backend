@@ -24,15 +24,12 @@ class JWT {
     }
     signTempToken(
         data: {
-            email?: string;
-            phoneNumber?: string;
-            countryCode?: string;
+            email: string;
             otp?: string;
             purpose: string;
         },
         expires = '1d'
     ): Promise<string | undefined> {
-        console.log(data);
         return new Promise((resolve, reject) => {
             jwt.sign(
                 {
@@ -69,6 +66,9 @@ class JWT {
         purpose: string
     ): Promise<jwt.JwtPayload | undefined> {
         return new Promise((resolve, reject) => {
+            if (!token) {
+                return reject(new Error('Token is required'));
+            }
             jwt.verify(
                 token,
                 AppConfig.app.tempSecret + purpose,

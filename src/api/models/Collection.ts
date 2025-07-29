@@ -1,33 +1,53 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { slugify } from 'src/utils/helpers';
 
 export interface Collection extends Document {
-    accountNumber: string;
-    amount:number;
-    fee:number;
-    reference?: string;
-    flwRef?:string;
-    ipAddress?:string;
-    description: string;
-    deviceFingerprint?:string;
-    type: string;
-    accountId?: string;
-    status: string;
+    user: mongoose.Types.ObjectId;
+    product: any;
+    paymentReference: string;
+    transactionReference: string;
+    paidOn: string;
+    paymentDescription: string;
+    metaData: any;
+    destinationAccountInformation: any;
+    paymentSourceInformation: any;
+    amountPaid: number;
+    totalPayable: number;
+    offlineProductInformation: any;
+    cardDetails: any;
+    paymentMethod: string;
+    currency: string;
+    settlementAmount: number;
+    paymentStatus: string;
+    customer: any;
+    status: 'pending' | 'successful' | 'failed' | 'refunded';
+    responseData?: any;
 }
 
 const collectionSchema = new Schema<Collection>(
     {
-        accountNumber: { type: String, required: true },
-        amount: { type: Number, required: true },
-        fee: { type: Number, required: true },
-        reference: { type: String, required: true },
-        flwRef: { type: String, required: false },
-        ipAddress: { type: String, required: false },
-        description: { type: String, required: false },
-        deviceFingerprint: { type: String, required: false },
-        type: { type: String, required: false },
-        accountId: { type: String, required: false },
+        user: { type: Schema.Types.ObjectId, required: false, ref: 'User' },
+        product: { type: Schema.Types.Map, required: false },
+        paymentReference: { type: String, required: false },
+        transactionReference: { type: String, required: false },
+        paidOn: { type: String, required: false },
+        paymentDescription: { type: String, required: false },
+        metaData: { type: Schema.Types.Map, required: false },
+        destinationAccountInformation: {
+            type: Schema.Types.Map,
+            required: false
+        },
+        paymentSourceInformation: { type: Schema.Types.Map, required: false },
+        amountPaid: { type: Number, required: false },
+        totalPayable: { type: Number, required: false },
+        offlineProductInformation: { type: Schema.Types.Map, required: false },
+        cardDetails: { type: Schema.Types.Map, required: false },
+        paymentMethod: { type: String, required: false },
+        currency: { type: String, required: false },
+        settlementAmount: { type: Number, required: false },
+        paymentStatus: { type: String, required: false },
+        customer: { type: Schema.Types.Map, required: false },
         status: { type: String, required: false },
+        responseData: { type: Schema.Types.Map, required: false }
     },
     {
         timestamps: true,
@@ -40,10 +60,9 @@ const collectionSchema = new Schema<Collection>(
     }
 );
 
-collectionSchema.pre('save', function (next) {
-    // this.slug = slugify(this.name);
-    next();
-});
-const CollectionModel = mongoose.model<Collection>('Collection', collectionSchema);
+const CollectionModel = mongoose.model<Collection>(
+    'Collection',
+    collectionSchema
+);
 
 export default CollectionModel;

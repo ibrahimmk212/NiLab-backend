@@ -1,0 +1,34 @@
+<html>
+    <head>
+        <title>New Order Notification</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333;'>
+        <div
+            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
+        >
+            <header style='text-align: center;'>
+                <h1 style='color: #007BFF;'>You Have a New Order!</h1>
+            </header>
+            <section>
+                <p>Dear {{vendorName}},</p>
+                <p>You have received a new order (#{{orderId}}) from a customer.
+                    Here are the details:</p>
+                <ul>
+                    {{#each orderItems}}
+                        <li>{{name}} - Quantity: {{quantity}}</li>
+                    {{/each}}
+                </ul>
+                <p>Please log in to your vendor portal to confirm and process
+                    this order.</p>
+                <a
+                    href='{{orderDetailsUrl}}'
+                    style='display: inline-block; background-color: #007BFF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'
+                >View Order</a>
+            </section>
+            <footer style='text-align: center; margin-top: 20px;'>
+                <p>Thank you for being a part of MDS Foods.</p>
+                <p style='color: #aaa;'>&copy; 2023 MDS Foods</p>
+            </footer>
+        </div>
+    </body>
+</html>

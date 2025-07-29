@@ -13,9 +13,22 @@ const mainRequirement = {
 
     signup: [
         body('password').isString().isLength({ min: 5 }),
-
+        body('phoneNumber').isString().isLength({ min: 11, max: 13 }),
         body('firstName').isString().isLength({ min: 1 }),
         body('lastName').isString().optional({ nullable: true }),
+        body('gender').isString().optional({ nullable: true }),
+        body('promotionCode').isString().optional({ nullable: true }),
+        body('token').isString()
+    ],
+
+    riderSignup: [
+        body('password').isString().isLength({ min: 5 }),
+        body('phoneNumber').isString().isLength({ min: 11, max: 13 }),
+        body('firstName').isString().isLength({ min: 1 }),
+        body('lastName').isString().optional({ nullable: true }),
+        body('gender').isString().optional({ nullable: true }),
+        body('city').isString().optional(),
+        body('vehicle').isString().optional(),
         body('token').isString()
     ],
 

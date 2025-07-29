@@ -34,8 +34,8 @@ vendorProductRouter.put(
 );
 vendorProductRouter.put(
     '/:id/status',
-    Validate(productRequirement.updateStatus),
-    VendorProductController.update
+    // Validate(productRequirement.updateStatus),
+    VendorProductController.updateAvailability
 );
 
 export default vendorProductRouter;

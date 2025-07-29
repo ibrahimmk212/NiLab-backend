@@ -3,20 +3,21 @@ import JWT from '../../../utils/jwt';
 import UserRepository from '../../repositories/UserRepository';
 import { ROLE, STATUS } from '../../../constants';
 import VendorRepository from '../../repositories/VendorRepository';
+import RiderRepository from '../../repositories/RiderRepository';
+import AdminService from '../../services/AdminService';
 
 class Auth {
     async authenticate(
         req: Request | any,
         res: Response,
         next: NextFunction
-    ): Promise<void> {
+    ): Promise<any> {
         const authorization = String(req.headers.authorization);
         if (!authorization || !authorization.includes('Bearer')) {
-            res.status(STATUS.UNAUTHORIZED).json({
+            return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
                 message: 'Provide a token'
             });
-            return;
         }
 
         const token = authorization?.slice(7);
@@ -24,22 +25,20 @@ class Auth {
             const payload = await JWT.verifyToken(token);
 
             if (!payload) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'invalid Token'
                 });
-                return;
             }
 
             const userId: string = payload.id;
             const userdata = await UserRepository.findUserById(userId);
 
             if (!userdata) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'Account not found'
                 });
-                return;
             }
             // TODO check if account is active
             req.userdata = userdata;
@@ -54,97 +53,97 @@ class Auth {
         req: Request | any,
         res: Response,
         next: NextFunction
-    ): Promise<void> {
+    ): Promise<any> {
         const authorization = String(req.headers.authorization);
         if (!authorization || !authorization.includes('Bearer')) {
-            res.status(STATUS.UNAUTHORIZED).json({
+            return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
                 message: 'Provide a token'
             });
-            return;
         }
         const token = authorization?.slice(7);
         try {
             const payload = await JWT.verifyToken(token);
 
             if (!payload) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'invalid Token'
                 });
-                return;
             }
 
             const userId: string = payload.id;
             const userdata = await UserRepository.findUserById(userId);
 
             if (!userdata) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'Account not found'
                 });
-                return;
             }
             if (userdata.role != ROLE.ADMIN) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'This is not an Admin Account'
                 });
-                return;
             }
-            // TODO check if account is active
+
+            const admin = await AdminService.getByUserId(userdata.id);
+
+            if (admin && admin.status == 'suspended') {
+                return res.status(STATUS.FORBIDDEN).json({
+                    success: false,
+                    message: 'Your account has been suspended'
+                });
+            }
             req.userdata = userdata;
+            req.admin = admin;
 
             next();
         } catch (e: any) {
-            res.status(STATUS.UNAUTHORIZED).json({
+            return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
                 message: e?.message
             });
-            return;
         }
     }
     async isVendor(
         req: Request | any,
         res: Response,
         next: NextFunction
-    ): Promise<void> {
+    ): Promise<any> {
         const authorization = String(req.headers.authorization);
         if (!authorization || !authorization.includes('Bearer')) {
-            res.status(STATUS.UNAUTHORIZED).json({
+            return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
                 message: 'Provide a token'
             });
-            return;
         }
         try {
             const token = authorization?.slice(7);
             const payload = await JWT.verifyToken(token);
 
             if (!payload) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'invalid Token'
                 });
-                return;
             }
 
             const userId: string = payload.id;
             const userdata = await UserRepository.findUserById(userId);
 
             if (!userdata) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'Account not found'
                 });
-                return;
             }
             if (userdata.role != ROLE.VENDOR) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'This is not a Vendor Account'
                 });
-                return;
             }
             //Get vendor by user
             const vendor = await VendorRepository.findByKey(
@@ -152,31 +151,98 @@ class Auth {
                 userdata.id
             );
             if (!vendor) {
-                res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'Invalid Vendor'
                 });
-                return;
             }
-            if (vendor.status != 'active') {
-                res.status(STATUS.UNAUTHORIZED).json({
+
+            if (req.path !== '/location' && vendor.status != 'active') {
+                return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'Vendor Not Active'
                 });
-                return;
             }
 
             req.userdata = userdata;
             req.vendor = vendor;
             next();
         } catch (e: any) {
-            res.status(STATUS.UNAUTHORIZED).json({
+            return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
                 message: 'Error validating vendor'
             });
-            return;
         }
     }
+
+    async isRider(
+        req: Request | any,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
+        const authorization = String(req.headers.authorization);
+        if (!authorization || !authorization.includes('Bearer')) {
+            return res.status(STATUS.UNAUTHORIZED).json({
+                success: false,
+                message: 'Provide a token'
+            });
+        }
+        try {
+            const token = authorization?.slice(7);
+            const payload = await JWT.verifyToken(token);
+
+            if (!payload) {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'invalid Token'
+                });
+            }
+
+            const userId: string = payload.id;
+            const userdata = await UserRepository.findUserById(userId);
+
+            if (!userdata) {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Account not found'
+                });
+            }
+            if (userdata.role != ROLE.RIDER) {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'This is not a rider Account'
+                });
+            }
+
+            //Get rider by user
+            const rider = await RiderRepository.findByKey(
+                'userId',
+                userdata.id
+            );
+            if (!rider) {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Invalid rider'
+                });
+            }
+            if (rider.status == 'suspended') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Your account is suspended'
+                });
+            }
+
+            req.userdata = userdata;
+            req.rider = rider;
+            next();
+        } catch (e: any) {
+            return res.status(STATUS.UNAUTHORIZED).json({
+                success: false,
+                message: 'Error validating rider'
+            });
+        }
+    }
+
     checkRoles(...roles: string[]) {
         return async (
             req: Request | any,
@@ -184,17 +250,13 @@ class Auth {
             next: NextFunction
         ) => {
             const userdata = req.userdata;
-
             const roleUser = userdata.role;
             if (!roleUser) {
-                res.sendStatus(403);
-                return;
+                return res.sendStatus(STATUS.FORBIDDEN);
             }
-
             const isRoleValid = roles.includes(roleUser);
             if (!isRoleValid) {
-                res.sendStatus(403);
-                return;
+                return res.sendStatus(STATUS.FORBIDDEN);
             }
             next();
         };

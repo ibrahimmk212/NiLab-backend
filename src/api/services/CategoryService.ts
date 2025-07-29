@@ -1,5 +1,5 @@
 import { Category } from '../models/Category';
-import CategoryRepository from '../repositories/CategoryRepository'; 
+import CategoryRepository from '../repositories/CategoryRepository';
 interface ICategoryService {
     create(payload: any): Promise<any>;
     getAll(): Promise<any[]>;
@@ -10,18 +10,17 @@ interface ICategoryService {
 
 class CategoryService implements ICategoryService {
     async create(payload: Category): Promise<any> {
-        return await CategoryRepository.createCategory(payload);
-    }
-
-    async update(Id: string, data: any): Promise<any> {
-        return await CategoryRepository.updateCategory(Id, data);
+        return CategoryRepository.createCategory(payload);
     }
 
     async find(id: string): Promise<any> {
-        return await CategoryRepository.findCategoryById(id);
+        return CategoryRepository.findCategoryById(id);
+    }
+    async update(id: string, data: any): Promise<any> {
+        return CategoryRepository.updateCategory(id, data);
     }
     async getAll(): Promise<any> {
-        return await CategoryRepository.getAll();
+        return CategoryRepository.getAll();
     }
 }
 export default new CategoryService();

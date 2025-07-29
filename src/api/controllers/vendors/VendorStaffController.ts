@@ -27,9 +27,9 @@ class VendorStaffController {
                 role: 'staff'
             });
             const staff = await StaffService.createStaff({
-                userId: newUser.id,
+                user: newUser.id,
                 role: body.role,
-                vendorId: vendor.id
+                vendor: vendor.id
             });
 
             if (!staff) {
@@ -49,10 +49,7 @@ class VendorStaffController {
             next: NextFunction
         ): Promise<void> => {
             const { vendor } = req;
-            const staffs = await StaffService.findAllByKey(
-                'vendorId',
-                vendor.id
-            );
+            const staffs = await StaffService.findAllByKey('vendor', vendor.id);
 
             res.status(STATUS.OK).json({
                 success: true,
@@ -89,7 +86,7 @@ class VendorStaffController {
             const { id } = params;
 
             // res.json(vendor)
-            throw Error('Failed to update Product');
+            throw Error('Failed to update staff');
         }
     );
 }
