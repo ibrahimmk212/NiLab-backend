@@ -104,7 +104,10 @@ class UserRepository {
         const userId = user._id;
 
         // Create Wallet
-        const wallet = await WalletModel.create({ userId });
+        const wallet = await WalletModel.create({
+            role: 'user',
+            owner: userId.toString()
+        });
         if (!wallet) throw new Error('Failed to create wallet');
 
         return { user, wallet };
@@ -126,7 +129,10 @@ class UserRepository {
             const vendorId = vendor._id;
 
             // Create Wallet
-            wallet = await WalletModel.create({ vendorId });
+            wallet = await WalletModel.create({
+                role: 'vendor',
+                owner: userId.toString()
+            });
             if (!wallet) throw new Error('Failed to create wallet');
 
             return { user, vendor, wallet };
@@ -156,7 +162,10 @@ class UserRepository {
             const riderId = rider._id;
 
             // Create Wallet
-            wallet = await WalletModel.create({ riderId });
+            wallet = await WalletModel.create({
+                role: 'rider',
+                owner: userId.toString()
+            });
             if (!wallet) throw new Error('Failed to create wallet');
 
             return { user, rider, wallet };
