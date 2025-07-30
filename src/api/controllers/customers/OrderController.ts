@@ -105,7 +105,7 @@ class OrderController {
                 street: vendor.address
             },
             destination: {
-                additionalInfo: `${userdata.firstName} ${userdata.lastName} - ${userdata.phoneNumberNumber}`,
+                additionalInfo: `${userdata.firstName} ${userdata.lastName} - ${userdata.phoneNumber}`,
                 buildingNumber: deliveryAddress.buildingNumber,
                 city: deliveryAddress.city,
                 coordinates: deliveryAddress.coordinates,
@@ -119,7 +119,7 @@ class OrderController {
                 name: vendor.name
             },
             receiverDetails: {
-                contactNumber: userdata.phoneNumberNumber,
+                contactNumber: userdata.phoneNumber,
                 name: `${userdata.firstName} ${userdata.lastName}`
             }
         };
