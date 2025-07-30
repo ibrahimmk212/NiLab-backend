@@ -22,8 +22,16 @@ router.use(
     customersRouter
 );
 
-router.use('/vendor', auth.isVendor, vendorsRouter);
-router.use('/rider', auth.isRider, ridersRouter);
+router.use(
+    '/vendor',
+    // auth.isVendor,
+    vendorsRouter
+);
+router.use(
+    '/rider',
+    //  auth.isRider,
+    ridersRouter
+);
 router.use('/public', publicRouter);
 router.use('/admin', auth.isAdmin, adminsRouter);
 
