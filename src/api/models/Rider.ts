@@ -23,7 +23,7 @@ export interface Rider extends Document {
 
 const riderSchema = new Schema<Rider>(
     {
-        name: { type: String, required: true },
+        name: { type: String, required: false },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         phoneNumber: { type: String, required: false },
         email: { type: String, required: false },

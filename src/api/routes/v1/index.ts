@@ -8,6 +8,7 @@ import adminsRouter from './admin';
 import auth from '../../middlewares/auth';
 import { ROLE } from '../../../constants';
 import webhookRouter from './webhooks';
+import publicRouter from './public';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -21,8 +22,9 @@ router.use(
     customersRouter
 );
 
-router.use('/vendor', vendorsRouter);
-router.use('/rider', ridersRouter);
+router.use('/vendor', auth.isVendor, vendorsRouter);
+router.use('/rider', auth.isRider, ridersRouter);
+router.use('/public', publicRouter);
 router.use('/admin', auth.isAdmin, adminsRouter);
 
 router.use('/users', usersRouter);
