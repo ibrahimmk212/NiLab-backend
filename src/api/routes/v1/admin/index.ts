@@ -21,6 +21,7 @@ adminsRouter.get('/', AdminMainController.currentUser);
 adminsRouter.use('/users', usersRouter);
 adminsRouter.use('/admins', adminRouter);
 adminsRouter.use('/vendors', adminVendorRouter);
+adminsRouter.use('/market-categories', adminCategoryRouter);
 adminsRouter.use('/orders', adminOrderRouter);
 adminsRouter.use('/riders', adminRidersRouter);
 adminsRouter.use('/dispatches', adminDispatchRouter);

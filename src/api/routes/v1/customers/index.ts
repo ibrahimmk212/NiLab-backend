@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import customerCategoryRouter from './categories';
 import customerVendorRouter from './vendors';
-import customerProductRouter from './products';
 import customerReviewRouter from './reviews';
 import customerNotificationRouter from './notifications';
 import customerTransactionRouter from './transactions';
@@ -10,6 +9,7 @@ import { Validate, Requirements } from '../../../middlewares/validator';
 import ProfileController from '../../../controllers/customers/ProfileController';
 import customerFavouriteRouter from './favourites';
 import customerPromotionRouter from './promotions';
+import customerMarketCategoryRouter from './marketCategory';
 
 const customersRouter: Router = Router();
 
@@ -22,6 +22,9 @@ customersRouter.use('/categories', customerCategoryRouter);
 customersRouter.use('/notifications', customerNotificationRouter);
 customersRouter.use('/transactions', customerTransactionRouter);
 customersRouter.use('/favourites', customerFavouriteRouter);
+customersRouter.use('/favourites', customerFavouriteRouter);
+customersRouter.use('/market-categories', customerMarketCategoryRouter);
+
 customersRouter
     .route('/profile')
     .get(ProfileController.currentUser)

@@ -45,7 +45,7 @@ class AdminVendorController {
                 description: payload?.description ?? '',
                 userId: user._id,
                 email: payload.email,
-                phone: payload.phone,
+                phoneNumber: payload.phoneNumber,
                 logo: payload.logo ?? '',
                 banner: payload.banner ?? '',
                 lat: payload.lat,

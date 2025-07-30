@@ -11,7 +11,7 @@ export interface Rider extends Document {
     name: string;
     userId: mongoose.Types.ObjectId;
     ratings: number;
-    phone: string;
+    phoneNumber: string;
     email: string;
     city: string;
     vehicle: string;
@@ -25,7 +25,7 @@ const riderSchema = new Schema<Rider>(
     {
         name: { type: String, required: true },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        phone: { type: String, required: false },
+        phoneNumber: { type: String, required: false },
         email: { type: String, required: false },
         city: { type: String, required: false },
         gender: { type: String, required: false, default: 'male' },

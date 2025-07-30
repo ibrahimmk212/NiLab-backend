@@ -95,7 +95,7 @@ class OrderController {
             orderType: 'products',
             paymentReference: reference,
             pickup: {
-                additionalInfo: `${vendor.name} - ${vendor.phone}`,
+                additionalInfo: `${vendor.name} - ${vendor.phoneNumber}`,
                 buildingNumber: '',
                 city: vendor.location.city,
                 coordinates: vendor.location.coordinates,
@@ -105,7 +105,7 @@ class OrderController {
                 street: vendor.address
             },
             destination: {
-                additionalInfo: `${userdata.firstName} ${userdata.lastName} - ${userdata.phoneNumber}`,
+                additionalInfo: `${userdata.firstName} ${userdata.lastName} - ${userdata.phoneNumberNumber}`,
                 buildingNumber: deliveryAddress.buildingNumber,
                 city: deliveryAddress.city,
                 coordinates: deliveryAddress.coordinates,
@@ -115,11 +115,11 @@ class OrderController {
                 street: userdata.address
             },
             senderDetails: {
-                contactNumber: vendor.phone,
+                contactNumber: vendor.phoneNumber,
                 name: vendor.name
             },
             receiverDetails: {
-                contactNumber: userdata.phoneNumber,
+                contactNumber: userdata.phoneNumberNumber,
                 name: `${userdata.firstName} ${userdata.lastName}`
             }
         };
