@@ -45,14 +45,7 @@ class ProductController {
                 ...restFilters
             } = req.query;
 
-            const result = await ProductService.getAll({
-                page: parseInt(page as string, 10),
-                limit: parseInt(limit as string, 10),
-                sortBy: sortBy as string,
-                sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
-                search: search as string,
-                filters: restFilters
-            });
+            const result = await ProductService.getAll();
             // TODO populate categories
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
@@ -67,7 +60,20 @@ class ProductController {
             next: NextFunction
         ): Promise<void> => {
             const query = req.query;
-            const product = await ProductService.search(query);
+            const limit = parseInt(query.limit as string) || 10;
+            const page = parseInt(query.page as string) || 1;
+            const search = (query.search as string) || '';
+            const options: Record<string, unknown> = {
+                search,
+                limit,
+                page
+            };
+            const product = await ProductService.searchProducts(
+                search,
+                limit,
+                page,
+                options
+            );
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
                 data: product
