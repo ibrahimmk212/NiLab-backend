@@ -1,9 +1,9 @@
-import admin, { ServiceAccount } from 'firebase-admin';
+import * as admin from 'firebase-admin';
+import * as fs from 'fs';
 
-// Load your service account key JSON file
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const serviceAccount: ServiceAccount = JSON.parse(
-    process.env.FIREBASE_SECRET || '{}'
+// Load JSON from secret file path
+const serviceAccount = JSON.parse(
+    fs.readFileSync('/etc/secrets/firebase_secret.json', 'utf-8')
 );
 
 admin.initializeApp({
