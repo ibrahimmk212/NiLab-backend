@@ -18,6 +18,7 @@ const adminSchema = new Schema<Admin>(
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         status: { type: String, required: true, default: 'active' }
     },
+
     {
         timestamps: true,
         toJSON: {
