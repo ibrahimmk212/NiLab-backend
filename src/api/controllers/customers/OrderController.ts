@@ -266,8 +266,9 @@ class OrderController {
 
         const totalAmount = deliveryFee + serviceFee;
         const reference = `ORDER_${currentTimestamp()}${userdata.id}`;
-        const orderData: Partial<Order> = {
+        const orderData: any | Partial<Order> = {
             ...payload,
+            contactNumber: userdata.phoneNumber,
             deliveryFee,
             serviceFee,
             paymentReference: reference,
