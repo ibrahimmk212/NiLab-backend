@@ -1,7 +1,25 @@
-import { Category } from '../models/Category';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import VendorModel, { BankAccount, Vendor } from '../models/Vendor';
 import { CreateVendorType } from '../types/vendor';
 
+interface FindAllVendorsOptions {
+    page?: number;
+    limit?: number;
+    name?: string; // example filter
+    marketCategoryId?: string; // example filter
+    categories?: string[]; // example filter
+    state?: string; // example filter
+    lga?: string; // example filter
+    ratings?: number; // example filter
+    acceptDelivery?: boolean; // example filter
+    openingHour?: string; // example filter
+    closingHour?: string; // example filter
+    isAvailable?: boolean; // example filter
+    averageReadyTime?: number | string; // example filter
+    email?: string; // example filter
+    phoneNumber?: string; // example filter
+    status?: string; // example filter
+}
 class VendorRepository {
     // Create a new vendor
     async createVendor(data: CreateVendorType): Promise<Vendor> {
@@ -80,10 +98,80 @@ class VendorRepository {
         return vendors;
     }
     // Find all vendor
-    async findAllVendors(): Promise<Vendor[] | null> {
-        const vendors = await VendorModel.find().populate('categories');
+    async findAllVendors(options: FindAllVendorsOptions) {
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const skip = (page - 1) * limit;
 
-        return vendors;
+        const filter: Record<string, any> = {};
+
+        if (options.marketCategoryId) {
+            filter.marketCategoryId = options.marketCategoryId;
+        }
+
+        if (options.categories && options.categories.length > 0) {
+            filter.categories = { $in: options.categories };
+        }
+        if (options.state) {
+            filter.state = options.state;
+        }
+        if (options.lga) {
+            filter.lga = options.lga;
+        }
+        if (options.ratings) {
+            filter.ratings = { $gte: options.ratings };
+        }
+        if (options.acceptDelivery !== undefined) {
+            filter.acceptDelivery = options.acceptDelivery;
+        }
+        if (options.openingHour) {
+            filter.openingHour = options.openingHour;
+        }
+        if (options.closingHour) {
+            filter.closingHour = options.closingHour;
+        }
+        if (options.isAvailable !== undefined) {
+            filter.isAvailable = options.isAvailable;
+        }
+        if (options.averageReadyTime) {
+            filter.averageReadyTime = options.averageReadyTime;
+        }
+        if (options.email) {
+            filter.email = options.email;
+        }
+        if (options.phoneNumber) {
+            filter.phoneNumber = options.phoneNumber;
+        }
+
+        if (options.name) {
+            filter.name = { $regex: options.name, $options: 'i' };
+        }
+
+        if (options.status) {
+            filter.status = options.status;
+        }
+
+        const [vendors, total] = await Promise.all([
+            VendorModel.find(filter)
+                .populate('categories')
+                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .skip(skip)
+                .limit(limit),
+            VendorModel.countDocuments(filter)
+        ]);
+
+        return {
+            total,
+            count: vendors.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: vendors
+        };
     }
 
     async searchVendors(search: string, limit = 10, page = 1): Promise<any> {

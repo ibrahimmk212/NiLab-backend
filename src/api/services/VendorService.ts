@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import VendorRepository from '../repositories/VendorRepository';
 import { Vendor } from '../models/Vendor';
 import { CreateVendorType } from '../types/vendor';
@@ -31,8 +31,8 @@ class VendorService implements IVendorService {
         }
         return vendor;
     }
-    async getAll(): Promise<Vendor[] | null> {
-        return await VendorRepository.findAllVendors();
+    async getAll(data: any): Promise<any> {
+        return await VendorRepository.findAllVendors(data);
     }
 
     // nearby vendors

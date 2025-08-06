@@ -76,7 +76,7 @@ class AdminVendorController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const vendors = await VendorService.getAll();
+            const vendors = await VendorService.getAll(req.query);
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Venors fetched successfully',

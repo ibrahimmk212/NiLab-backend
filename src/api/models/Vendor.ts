@@ -20,8 +20,11 @@ export interface BankAccount {
 export interface Vendor extends Document {
     name: string;
     address: string;
+    state: string;
+    lga: string;
     description: string;
     userId: mongoose.Types.ObjectId;
+    marketCategoryId: mongoose.Types.ObjectId;
     email: string;
     phoneNumber: string;
     ratings: number;
@@ -42,8 +45,15 @@ const vendorSchema = new Schema<Vendor>(
     {
         name: { type: String, required: true },
         address: { type: String, required: true },
+        state: { type: String, required: true },
+        lga: { type: String, required: true },
         description: { type: String, required: false },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        marketCategoryId: {
+            type: Schema.Types.ObjectId,
+            ref: 'MarketCategory',
+            required: true
+        },
         email: {
             type: String,
             required: [true, 'email is required'],

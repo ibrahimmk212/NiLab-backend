@@ -12,30 +12,36 @@ class VendorController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { categoryId } = req.params;
-            const { limit = 10, page = 1, search = '', category } = req.query;
+            // const { categoryId } = req.params;
+            // const { limit = 10, page = 1, search = '', category } = req.query;
 
-            const { vendors, count, pagination, total } = categoryId
-                ? await VendorService.getVendorsByOption(
-                      {
-                          //   categories: { $in: category }
-                          //   status: 'active'
-                      },
-                      Number(limit),
-                      Number(page)
-                  )
-                : await VendorService.searchVendors(
-                      search as string,
-                      Number(limit),
-                      Number(page)
-                  );
+            // const { vendors, count, pagination, total } = categoryId
+            //     ? await VendorService.getVendorsByOption(
+            //           {
+            //               //   categories: { $in: category }
+            //               //   status: 'active'
+            //           },
+            //           Number(limit),
+            //           Number(page)
+            //       )
+            //     : await VendorService.searchVendors(
+            //           search as string,
+            //           Number(limit),
+            //           Number(page)
+            //       );
 
-            res.status(STATUS.OK).json({
+            // res.status(STATUS.OK).json({
+            //     success: true,
+            //     total,
+            //     count,
+            //     pagination,
+            //     data: vendors
+            // });
+            const vendors = await VendorService.getAll(req.query);
+            res.status(STATUS.OK).send({
                 success: true,
-                total,
-                count,
-                pagination,
-                data: vendors
+                message: 'Vendors fetched successfully',
+                ...vendors
             });
         }
     );

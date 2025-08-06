@@ -42,4 +42,11 @@ declare global {
             advancedResults?: AdvancedResults;
         }
     }
+
+    interface FindVendorsQuery {
+        page?: number;
+        limit?: number;
+        category?: string;
+        status?: string;
+    }
 }

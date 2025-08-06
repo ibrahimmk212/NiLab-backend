@@ -9,6 +9,7 @@ import auth from '../../middlewares/auth';
 import { ROLE } from '../../../constants';
 import webhookRouter from './webhooks';
 import publicRouter from './public';
+import fileRouter from './file';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -36,4 +37,5 @@ router.use('/public', publicRouter);
 router.use('/admin', auth.isAdmin, adminsRouter);
 
 router.use('/users', usersRouter);
+router.use('/file', fileRouter);
 export default router;

@@ -9,7 +9,7 @@ const customerVendorRouter: Router = Router({ mergeParams: true });
 
 customerVendorRouter.get(
     '/',
-    // advancedQuery(VendorModel, 'categories'),
+    // advancedQuery(VendorModel, 'marketCategoryId'),
     vendorController.getVendors
 );
 customerVendorRouter.get('/nearby', vendorController.getNearbyVendors);
