@@ -36,7 +36,7 @@ export function createServer(): Application {
     app.use(cors(corsOption));
     app.use(compression());
     app.use(MorganMiddleware);
-    app.use(expressfileupload());
+    // app.use(expressfileupload());
     app.use(`/api/${AppConfig.app.apiVersion}`, routesV1);
 
     app.get('/', (req: Request, res: Response) => {
