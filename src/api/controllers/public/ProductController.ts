@@ -45,7 +45,7 @@ class ProductController {
                 ...restFilters
             } = req.query;
 
-            const result = await ProductService.getAll();
+            const result = await ProductService.getAll(req.query);
             // TODO populate categories
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',

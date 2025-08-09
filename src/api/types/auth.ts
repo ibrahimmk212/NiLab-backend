@@ -56,6 +56,7 @@ export type VendorType = {
     description?: string;
     logo?: string;
     banner?: string;
+    marketCategoryId: string;
 };
 export type VendorSignUpType = {
     email: string;

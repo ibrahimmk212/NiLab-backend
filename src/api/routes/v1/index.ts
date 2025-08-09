@@ -23,11 +23,7 @@ router.use(
     customersRouter
 );
 
-router.use(
-    '/vendor',
-    // auth.isVendor,
-    vendorsRouter
-);
+router.use('/vendor', auth.isVendor, vendorsRouter);
 router.use(
     '/rider',
     //  auth.isRider,

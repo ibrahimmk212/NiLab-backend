@@ -157,7 +157,10 @@ class Auth {
                 });
             }
 
-            if (req.path !== '/location' && vendor.status != 'active') {
+            if (
+                // req.path !== '/location' &&
+                vendor.status != 'active'
+            ) {
                 return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'Vendor Not Active'

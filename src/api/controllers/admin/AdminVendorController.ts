@@ -114,9 +114,12 @@ class AdminVendorController {
             if (!vendor) {
                 throw Error('Vendor not found');
             }
-            if (body.status === 'active' && !vendor.location.coordinates) {
-                throw Error('Location data is missing');
-            }
+            // if (
+            //     body.status === 'active'
+            //     //  && !vendor.location.coordinates
+            // ) {
+            // throw Error('Location data is missing');
+            // }
             const update = await VendorService.update(id, body);
             if (!update) {
                 throw Error(' Could not update vendor');

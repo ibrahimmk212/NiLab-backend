@@ -12,6 +12,7 @@ import appConfig from '../../config/appConfig';
 import bcrypt from 'bcrypt';
 import emails from '../libraries/emails';
 import { generateRandomNumbers } from '../../utils/helpers';
+import MarketCategoryRepository from '../repositories/MarketCategoryRepository';
 
 interface IAuthService {
     login(payload: LoginType): Promise<{ token: string; user: User }>;
@@ -208,8 +209,14 @@ class AuthService implements IAuthService {
         if (!savedData) {
             throw Error('Invalid token');
         }
-        console.log('payload', payload);
-        console.log('saved Data', savedData);
+        // check existing Market Category
+        const existingMarketCategory =
+            await MarketCategoryRepository.findMarketCategoryById(
+                payload.vendor?.marketCategoryId as string
+            );
+        if (!existingMarketCategory) {
+            throw Error('Market Category not found');
+        }
         const user =
             savedData.purpose === 'email-verify'
                 ? await UserRepository.findUserByKey(

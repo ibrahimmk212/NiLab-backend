@@ -10,34 +10,11 @@ class ProductController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { vendorId } = req.params;
-
-            const { limit = 10, page = 1, search = '', category } = req.query;
-
-            const queryParams = { vendor: vendorId };
-
-            const { products, count, pagination, total } = category
-                ? await ProductService.getProductsByOption(
-                      {
-                          vendor: vendorId,
-                          category
-                      },
-                      Number(limit),
-                      Number(page)
-                  )
-                : await ProductService.searchProducts(
-                      search as string,
-                      Number(limit),
-                      Number(page),
-                      queryParams
-                  );
-
-            res.status(STATUS.OK).json({
+            const products = await ProductService.getAll(req.query);
+            res.status(STATUS.OK).send({
                 success: true,
-                total,
-                count,
-                pagination,
-                data: products
+                message: 'products fetched successfully',
+                ...products
             });
         }
     );
