@@ -10,6 +10,7 @@ import { ROLE } from '../../../constants';
 import webhookRouter from './webhooks';
 import publicRouter from './public';
 import fileRouter from './file';
+import dashboardRouter from './dashboard';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -34,4 +35,5 @@ router.use('/admin', auth.isAdmin, adminsRouter);
 
 router.use('/users', usersRouter);
 router.use('/file', fileRouter);
+router.use('/dashboard', dashboardRouter);
 export default router;

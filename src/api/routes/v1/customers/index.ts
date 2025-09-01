@@ -10,11 +10,13 @@ import ProfileController from '../../../controllers/customers/ProfileController'
 import customerFavouriteRouter from './favourites';
 import customerPromotionRouter from './promotions';
 import customerMarketCategoryRouter from './marketCategory';
+import customerProductRouter from './products';
 
 const customersRouter: Router = Router();
 
 // customersRouter.use('/products', customerProductRouter); only through reroute
 customersRouter.use('/orders', customerOrderRouter);
+customersRouter.use('/products', customerProductRouter); // Products are accessed through vendors
 customersRouter.use('/vendors', customerVendorRouter);
 customersRouter.use('/reviews', customerReviewRouter);
 customersRouter.use('/promotions', customerPromotionRouter);

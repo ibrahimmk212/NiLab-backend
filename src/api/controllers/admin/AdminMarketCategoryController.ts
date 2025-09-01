@@ -46,7 +46,7 @@ class AdminVendorCategoryController {
     );
     getAll = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const product = await VendorCategoryService.getAll();
+            const product = await VendorCategoryService.findAll(req.query);
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',

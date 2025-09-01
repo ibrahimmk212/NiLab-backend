@@ -1,14 +1,7 @@
-import { MarketCategory } from '../models/MarketCategory';
+import MarketCategoryModel, { MarketCategory } from '../models/MarketCategory';
 import MarketCategoryRepository from '../repositories/MarketCategoryRepository';
-interface IMarketCategoryService {
-    create(payload: any): Promise<any>;
-    getAll(): Promise<any[]>;
-    // get(Id: string): Promise<any>;
-    // update(Id: string, data: any): Promise<boolean>;
-    // delete(userId: string): Promise<boolean>;
-}
 
-class MarketCategoryService implements IMarketCategoryService {
+class MarketCategoryService {
     async create(payload: MarketCategory): Promise<any> {
         return await MarketCategoryRepository.createMarketCategory(payload);
     }
@@ -20,8 +13,38 @@ class MarketCategoryService implements IMarketCategoryService {
     async find(id: string): Promise<any> {
         return await MarketCategoryRepository.findMarketCategoryById(id);
     }
-    async getAll(): Promise<any> {
-        return await MarketCategoryRepository.getAll();
+    async findAll(options: any) {
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const filter: Record<string, any> = {};
+
+        if (options.name) {
+            filter.name = { $regex: options.name, $options: 'i' };
+        }
+
+        const [marketCategories, total] = await Promise.all([
+            MarketCategoryModel.find(filter)
+                .populate('categories')
+                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .skip(skip)
+                .limit(limit),
+            MarketCategoryModel.countDocuments(filter)
+        ]);
+
+        return {
+            total,
+            count: marketCategories.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: marketCategories
+        };
     }
 }
 export default new MarketCategoryService();
