@@ -40,6 +40,13 @@ class OrderService {
         return await OrderRepository.findOrderByVendor(vendorId, data);
     }
 
+    async getVendorRecentOrders(
+        vendorId: string,
+        limit: number
+    ): Promise<Order[] | null> {
+        return await OrderRepository.findVendorRecentOrders(vendorId, limit);
+    }
+
     async getOrdersByCustomer(
         customerId: string,
         limit: number,

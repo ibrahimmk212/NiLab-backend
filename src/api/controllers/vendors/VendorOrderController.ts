@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
@@ -30,6 +31,23 @@ class VendorOrderController {
 
             res.status(STATUS.OK).send({
                 message: 'Orders fetched successfully',
+                data: orders
+            });
+        }
+    );
+
+    getRecent = asyncHandler(
+        async (req: Request | any, res: Response): Promise<any> => {
+            const { vendor } = req;
+            const limit = parseInt(req.query.limit) || 5;
+
+            const orders = await OrderService.getVendorRecentOrders(
+                vendor.id,
+                limit
+            );
+
+            res.status(STATUS.OK).send({
+                message: 'Recent Orders fetched successfully',
                 data: orders
             });
         }

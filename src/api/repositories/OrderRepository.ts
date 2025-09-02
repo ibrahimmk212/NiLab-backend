@@ -15,6 +15,17 @@ class OrderRepository {
     async findOrderById(orderId: string): Promise<Order | null> {
         return await OrderModel.findById(orderId).populate(this.populatedData);
     }
+
+    async findVendorRecentOrders(
+        vendorId: string,
+        limit: number
+    ): Promise<Order[] | null> {
+        return await OrderModel.find({ vendor: vendorId })
+            .populate(this.populatedData)
+            .sort({ createdAt: -1 })
+            .limit(limit);
+    }
+
     async findOrderByReference(
         paymentReference: string
     ): Promise<Order | null> {

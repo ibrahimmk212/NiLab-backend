@@ -27,10 +27,14 @@ class DashboardRepository {
 
     // Vendor dashboard summary
     async getVendorSummary(vendorId: string) {
-        const productsCount = await ProductModel.countDocuments({ vendorId });
-        const ordersCount = await OrderModel.countDocuments({ vendorId });
+        const productsCount = await ProductModel.countDocuments({
+            vendor: vendorId
+        });
+        const ordersCount = await OrderModel.countDocuments({
+            vendor: vendorId
+        });
         const revenue = await OrderModel.aggregate([
-            { $match: { vendorId, status: 'completed' } },
+            { $match: { vendor: vendorId, status: 'completed' } },
             { $group: { _id: null, total: { $sum: '$amount' } } }
         ]);
 

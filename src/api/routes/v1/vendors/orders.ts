@@ -13,6 +13,7 @@ vendorOrderRouter.get(
     VendorOrderController.getAll
 );
 
+vendorOrderRouter.get('/recent/all', VendorOrderController.getRecent);
 vendorOrderRouter.get('/:id', VendorOrderController.getSingle);
 // vendorOrderRouter.put(
 //     '/:id',
