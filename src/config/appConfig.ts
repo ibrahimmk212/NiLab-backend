@@ -42,9 +42,8 @@ const AppConfig = {
         fromName: process.env.FROM_NAME,
         fromEmail: process.env.FROM_EMAIL
     },
-    corsWhiteList: {
-        corsWhiteList: process.env.CORS_WHITELIST || '*'
-    }
+    corsWhiteList: ['*']
+    // corsWhiteList: (process.env.CORS_WHITELIST as string) || ''
 };
 
 export default Object.freeze(AppConfig);
