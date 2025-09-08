@@ -13,21 +13,12 @@ import expressfileupload from 'express-fileupload';
 export function createServer(): Application {
     const app = express();
 
-    const whitelist = AppConfig.corsWhiteList || ['*'];
-
     const corsOptions = {
         origin: (
             origin: string | undefined,
             callback: (err: Error | null, allow?: boolean) => void
         ) => {
             console.log('CORS check for origin:', origin);
-
-            // allow requests with no origin (like curl, Postman)
-            if (!origin || whitelist.includes(origin)) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
-            }
         },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
