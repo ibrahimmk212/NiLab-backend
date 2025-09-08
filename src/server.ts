@@ -13,32 +13,32 @@ import expressfileupload from 'express-fileupload';
 export function createServer(): Application {
     const app = express();
 
-    // Getting cors enabled domain  from env
-    const domainsFromEnv = process.env.CORS_DOMAINS || 'http://localhost:3000';
+    const corsOptions = {
+        origin: (
+            origin: string | undefined,
+            callback: (err: Error | null, allow?: boolean) => void
+        ) => {
+            console.log('CORS check for origin:', origin);
 
-    const whitelist = domainsFromEnv.split(',').map((item) => item.trim());
-
-    console.log(whitelist);
-    const corsOption = {
-        origin: function (origin: any, callback: any) {
-            console.log('origin', origin);
-            if (!origin || whitelist.indexOf(origin) !== -1) {
+            // allow requests with no origin (like curl, Postman)
+            if (!origin || whitelist.includes(origin)) {
                 callback(null, true);
             } else {
-                callback(Error('Not allowed by CORS'));
+                callback(new Error('Not allowed by CORS'));
             }
         },
-        credentials: true
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
     };
+
+    // apply CORS for all requests
+    app.use(cors(corsOptions));
+    // make sure preflight OPTIONS requests are handled too
+    app.options('*', cors(corsOptions));
 
     app.use(express.urlencoded({ extended: false }));
     app.use(express.json());
-    // app.use(cors(corsOption));
-    app.use(
-        cors({
-            origin: '*'
-        })
-    );
     app.use(compression());
     app.use(MorganMiddleware);
     // app.use(expressfileupload());
