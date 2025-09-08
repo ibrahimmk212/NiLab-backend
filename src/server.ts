@@ -13,6 +13,8 @@ import expressfileupload from 'express-fileupload';
 export function createServer(): Application {
     const app = express();
 
+    const whitelist = AppConfig.app.corsWhiteList.split(',');
+
     const corsOptions = {
         origin: (
             origin: string | undefined,

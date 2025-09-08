@@ -41,6 +41,9 @@ const AppConfig = {
 
         fromName: process.env.FROM_NAME,
         fromEmail: process.env.FROM_EMAIL
+    },
+    corsWhiteList: {
+        corsWhiteList: process.env.CORS_WHITELIST || '*'
     }
 };
 
