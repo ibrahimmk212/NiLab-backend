@@ -33,7 +33,12 @@ export function createServer(): Application {
 
     app.use(express.urlencoded({ extended: false }));
     app.use(express.json());
-    app.use(cors(corsOption));
+    // app.use(cors(corsOption));
+    app.use(
+        cors({
+            origin: '*'
+        })
+    );
     app.use(compression());
     app.use(MorganMiddleware);
     // app.use(expressfileupload());
