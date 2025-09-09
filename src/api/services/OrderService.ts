@@ -30,8 +30,8 @@ class OrderService {
         const serviceFee = (deliveryFee * config.serviceFee) / 100;
         return Math.min(serviceFee, config.maxServiceFee);
     }
-    async getAll(): Promise<Order[] | null> {
-        return await OrderRepository.findAll();
+    async getAll(options: any): Promise<any> {
+        return await OrderRepository.findAll(options);
     }
     async getOrdersByVendor(
         vendorId: string,

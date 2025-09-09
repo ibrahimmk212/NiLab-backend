@@ -96,11 +96,14 @@ class VendorProductController {
         ): Promise<void> => {
             const { vendor } = req;
             // TODO set pagination and filter
-            const product = await ProductService.getAllByVendor(vendor.id);
+            const product = await ProductService.getAll({
+                ...req.query,
+                vendorId: vendor.id
+            });
             // TODO populate categories
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
-                data: product
+                ...product
             });
         }
     );

@@ -47,18 +47,80 @@ class OrderRepository {
             .sort({ createdAt: -1 })
             .populate(this.populatedData);
     }
-    async findAll(): Promise<Order[] | null> {
-        // const total = await OrderModel.countDocuments();
-        // const page = parseInt(data.page?.toString() || '1', 10);
-        // const limit = parseInt(data.limit?.toString() || `${total}`, 10);
-        // const startIndex = (page - 1) * limit;
-        // const endIndex = page * limit;
-        // .skip(startIndex)
-        // .limit(limit)
+    async findAll(options: any) {
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const skip = (page - 1) * limit;
 
-        return await OrderModel.find()
-            .populate(this.populatedData)
-            .sort({ createdAt: -1 });
+        const filter: Record<string, any> = {};
+
+        if (options.vendorId) {
+            filter.vendor = options.vendorId;
+        }
+        if (options.customerId) {
+            filter.user = options.customerId;
+        }
+        if (options.categoryId) {
+            filter.category = options.categoryId;
+        }
+        if (options.name) {
+            filter.name = { $regex: options.name, $options: 'i' };
+        }
+        if (options.status) {
+            filter.status = options.status;
+        }
+        if (options.search) {
+            filter.$text = { $search: options.search };
+        }
+        if (options.ratings) {
+            filter.ratings = { $gte: options.ratings };
+        }
+        if (options.price) {
+            filter.price = { $gte: options.price };
+        }
+        if (options.description) {
+            filter.description = { $regex: options.description, $options: 'i' };
+        }
+        if (options.images) {
+            filter.images = { $exists: true, $ne: [] };
+        }
+        if (options.thumbnail) {
+            filter.thumbnail = { $exists: true, $ne: '' };
+        }
+        if (options.createdAt) {
+            filter.createdAt = { $gte: new Date(options.createdAt) };
+        }
+        if (options.updatedAt) {
+            filter.updatedAt = { $gte: new Date(options.updatedAt) };
+        }
+        if (options.sortBy) {
+            filter.sortBy = options.sortBy;
+        }
+        if (options.sortOrder) {
+            filter.sortOrder = options.sortOrder;
+        }
+
+        const [orders, total] = await Promise.all([
+            OrderModel.find(filter)
+                .populate('categories')
+                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .skip(skip)
+                .limit(limit),
+            OrderModel.countDocuments(filter)
+        ]);
+
+        return {
+            total,
+            count: orders.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: orders
+        };
     }
     async findOrderByCustomer(
         customerId: string,

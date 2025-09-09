@@ -16,22 +16,16 @@ class VendorOrderController {
             next: NextFunction
         ): Promise<any> => {
             const { vendor }: any = req;
-            const { status, limit, page } = req.query;
-            const pagination = {
-                limit: page ?? 10,
-                page: page ?? 10
-            };
-            const queryParams: any = {};
-            if (status) queryParams.status = status;
 
-            const orders = await OrderService.getOrdersByVendor(vendor.id, {
-                ...pagination,
-                queryParams
+            const orders = await OrderService.getAll({
+                ...req.query,
+                vendorId: vendor.id
             });
+            // const orders = await OrderService.getOrdersByVendor(vendor.id);
 
             res.status(STATUS.OK).send({
                 message: 'Orders fetched successfully',
-                data: orders
+                ...orders
             });
         }
     );

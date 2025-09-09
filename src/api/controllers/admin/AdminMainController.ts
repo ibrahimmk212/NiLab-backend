@@ -68,7 +68,7 @@ class AdminMainController {
                 };
             });
 
-            const orders = await OrderService.getAll();
+            const orders = await OrderService.getAll(req.query);
             // [];
             analytics.latestOrderData = orders?.slice(0, 5);
 

@@ -4,14 +4,13 @@ import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 
 class AdminOrderController {
-    
     getAll = asyncHandler(
         async (
             req: Request,
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const orders = await OrderService.getAll();
+            const orders = await OrderService.getAll(req.query);
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Orders fetched successfully',
