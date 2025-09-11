@@ -49,7 +49,7 @@ class ProductController {
             // TODO populate categories
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
-                data: result
+                ...result
             });
         }
     );

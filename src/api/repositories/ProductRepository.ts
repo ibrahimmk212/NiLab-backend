@@ -74,7 +74,7 @@ class ProductRepository {
 
         const [products, total] = await Promise.all([
             ProductModel.find(filter)
-                .populate('categories')
+                .populate('category vendor')
                 .sort({ createdAt: -1 }) // Sort by createdAt descending
                 .skip(skip)
                 .limit(limit),

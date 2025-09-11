@@ -12,21 +12,21 @@ interface IProductService {
 
 class ProductService implements IProductService {
     async create(payload: CreateProductType): Promise<any> {
-        return ProductRepository.createProduct(payload);
+        return await ProductRepository.createProduct(payload);
     }
 
     async findById(id: string): Promise<Product | null> {
-        return ProductRepository.findProductById(id);
+        return await ProductRepository.findProductById(id);
     }
     async getAll(data: any): Promise<any> {
-        return ProductRepository.getAll(data);
+        return await ProductRepository.getAll(data);
     }
     async getAllByVendor(vendorId: any): Promise<Product[] | null> {
-        return ProductRepository.getAllByVendor(vendorId);
+        return await ProductRepository.getAllByVendor(vendorId);
     }
 
     async getAllByCategory(categoryId: any): Promise<Product[] | null> {
-        return ProductRepository.getAllByCategory(categoryId);
+        return await ProductRepository.getAllByCategory(categoryId);
     }
     async getProductsByOption(
         options: Record<string, unknown>,
@@ -57,7 +57,7 @@ class ProductService implements IProductService {
         productId: string,
         updateData: Partial<Product>
     ): Promise<any> {
-        return ProductRepository.updateProduct(productId, updateData);
+        return await ProductRepository.updateProduct(productId, updateData);
     }
 }
 export default new ProductService();
