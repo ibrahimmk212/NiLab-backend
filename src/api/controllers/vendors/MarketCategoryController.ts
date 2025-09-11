@@ -10,11 +10,13 @@ class VendorMarketCategoryController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const product = await MarketCategoryService.findAll(req.query);
+            const marketCategory = await MarketCategoryService.findAll(
+                req.query
+            );
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',
-                data: product
+                ...marketCategory
             });
         }
     );
@@ -25,11 +27,11 @@ class VendorMarketCategoryController {
             next: NextFunction
         ): Promise<void> => {
             const { id } = req.params;
-            const product = await MarketCategoryService.find(id);
+            const marketCategory = await MarketCategoryService.find(id);
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',
-                data: product
+                data: marketCategory
             });
         }
     );
