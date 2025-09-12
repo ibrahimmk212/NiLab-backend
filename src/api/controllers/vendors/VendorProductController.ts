@@ -147,6 +147,15 @@ class VendorProductController {
             const { vendor, body, params } = req;
             const { id } = params;
 
+            const getProduct = await ProductService.findById(id);
+
+            if (!getProduct) {
+                throw Error('Product not found');
+            }
+            if (getProduct.vendor._id.toString() !== vendor.id) {
+                throw Error('Unauthorized');
+            }
+
             const newProduct = await ProductService.update(id, body);
             if (!newProduct) {
                 throw Error('Failed to update Product');

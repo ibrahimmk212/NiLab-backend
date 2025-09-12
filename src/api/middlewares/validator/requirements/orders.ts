@@ -50,7 +50,11 @@ const orderRequirement = {
             // .contains(['delivered', 'canceled'], { ignoreCase: false })
             .withMessage('Invalid status, you can only cancel or confirm order')
     ],
-    updateStatus: [param('id').isString(), body('status').isString()]
+    updateStatus: [
+        param('id').isString(),
+        body('status').isString(),
+        body('reason').isString().optional()
+    ]
 };
 
 export default orderRequirement;

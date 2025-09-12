@@ -11,7 +11,7 @@ const customerCategoryRouter: Router = Router();
 customerCategoryRouter.get(
     '/',
     advancedQuery(CategoryModel),
-    CategoryController.getCategories
+    CategoryController.getAll
 );
 
 customerCategoryRouter.use('/:categoryId/vendors', customerVendorRouter);

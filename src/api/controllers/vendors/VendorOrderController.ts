@@ -155,7 +155,7 @@ class VendorOrderController {
             if (status === 'preparing') {
                 if (!order.paymentCompleted)
                     return res.status(STATUS.OK).json({
-                        jsuccess: false,
+                        success: false,
                         message:
                             'Order not paid, please wait for customer to complete payment'
                     });

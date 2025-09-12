@@ -21,7 +21,7 @@ const productRequirement = {
     ],
     getSingle: [param('id').isInt()],
     update: [
-        param('id').isInt(),
+        param('id').isString(),
         body('name').isString().optional({ nullable: true }),
         body('price').isNumeric().optional({ nullable: true }),
         body('available')
