@@ -48,8 +48,8 @@ class OrderRepository {
             .populate(this.populatedData);
     }
     async findAll(options: any) {
-        const page = options.page || 1;
-        const limit = options.limit || 10;
+        const page = Number(options.page) || 1;
+        const limit = Number(options.limit) || 10;
         const skip = (page - 1) * limit;
 
         const filter: Record<string, any> = {};

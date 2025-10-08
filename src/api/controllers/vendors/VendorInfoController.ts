@@ -9,6 +9,7 @@ import { LoginType } from '../../types/auth';
 import AuthService from '../../services/AuthService';
 import OrderService from '../../services/OrderService';
 import dayjs from 'dayjs';
+import MarketCategoryService from '../../services/MarketCategoryService';
 
 class VendorInfoController {
     currentUser = asyncHandler(
@@ -21,10 +22,14 @@ class VendorInfoController {
                 owner: vendor.id
             });
 
+            const marketCategory = await MarketCategoryService.find(
+                vendor?.marketCategoryId.toString()
+            );
+
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'User fetched successfully',
-                data: { user: userdata, vendor, wallet }
+                data: { user: userdata, vendor, marketCategory, wallet }
             });
         }
     );

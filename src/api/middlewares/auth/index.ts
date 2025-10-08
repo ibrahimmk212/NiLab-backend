@@ -5,6 +5,7 @@ import { ROLE, STATUS } from '../../../constants';
 import VendorRepository from '../../repositories/VendorRepository';
 import RiderRepository from '../../repositories/RiderRepository';
 import AdminService from '../../services/AdminService';
+import MarketCategoryRepository from '../../repositories/MarketCategoryRepository';
 
 class Auth {
     async authenticate(
@@ -150,12 +151,21 @@ class Auth {
                 'userId',
                 userdata.id
             );
+
             if (!vendor) {
                 return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
                     message: 'Invalid Vendor'
                 });
             }
+            const marketCategory =
+                await MarketCategoryRepository.findMarketCategoryById(
+                    vendor?.marketCategoryId.toString()
+                );
+
+            // if (marketCategory) {
+            //     vendor.marketCategory = marketCategory;
+            // }
 
             if (
                 // req.path !== '/location' &&
@@ -168,6 +178,7 @@ class Auth {
             }
 
             req.userdata = userdata;
+            // req.vendor.marketCategory = marketCategory;
             req.vendor = vendor;
             next();
         } catch (e: any) {

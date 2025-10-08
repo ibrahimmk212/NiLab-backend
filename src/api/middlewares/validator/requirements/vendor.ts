@@ -28,8 +28,8 @@ const vendorRequirement = {
     ],
     getUserDetail: [param('id').isInt()],
     update: [
-        param('id').isString(),
-        body('name').isString(),
+        // param('id').isString(),
+        body('name').isString().optional({ nullable: true }),
         // body('email').isEmail(),
         // body('phone').isString().isLength({ min: 11 }),
         body('address').isString().optional({ nullable: true }),

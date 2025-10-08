@@ -150,6 +150,14 @@ vendorSchema.virtual('staffs', {
     justOne: false
 });
 
+// reverse populate Market Category
+vendorSchema.virtual('marketCategory', {
+    ref: 'MarketCategory',
+    localField: 'marketCategoryId',
+    foreignField: '_id',
+    justOne: true
+});
+
 vendorSchema.post('save', async function (vendor) {
     try {
         if (vendor.isNew) {

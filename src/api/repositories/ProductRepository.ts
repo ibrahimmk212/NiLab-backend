@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import ProductModel, { Product } from '../models/Product';
 import { CreateProductType } from '../types/product';
 
@@ -20,8 +21,8 @@ class ProductRepository {
 
     // Find all vendor
     async getAll(options: any) {
-        const page = options.page || 1;
-        const limit = options.limit || 10;
+        const page = Number(options.page) || 1;
+        const limit = Number(options.limit) || 10;
         const skip = (page - 1) * limit;
 
         const filter: Record<string, any> = {};

@@ -29,12 +29,18 @@ class VendorRepository {
 
     // Find a vendor by ID
     async findById(vendorId: string): Promise<Vendor | null> {
-        return await VendorModel.findById({ _id: vendorId }).populate(
-            'products categories'
-        );
+        return await VendorModel.findById({ _id: vendorId }).populate([
+            { path: 'products' },
+            { path: 'categories' },
+            { path: 'marketCategory' }
+        ]);
     }
     async findByKey(key: string, value: string): Promise<Vendor | null> {
-        return await VendorModel.findOne({ [key]: value });
+        return await VendorModel.findOne({ [key]: value }).populate([
+            { path: 'products' },
+            { path: 'categories' },
+            { path: 'marketCategory' }
+        ]);
     }
     // find vendors options
     async findVendorsByOption(
@@ -49,7 +55,7 @@ class VendorRepository {
         const vendors = await VendorModel.find(options)
             .skip(startIndex)
             .limit(limit)
-            .populate('categories');
+            .populate({ path: 'products' });
 
         // Pagination results
         const pagination: any = {};
@@ -153,7 +159,7 @@ class VendorRepository {
 
         const [vendors, total] = await Promise.all([
             VendorModel.find(filter)
-                .populate('categories')
+                .populate('categories marketCategory')
                 .sort({ createdAt: -1 }) // Sort by createdAt descending
                 .skip(skip)
                 .limit(limit),
@@ -186,8 +192,7 @@ class VendorRepository {
         const vendors = await VendorModel.find(searchQuery)
             .skip(startIndex)
             .limit(limit)
-            .populate('categories');
-
+            .populate('categories marketCategory products');
         // Pagination results
         const pagination: any = {};
         if (endIndex < total) {
