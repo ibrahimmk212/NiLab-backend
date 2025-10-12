@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from 'express';
 import JWT from '../../../utils/jwt';
 import UserRepository from '../../repositories/UserRepository';
@@ -45,9 +46,24 @@ class Auth {
             req.userdata = userdata;
 
             next();
-        } catch (err) {
-            console.log(err);
-            throw Error(`Invalid Token`);
+        } catch (err: any) {
+            console.log('JWT Error:', err.name, err.message);
+            if (err.name === 'TokenExpiredError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Token expired'
+                });
+            }
+            if (err.name === 'JsonWebTokenError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Invalid token'
+                });
+            }
+            return res.status(STATUS.UNAUTHORIZED).json({
+                success: false,
+                message: 'Authentication failed'
+            });
         }
     }
     async isAdmin(
@@ -101,10 +117,23 @@ class Auth {
             req.admin = admin;
 
             next();
-        } catch (e: any) {
+        } catch (err: any) {
+            console.log('JWT Error:', err.name, err.message);
+            if (err.name === 'TokenExpiredError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Token expired'
+                });
+            }
+            if (err.name === 'JsonWebTokenError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Invalid token'
+                });
+            }
             return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
-                message: e?.message
+                message: 'Authentication failed'
             });
         }
     }
@@ -181,10 +210,23 @@ class Auth {
             // req.vendor.marketCategory = marketCategory;
             req.vendor = vendor;
             next();
-        } catch (e: any) {
+        } catch (err: any) {
+            console.log('JWT Error:', err.name, err.message);
+            if (err.name === 'TokenExpiredError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Token expired'
+                });
+            }
+            if (err.name === 'JsonWebTokenError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Invalid token'
+                });
+            }
             return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
-                message: 'Error validating vendor'
+                message: 'Authentication failed'
             });
         }
     }
@@ -249,10 +291,23 @@ class Auth {
             req.userdata = userdata;
             req.rider = rider;
             next();
-        } catch (e: any) {
+        } catch (err: any) {
+            console.log('JWT Error:', err.name, err.message);
+            if (err.name === 'TokenExpiredError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Token expired'
+                });
+            }
+            if (err.name === 'JsonWebTokenError') {
+                return res.status(STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: 'Invalid token'
+                });
+            }
             return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
-                message: 'Error validating rider'
+                message: 'Authentication failed'
             });
         }
     }
