@@ -78,6 +78,23 @@ class AdminOrderController {
             // }
         }
     );
+
+    completeOrderPayment = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const { orderId } = req.params;
+            const completedPayment = await OrderService.updateOrder(orderId, {
+                paymentCompleted: true
+            });
+            if (!completedPayment) {
+                throw Error(' Could not complete order payment');
+            }
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Order payment completed successfully',
+                data: completedPayment
+            });
+        }
+    );
 }
 
 export default new AdminOrderController();

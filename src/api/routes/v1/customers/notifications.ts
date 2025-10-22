@@ -1,17 +1,20 @@
 import { Router } from 'express';
-import { Validate, Requirements } from '../../../middlewares/validator';
-import Auth from '../../../middlewares/auth';
 import NotificationController from '../../../controllers/customers/NotificationController';
-import advancedQuery from '../../../../api/middlewares/data/advancedQuery';
-
-import NotificationModel from '../../../../api/models/Notification';
 
 const customerNotificationRouter: Router = Router();
 
+customerNotificationRouter.get('/', NotificationController.getNotifications);
+customerNotificationRouter.put(
+    '/:notificationId/read',
+    NotificationController.markAsRead
+);
+customerNotificationRouter.put(
+    '/:notificationId/unread',
+    NotificationController.markAsUnread
+);
 customerNotificationRouter.get(
-    '/',
-    advancedQuery(NotificationModel),
-    NotificationController.getNotifications
+    '/:notificationId',
+    NotificationController.getNotificationById
 );
 
 export default customerNotificationRouter;

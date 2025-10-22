@@ -9,7 +9,7 @@ class NotificationController {
         async (req: any, res: Response): Promise<void> => {
             const Notifications = await NotificationService.getAll({
                 ...req.query,
-                riderId: req.rider.id
+                vendorId: req.vendor.id
             });
             res.status(STATUS.OK).send({
                 success: true,
@@ -27,9 +27,10 @@ class NotificationController {
                 notificationId
             );
 
-            if (notification.riderId.toString() !== req.rider.id) {
+            if (notification.vendorId.toString() !== req.vendor.id) {
                 throw Error('Unauthorized');
             }
+
             res.status(STATUS.OK).json({
                 success: true,
                 data: notification
@@ -47,7 +48,7 @@ class NotificationController {
                 throw Error('Failed to update status');
             }
 
-            if (notification.riderId.toString() !== req.rider.id) {
+            if (notification.toString() !== req.vendor.id) {
                 throw Error('Unauthorized');
             }
 
@@ -73,7 +74,7 @@ class NotificationController {
                 throw Error('Failed to update status');
             }
 
-            if (notification.riderId.toString() !== req.rider.id) {
+            if (notification.vendorId.toString() !== req.vendor.id) {
                 throw Error('Unauthorized');
             }
 
@@ -99,7 +100,7 @@ class NotificationController {
                 throw Error('Failed to delete status');
             }
 
-            if (notification.riderId.toString() !== req.rider.id) {
+            if (notification.vendorId.toString() !== req.vendor.id) {
                 throw Error('Unauthorized');
             }
 

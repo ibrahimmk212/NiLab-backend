@@ -13,11 +13,6 @@ class ProductRepository {
             'category vendor'
         );
     }
-    // async getAll(): Promise<Product[] | null> {
-    //     return await ProductModel.find()
-    //         .populate('category vendor')
-    //         .sort({ name: 'asc' });
-    // }
 
     // Find all vendor
     async getAll(options: any) {

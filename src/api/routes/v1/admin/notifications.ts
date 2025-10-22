@@ -1,7 +1,35 @@
 import { Router } from 'express';
-import { Validate, Requirements } from '../../../middlewares/validator';
-import Auth from '../../../middlewares/auth';
+import NotificationController from '../../../controllers/admin/NotificationController';
 
-const adminNotificationRouter: Router = Router();
+const customerNotificationRouter: Router = Router();
 
-export default adminNotificationRouter;
+customerNotificationRouter.get('/', NotificationController.getNotifications);
+customerNotificationRouter.put(
+    '/:notificationId/read',
+    NotificationController.markAsRead
+);
+customerNotificationRouter.put(
+    '/:notificationId/unread',
+    NotificationController.markAsUnread
+);
+customerNotificationRouter.put(
+    '/:notificationId',
+    NotificationController.getNotificationById
+);
+
+customerNotificationRouter.delete(
+    '/:notificationId',
+    NotificationController.delete
+);
+
+customerNotificationRouter.put(
+    '/:notificationId',
+    NotificationController.update
+);
+
+customerNotificationRouter.post(
+    '/:notificationId',
+    NotificationController.create
+);
+
+export default customerNotificationRouter;

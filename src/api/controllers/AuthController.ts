@@ -19,11 +19,18 @@ import ConfigurationService from '../services/ConfigurationService';
 import CouponService from '../services/CouponService';
 import PromotionService from '../services/PromotionService';
 import dayjs from 'dayjs';
+import NotificationService from '../services/NotificationService';
 
 class AuthController {
     login = asyncHandler(async (req: Request, res: Response): Promise<any> => {
         const payload: LoginType = req.body;
         const { token, user } = await AuthService.login(payload);
+
+        // Login notification for test
+        const notificationDetail: any = {
+            message: 'Welcome to Nilab!',
+            subject: 'Successfully logged in'
+        };
 
         if (user.role === 'admin') {
             const admin = await AdminService.getByUserId(user.id);
@@ -52,6 +59,9 @@ class AuthController {
             if (payload.deviceToken) user.deviceToken = payload.deviceToken;
             await user.save();
 
+            notificationDetail.vendorId = vendor.id;
+            NotificationService.create(notificationDetail);
+
             return res.status(STATUS.OK).send({
                 message: 'Logged in successfully',
                 success: true,
@@ -64,7 +74,9 @@ class AuthController {
         } else if (user.role == 'user') {
             if (payload.deviceToken) user.deviceToken = payload.deviceToken;
             await user.save();
+            notificationDetail.userId = user.id;
 
+            NotificationService.create(notificationDetail);
             res.status(STATUS.OK).send({
                 message: 'Logged in successfully',
                 success: true,
@@ -151,8 +163,6 @@ class AuthController {
                     discountType: promotion.discountType,
                     isActive: promotion.isActive
                 });
-
-                console.log(coupon);
             }
         }
 

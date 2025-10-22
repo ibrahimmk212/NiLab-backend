@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
@@ -21,6 +22,7 @@ import { Address } from '../../models/User';
 import { uploadFileToS3 } from '../../../utils/s3';
 import emails from '../../libraries/emails';
 import CouponService from '../../services/CouponService';
+import NotificationService from '../../services/NotificationService';
 
 class OrderController {
     upload = asyncHandler(
@@ -136,6 +138,15 @@ class OrderController {
         }
         const order = await OrderService.createOrder(orderData);
 
+        // send Order notification
+        const customerNotification = `Your order with order code ${order.code} has been created successfully.`;
+        NotificationService.create({
+            userId: userdata.id,
+            subject: 'Order Created',
+            message: customerNotification,
+            status: 'unread'
+        });
+
         await order?.populate(OrderRepository.populatedData);
 
         if (payload.paymentType === 'cash') {
@@ -173,11 +184,11 @@ class OrderController {
                 success: false,
                 data: order,
                 payment: {
-                    merchantName: 'MDS PAYS',
+                    merchantName: 'NILAB PAYS',
                     checkoutUrl:
                         'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
                     bankName: 'Wema bank',
-                    accountName: 'MDS PAYS-Ord',
+                    accountName: 'NILAB PAYS-Ord',
                     accountNumber: '3000293913',
                     expiresOn: '2024-02-17T23:46:15',
                     totalPayable: totalAmount,
@@ -207,11 +218,11 @@ class OrderController {
                     success: false,
                     data: order,
                     payment: {
-                        merchantName: 'MDS PAYS',
+                        merchantName: 'NILAB PAYS',
                         checkoutUrl:
                             'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
                         bankName: 'Wema bank',
-                        accountName: 'MDS PAYS-Ord',
+                        accountName: 'NILAB PAYS-Ord',
                         accountNumber: '3000293913',
                         expiresOn: '2024-02-17T23:46:15',
                         totalPayable: totalAmount,
@@ -331,11 +342,11 @@ class OrderController {
                 success: false,
                 data: order,
                 payment: {
-                    merchantName: 'MDS PAYS',
+                    merchantName: 'NILAB PAYS',
                     checkoutUrl:
                         'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
                     bankName: 'Wema bank',
-                    accountName: 'MDS PAYS-Ord',
+                    accountName: 'NILAB PAYS-Ord',
                     accountNumber: '3000293913',
                     expiresOn: '2024-02-17T23:46:15',
                     totalPayable: totalAmount,
@@ -365,11 +376,11 @@ class OrderController {
                     success: false,
                     data: order,
                     payment: {
-                        merchantName: 'MDS PAYS',
+                        merchantName: 'NILAB PAYS',
                         checkoutUrl:
                             'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
                         bankName: 'Wema bank',
-                        accountName: 'MDS PAYS-Ord',
+                        accountName: 'NILAB PAYS-Ord',
                         accountNumber: '3000293913',
                         expiresOn: '2024-02-17T23:46:15',
                         totalPayable: totalAmount,
@@ -533,11 +544,11 @@ class OrderController {
                     success: false,
                     data: order,
                     payment: {
-                        merchantName: 'MDS PAYS',
+                        merchantName: 'NILAB PAYS',
                         checkoutUrl:
                             'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
                         bankName: 'Wema bank',
-                        accountName: 'MDS PAYS-Ord',
+                        accountName: 'NILAB PAYS-Ord',
                         accountNumber: '3000293913',
                         paymentReference: reference,
                         expiresOn: '2024-02-17T23:46:15',
@@ -567,11 +578,11 @@ class OrderController {
                         success: false,
                         data: order,
                         payment: {
-                            merchantName: 'MDS PAYS',
+                            merchantName: 'NILAB PAYS',
                             checkoutUrl:
                                 'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
                             bankName: 'Wema bank',
-                            accountName: 'MDS PAYS-Ord',
+                            accountName: 'NILAB PAYS-Ord',
                             accountNumber: '3000293913',
                             expiresOn: '2024-02-17T23:46:15',
                             paymentReference: reference,
