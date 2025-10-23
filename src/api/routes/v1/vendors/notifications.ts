@@ -1,20 +1,25 @@
 import { Router } from 'express';
 import NotificationController from '../../../controllers/vendors/NotificationController';
 
-const customerNotificationRouter: Router = Router();
+const vendorNotificationRouter: Router = Router();
 
-customerNotificationRouter.get('/', NotificationController.getNotifications);
-customerNotificationRouter.put(
+vendorNotificationRouter.get('/', NotificationController.getNotifications);
+vendorNotificationRouter.put(
     '/:notificationId/read',
     NotificationController.markAsRead
 );
-customerNotificationRouter.put(
+vendorNotificationRouter.put(
     '/:notificationId/unread',
     NotificationController.markAsUnread
 );
-customerNotificationRouter.put(
+vendorNotificationRouter.get(
     '/:notificationId',
     NotificationController.getNotificationById
 );
 
-export default customerNotificationRouter;
+vendorNotificationRouter.delete(
+    '/:notificationId',
+    NotificationController.delete
+);
+
+export default vendorNotificationRouter;

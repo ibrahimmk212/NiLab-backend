@@ -151,15 +151,15 @@ class VendorOrderController {
                 });
             }
 
+            if (!order.paymentCompleted)
+                return res.status(STATUS.OK).json({
+                    success: false,
+                    message:
+                        'Order not paid, please wait for customer to complete payment'
+                });
+
             // If accepted status==preparing. and mode is not offline add to vendor ledger, do not accept if not paid
             if (status === 'preparing') {
-                if (!order.paymentCompleted)
-                    return res.status(STATUS.OK).json({
-                        success: false,
-                        message:
-                            'Order not paid, please wait for customer to complete payment'
-                    });
-
                 order.status = status;
                 // order.pickupLocation = vendor.location?.coordinates;
                 await order.save();
@@ -222,7 +222,8 @@ class VendorOrderController {
             // TODO send notifcation to customer on status change
             res.status(STATUS.OK).json({
                 success: true,
-                message: 'Order updated succesfully'
+                message: 'Order updated succesfully',
+                data: order
             });
         }
     );

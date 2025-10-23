@@ -19,4 +19,8 @@ adminOrderRouter.put(
     AdminOrderController.updateStatus
 );
 adminOrderRouter.put('/:id', AdminOrderController.updateStatus);
+adminOrderRouter.put(
+    `/mark-as-paid/:orderId`,
+    AdminOrderController.completeOrderPayment
+);
 export default adminOrderRouter;
