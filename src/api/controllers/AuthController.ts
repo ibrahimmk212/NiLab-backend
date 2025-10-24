@@ -29,7 +29,7 @@ class AuthController {
         // Login notification for test
         const notificationDetail: any = {
             message: 'Welcome to Nilab!',
-            subject: 'Successfully logged in'
+            title: 'Successfully logged in'
         };
 
         if (user.role === 'admin') {

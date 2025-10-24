@@ -142,7 +142,7 @@ class OrderController {
         const customerNotification = `Your order with order code ${order.code} has been created successfully.`;
         NotificationService.create({
             userId: userdata.id,
-            subject: 'Order Created',
+            title: 'Order Created',
             message: customerNotification,
             status: 'unread'
         });

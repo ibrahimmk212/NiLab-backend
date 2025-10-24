@@ -80,8 +80,52 @@ class VendorRepository {
     async findNearbyVendors(
         longitude: number,
         latitude: number,
-        maxDistance: number
-    ): Promise<Vendor[]> {
+        maxDistance: number,
+        options: FindAllVendorsOptions
+    ): Promise<any> {
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const matchFilter: Record<string, any> = {};
+
+        if (options.marketCategoryId) {
+            matchFilter.marketCategoryId = options.marketCategoryId;
+        }
+
+        if (options.categories && options.categories.length > 0) {
+            matchFilter.categories = { $in: options.categories };
+        }
+
+        if (options.state) {
+            matchFilter.state = options.state;
+        }
+
+        if (options.lga) {
+            matchFilter.lga = options.lga;
+        }
+
+        if (options.ratings) {
+            matchFilter.ratings = { $gte: options.ratings };
+        }
+
+        if (options.acceptDelivery !== undefined) {
+            matchFilter.acceptDelivery = options.acceptDelivery;
+        }
+
+        if (options.isAvailable !== undefined) {
+            matchFilter.isAvailable = options.isAvailable;
+        }
+
+        if (options.status) {
+            matchFilter.status = options.status;
+        }
+
+        if (options.name) {
+            matchFilter.name = { $regex: options.name, $options: 'i' };
+        }
+
+        // Aggregation pipeline
         const vendors = await VendorModel.aggregate([
             {
                 $geoNear: {
@@ -91,18 +135,64 @@ class VendorRepository {
                     spherical: true
                 }
             },
+            { $match: matchFilter },
             {
                 $lookup: {
-                    from: 'categories', // The collection to join
-                    localField: 'categories', // Field from the vendors collection
-                    foreignField: '_id', // Field from the categories collection
-                    as: 'categories' // The array field to add to the result, containing the joined documents
+                    from: 'categories',
+                    localField: 'categories',
+                    foreignField: '_id',
+                    as: 'categories'
                 }
-            }
-            // Optionally add other aggregation stages
+            },
+            {
+                $lookup: {
+                    from: 'marketcategories',
+                    localField: 'marketCategoryId',
+                    foreignField: '_id',
+                    as: 'marketCategory'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$marketCategory',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            { $sort: { distance: 1, ratings: -1, createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit }
         ]);
-        return vendors;
+
+        // Count total (using same filters but without skip/limit)
+        const totalResult = await VendorModel.aggregate([
+            {
+                $geoNear: {
+                    near: { type: 'Point', coordinates: [longitude, latitude] },
+                    distanceField: 'distance',
+                    maxDistance: maxDistance,
+                    spherical: true
+                }
+            },
+            { $match: matchFilter },
+            { $count: 'total' }
+        ]);
+
+        const total = totalResult.length > 0 ? totalResult[0].total : 0;
+
+        return {
+            total,
+            count: vendors.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: vendors
+        };
     }
+
     // Find all vendor
     async findAllVendors(options: FindAllVendorsOptions) {
         const page = options.page || 1;

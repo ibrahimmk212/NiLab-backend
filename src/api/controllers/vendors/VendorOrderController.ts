@@ -7,6 +7,7 @@ import WalletService from '../../services/WalletService';
 import TransactionService from '../../services/TransactionService';
 import { currentTimestamp } from '../../../utils/helpers';
 import emails from '../../libraries/emails';
+import NotificationService from '../../services/NotificationService';
 
 class VendorOrderController {
     getAll = asyncHandler(
@@ -196,6 +197,14 @@ class VendorOrderController {
                     await transaction.save();
                 }
 
+                // Notify customer that order is accepted and being prepared
+                await NotificationService.create({
+                    userId: customer.id,
+                    title: 'Order Accepted',
+                    message: `Your order with order code ${order.code} has been accepted and is being prepared.`,
+                    status: 'unread'
+                });
+
                 return res.status(STATUS.OK).json({
                     success: true,
                     message: 'Order Accepted',
@@ -208,7 +217,22 @@ class VendorOrderController {
                 order.preparedAt = currentTimestamp();
                 await order.save();
 
-                // TODO notify rider to pick the order
+                //TODO notify rider to pick the order
+                // Notify customer that order is prepared
+                const customer: any = order.user;
+                await NotificationService.create({
+                    userId: customer.id,
+                    title: 'Order Prepared',
+                    message: `Your order with order code ${order.code} has been prepared and is ready for dispatch.`,
+                    status: 'unread'
+                });
+
+                res.status(STATUS.OK).json({
+                    success: true,
+                    message: 'Order marked as prepared',
+                    data: order
+                });
+                return;
             }
 
             // TODO add cancel details (Reson for cancellation) here, and refund money to wallet
@@ -219,7 +243,14 @@ class VendorOrderController {
                 await order.save();
             }
 
-            // TODO send notifcation to customer on status change
+            // send notifcation to customer on status change
+            const customer: any = order.user;
+            await NotificationService.create({
+                userId: customer.id,
+                title: 'Order Updated',
+                message: `Your order with order code ${order.code} status has been updated to ${status}.`,
+                status: 'unread'
+            });
             res.status(STATUS.OK).json({
                 success: true,
                 message: 'Order updated succesfully',

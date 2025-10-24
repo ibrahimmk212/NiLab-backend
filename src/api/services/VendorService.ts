@@ -39,12 +39,14 @@ class VendorService implements IVendorService {
     async getNearbyVendors(
         longitude: number,
         latitude: number,
-        maxDistance: number
+        maxDistance: number,
+        options: Record<string, unknown> = {}
     ): Promise<Vendor[]> {
         return await VendorRepository.findNearbyVendors(
             longitude,
             latitude,
-            maxDistance
+            maxDistance,
+            options
         );
     }
     // find vendors options

@@ -68,7 +68,8 @@ class VendorController {
             const vendors = await VendorService.getNearbyVendors(
                 Number(latitude),
                 Number(longitude),
-                Number(maxDistance)
+                Number(maxDistance),
+                req.query
             );
             // vendors.map((vendor: Vendor) => vendor.populate('categories'));
             res.status(STATUS.OK).json({
