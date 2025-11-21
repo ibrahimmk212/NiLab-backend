@@ -22,12 +22,14 @@ class DeliveryRepository {
     }
 
     async getAvailableDeliveries(): Promise<Delivery[]> {
-        return await DeliveryModel.find({ rider: null }).populate({
-            path: 'order rider dispatch',
-            populate: {
-                path: 'vendor'
-            }
-        });
+        return await DeliveryModel.find({ rider: null })
+            .populate({
+                path: 'order rider dispatch',
+                populate: {
+                    path: 'vendor'
+                }
+            })
+            .sort({ createdAt: -1 }); // Most recent first
     }
 
     async getDeliveryById(deliveryId: string): Promise<Delivery | null> {
@@ -63,7 +65,7 @@ class DeliveryRepository {
                     path: 'vendor'
                 }
             })
-            .sort({ name: 'asc' })
+            .sort({ createdAt: -1 }) // Most recent first
             .skip(startIndex)
             .limit(limit);
 
@@ -90,12 +92,14 @@ class DeliveryRepository {
         return await DeliveryModel.find({
             rider,
             status: { $ne: 'delivered' }
-        }).populate({
-            path: 'order rider dispatch',
-            populate: {
-                path: 'vendor'
-            }
-        });
+        })
+            .populate({
+                path: 'order rider dispatch',
+                populate: {
+                    path: 'vendor'
+                }
+            })
+            .sort({ createdAt: -1 }); // Most recent first
     }
 
     // Additional order-specific methods...
