@@ -1,7 +1,7 @@
 // services/PaymentService.ts
 
-import appConfig from 'src/config/appConfig';
-import { currentTimestamp } from 'src/utils/helpers';
+import appConfig from '../../config/appConfig';
+import { currentTimestamp } from '../../utils/helpers';
 import emails from '../libraries/emails';
 import Monnify from '../libraries/monnify';
 import axios from 'axios';
