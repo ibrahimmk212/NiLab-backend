@@ -23,7 +23,7 @@ import { uploadFileToS3 } from '../../../utils/s3';
 import emails from '../../libraries/emails';
 import CouponService from '../../services/CouponService';
 import NotificationService from '../../services/NotificationService';
-import { PaymentService } from 'src/api/services/PaymentService';
+import { PaymentService } from '../../services/PaymentService';
 
 class OrderController {
     upload = asyncHandler(
