@@ -87,6 +87,10 @@ class OrderService {
         return await OrderRepository.adminAnalytics(startDate, endDate);
     }
 
+    static async findOrderByReference(paymentReference: string) {
+        return OrderRepository.findOrderByReference(paymentReference);
+    }
+
     // async payVendor(order: Order): Promise<Transaction | null> {
     //  await OrderRepository.deleteOrder(orderId);
     // const transaction = await

@@ -44,9 +44,9 @@ export interface Vendor extends Document {
 const vendorSchema = new Schema<Vendor>(
     {
         name: { type: String, required: true },
-        address: { type: String, required: true },
-        state: { type: String, required: true },
-        lga: { type: String, required: true },
+        address: { type: String, required: false },
+        state: { type: String, required: false },
+        lga: { type: String, required: false },
         description: { type: String, required: false },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         marketCategoryId: {

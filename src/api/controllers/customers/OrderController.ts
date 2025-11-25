@@ -23,6 +23,7 @@ import { uploadFileToS3 } from '../../../utils/s3';
 import emails from '../../libraries/emails';
 import CouponService from '../../services/CouponService';
 import NotificationService from '../../services/NotificationService';
+import { PaymentService } from 'src/api/services/PaymentService';
 
 class OrderController {
     upload = asyncHandler(
@@ -300,7 +301,6 @@ class OrderController {
 
         const delivery = await DeliveryService.createDelivery(order._id);
         if (!delivery) {
-            console.log(delivery);
             await order.deleteOne();
             throw new Error('Delivery not created, please try again.');
         }
@@ -495,142 +495,179 @@ class OrderController {
         }
     );
 
-    checkout = asyncHandler(async (req: Request, res: Response) => {
+    checkout = asyncHandler(async (req: any, res: any) => {
         const { orderId } = req.params;
-        const { userdata }: any = req;
+        const { userdata } = req;
+
         const order = await OrderService.getOrderById(orderId);
 
-        if (!order) throw Error('Order not found!');
-
-        if (!order.paymentCompleted && order.paymentType !== 'cash') {
-            // if (order.transactionReference) {
-            //     return res.status(STATUS.OK).json({
-            //         success: true,
-            //         message: 'Proceed to payment',
-            //         data: {
-            //             transactionReference: order.transactionReference
-            //         }
-            //     });
-            // } else {
-            const totalAmount =
-                order.amount + order.deliveryFee + order.serviceFee + order.vat;
-            const monnifyToken = await Monnify.genToken();
-            // console.log(monnifyToken);
-            const reference = `ORDER_${currentTimestamp()}${userdata.id}`;
-            const paymentData: any = {};
-            const paymentRequest = await Monnify.initiatePayment(
-                {
-                    amount: totalAmount, //.amount,
-                    customerName: `${userdata.firstName} ${userdata.lastName}`,
-                    customerEmail: userdata.email,
-                    paymentDescription: `Order Payment|${order.code}`,
-                    // paymentReference: `${currentTimestamp()}`,
-                    paymentReference: reference,
-                    redirectUrl: '',
-                    contractCode: appConfig.monnify.contractCode,
-                    currencyCode: 'NGN',
-                    paymentMethods: ['ACCOUNT_TRANSFER', 'CARD']
-                },
-                monnifyToken
-            );
-
-            if (!paymentRequest.responseBody) {
-                order.paymentReference = reference;
-                order.transactionReference = 'MNFY|59|20240217230612|000526';
-
-                await order.save();
-
-                return res.status(STATUS.OK).json({
-                    success: false,
-                    data: order,
-                    payment: {
-                        merchantName: 'NILAB PAYS',
-                        checkoutUrl:
-                            'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
-                        bankName: 'Wema bank',
-                        accountName: 'NILAB PAYS-Ord',
-                        accountNumber: '3000293913',
-                        paymentReference: reference,
-                        expiresOn: '2024-02-17T23:46:15',
-                        totalPayable: totalAmount,
-                        fee: 0,
-                        ussdPayment: null
-                    },
-                    message: 'Payment not initiated, please checkout again'
-                });
-            }
-
-            paymentData.merchantName =
-                paymentRequest.responseBody?.merchantName;
-            paymentData.checkoutUrl = paymentRequest.responseBody?.checkoutUrl;
-
-            if (order.paymentType === 'transfer') {
-                const transfer = await Monnify.payWithBankTransfer(
-                    {
-                        transactionReference:
-                            paymentRequest.responseBody.transactionReference
-                    },
-                    monnifyToken
-                );
-
-                if (!transfer.responseBody) {
-                    return res.status(STATUS.OK).json({
-                        success: false,
-                        data: order,
-                        payment: {
-                            merchantName: 'NILAB PAYS',
-                            checkoutUrl:
-                                'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
-                            bankName: 'Wema bank',
-                            accountName: 'NILAB PAYS-Ord',
-                            accountNumber: '3000293913',
-                            expiresOn: '2024-02-17T23:46:15',
-                            paymentReference: reference,
-
-                            totalPayable: totalAmount,
-                            fee: 0,
-                            ussdPayment: null
-                        },
-                        message: 'Payment not initiated, please checkout again'
-                    });
-                }
-                paymentData.bankName = transfer.responseBody?.bankName;
-                paymentData.accountName = transfer.responseBody?.accountName;
-                paymentData.accountNumber =
-                    transfer.responseBody?.accountNumber;
-                paymentData.expiresOn = transfer.responseBody?.expiresOn;
-                paymentData.totalPayable = transfer.responseBody?.totalPayable;
-                paymentData.fee = transfer.responseBody?.fee;
-                paymentData.ussdPayment = transfer.responseBody?.ussdPayment;
-                paymentData.paymentReference = reference;
-
-                // }
-                order.paymentReference = reference;
-                order.transactionReference =
-                    paymentRequest.responseBody?.transactionReference;
-
-                await order.save();
-                emails.orderPaymentReceipt(userdata.email, {
-                    orderId: order.code?.toString(),
-                    orderItems: order.products,
-                    totalAmount: totalAmount,
-                    vendorName: ''
-                });
-                return res.status(STATUS.OK).json({
-                    success: true,
-                    message: 'Proceed to payment',
-                    data: order,
-                    payment: paymentData
-                });
-            }
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
+            });
         }
 
-        return res.status(STATUS.BAD_REQUEST).json({
-            success: false,
-            message:
-                'Invalid request: your order is either paid or pay on delivery'
+        const result: any = await PaymentService.initiateCheckout(
+            order,
+            userdata
+        );
+
+        if (!result.valid) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    result.message ||
+                    'Payment not initiated, please checkout again',
+                data: result.order,
+                payment: result.payment
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: result.message,
+            data: result.order,
+            payment: result.payment
         });
     });
+
+    // checkout = asyncHandler(async (req: Request, res: Response) => {
+    //     const { orderId } = req.params;
+    //     const { userdata }: any = req;
+    //     const order = await OrderService.getOrderById(orderId);
+
+    //     if (!order) throw Error('Order not found!');
+
+    //     if (!order.paymentCompleted && order.paymentType !== 'cash') {
+    //         // if (order.transactionReference) {
+    //         //     return res.status(STATUS.OK).json({
+    //         //         success: true,
+    //         //         message: 'Proceed to payment',
+    //         //         data: {
+    //         //             transactionReference: order.transactionReference
+    //         //         }
+    //         //     });
+    //         // } else {
+    //         const totalAmount =
+    //             order.amount + order.deliveryFee + order.serviceFee + order.vat;
+    //         const monnifyToken = await Monnify.genToken();
+    //         // console.log(monnifyToken);
+    //         const reference = `ORDER_${currentTimestamp()}${userdata.id}`;
+    //         const paymentData: any = {};
+    //         const paymentRequest = await Monnify.initiatePayment(
+    //             {
+    //                 amount: totalAmount, //.amount,
+    //                 customerName: `${userdata.firstName} ${userdata.lastName}`,
+    //                 customerEmail: userdata.email,
+    //                 paymentDescription: `Order Payment|${order.code}`,
+    //                 // paymentReference: `${currentTimestamp()}`,
+    //                 paymentReference: reference,
+    //                 redirectUrl: '',
+    //                 contractCode: appConfig.monnify.contractCode,
+    //                 currencyCode: 'NGN',
+    //                 paymentMethods: ['ACCOUNT_TRANSFER', 'CARD']
+    //             },
+    //             monnifyToken
+    //         );
+
+    //         if (!paymentRequest.responseBody) {
+    //             order.paymentReference = reference;
+    //             order.transactionReference = 'MNFY|59|20240217230612|000526';
+
+    //             await order.save();
+
+    //             return res.status(STATUS.OK).json({
+    //                 success: false,
+    //                 data: order,
+    //                 payment: {
+    //                     merchantName: 'NILAB PAYS',
+    //                     checkoutUrl:
+    //                         'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
+    //                     bankName: 'Wema bank',
+    //                     accountName: 'NILAB PAYS-Ord',
+    //                     accountNumber: '3000293913',
+    //                     paymentReference: reference,
+    //                     expiresOn: '2024-02-17T23:46:15',
+    //                     totalPayable: totalAmount,
+    //                     fee: 0,
+    //                     ussdPayment: null
+    //                 },
+    //                 message: 'Payment not initiated, please checkout again'
+    //             });
+    //         }
+
+    //         paymentData.merchantName =
+    //             paymentRequest.responseBody?.merchantName;
+    //         paymentData.checkoutUrl = paymentRequest.responseBody?.checkoutUrl;
+
+    //         if (order.paymentType === 'transfer') {
+    //             const transfer = await Monnify.payWithBankTransfer(
+    //                 {
+    //                     transactionReference:
+    //                         paymentRequest.responseBody.transactionReference
+    //                 },
+    //                 monnifyToken
+    //             );
+
+    //             if (!transfer.responseBody) {
+    //                 return res.status(STATUS.OK).json({
+    //                     success: false,
+    //                     data: order,
+    //                     payment: {
+    //                         merchantName: 'NILAB PAYS',
+    //                         checkoutUrl:
+    //                             'https://sandbox.sdk.monnify.com/checkout/MNFY|59|20240217230612|000526',
+    //                         bankName: 'Wema bank',
+    //                         accountName: 'NILAB PAYS-Ord',
+    //                         accountNumber: '3000293913',
+    //                         expiresOn: '2024-02-17T23:46:15',
+    //                         paymentReference: reference,
+
+    //                         totalPayable: totalAmount,
+    //                         fee: 0,
+    //                         ussdPayment: null
+    //                     },
+    //                     message: 'Payment not initiated, please checkout again'
+    //                 });
+    //             }
+    //             paymentData.bankName = transfer.responseBody?.bankName;
+    //             paymentData.accountName = transfer.responseBody?.accountName;
+    //             paymentData.accountNumber =
+    //                 transfer.responseBody?.accountNumber;
+    //             paymentData.expiresOn = transfer.responseBody?.expiresOn;
+    //             paymentData.totalPayable = transfer.responseBody?.totalPayable;
+    //             paymentData.fee = transfer.responseBody?.fee;
+    //             paymentData.ussdPayment = transfer.responseBody?.ussdPayment;
+    //             paymentData.paymentReference = reference;
+
+    //             // }
+    //             order.paymentReference = reference;
+    //             order.transactionReference =
+    //                 paymentRequest.responseBody?.transactionReference;
+
+    //             await order.save();
+    //             emails.orderPaymentReceipt(userdata.email, {
+    //                 orderId: order.code?.toString(),
+    //                 orderItems: order.products,
+    //                 totalAmount: totalAmount,
+    //                 vendorName: ''
+    //             });
+    //             return res.status(STATUS.OK).json({
+    //                 success: true,
+    //                 message: 'Proceed to payment',
+    //                 data: order,
+    //                 payment: paymentData
+    //             });
+    //         }
+    //     }
+
+    //     return res.status(STATUS.BAD_REQUEST).json({
+    //         success: false,
+    //         message:
+    //             'Invalid request: your order is either paid or pay on delivery'
+    //     });
+    // });
 
     submitReview = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {

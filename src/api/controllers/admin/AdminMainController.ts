@@ -139,7 +139,7 @@ class AdminMainController {
     create = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
             const payload: CreateAdminType = req.body;
-            const password = generateRandomNumbers(8).toString();
+            const password = '123456'; //generateRandomNumbers(8).toString();
 
             const user = await UserService.createUser({
                 ...payload,
