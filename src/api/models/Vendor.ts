@@ -19,14 +19,14 @@ export interface BankAccount {
 }
 export interface Vendor extends Document {
     name: string;
-    address: string;
-    state: string;
-    lga: string;
+    address?: string;
+    state?: string;
+    lga?: string;
     description: string;
     userId: mongoose.Types.ObjectId;
     marketCategoryId: mongoose.Types.ObjectId;
-    email: string;
-    phoneNumber: string;
+    email?: string;
+    phoneNumber?: string;
     ratings: number;
     categories: [];
     logo: string;
@@ -70,7 +70,7 @@ const vendorSchema = new Schema<Vendor>(
                 required: true
             }
         ],
-        phoneNumber: { type: String, required: true },
+        phoneNumber: { type: String, required: false },
         ratings: { type: Number, default: 0 },
         logo: { type: String },
         banner: { type: String },
