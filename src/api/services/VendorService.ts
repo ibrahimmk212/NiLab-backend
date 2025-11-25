@@ -4,7 +4,7 @@ import { Vendor } from '../models/Vendor';
 import { CreateVendorType } from '../types/vendor';
 
 interface IVendorService {
-    create(payload: Vendor): Promise<any>;
+    create(payload: CreateVendorType): Promise<any>;
     getAll(data: any): Promise<Vendor[] | null>;
     get(vendorId: string): Promise<any>;
     update(vendorId: string, data: any): Promise<boolean>;
