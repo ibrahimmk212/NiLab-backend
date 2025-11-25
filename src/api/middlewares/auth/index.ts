@@ -200,9 +200,10 @@ class Auth {
                 // req.path !== '/location' &&
                 vendor.status != 'active'
             ) {
-                return res.status(STATUS.UNAUTHORIZED).json({
+                return res.status(STATUS.FORBIDDEN).json({
                     success: false,
-                    message: 'Vendor Not Active'
+                    message: 'Vendor Not Active',
+                    code: 'VENDOR_NOT_ACTIVE'
                 });
             }
 
