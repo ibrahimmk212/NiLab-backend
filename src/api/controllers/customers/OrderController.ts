@@ -105,7 +105,7 @@ class OrderController {
                 label: 'Food Vendor',
                 postcode: vendor.location.zipcode,
                 state: vendor.location.state,
-                street: vendor.address
+                street: vendor.address || ''
             },
             destination: {
                 additionalInfo: `${userdata.firstName} ${userdata.lastName} - ${userdata.phoneNumber}`,
@@ -118,7 +118,7 @@ class OrderController {
                 street: userdata.address
             },
             senderDetails: {
-                contactNumber: vendor.phoneNumber,
+                contactNumber: vendor.phoneNumber || '',
                 name: vendor.name
             },
             receiverDetails: {
