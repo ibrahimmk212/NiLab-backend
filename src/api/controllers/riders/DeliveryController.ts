@@ -36,7 +36,10 @@ class DeliveryController {
     });
 
     availableDeliveries = asyncHandler(async (req: Request, res: Response) => {
-        const deliveries = await DeliveryService.getAvailableDeliveries();
+        const { rider, userdata }: any = req;
+        const deliveries = await DeliveryService.getAvailableDeliveries(
+            rider.state
+        );
 
         res.status(STATUS.OK).json({
             success: true,

@@ -71,8 +71,8 @@ class DeliveryService {
         return await DeliveryRepository.updateDelivery(deliveryId, { status });
     }
 
-    async getAvailableDeliveries() {
-        return await DeliveryRepository.getAvailableDeliveries();
+    async getAvailableDeliveries(state: string) {
+        return await DeliveryRepository.getAvailableDeliveries(state);
     }
     async riderAnalytics(
         riderId: string,

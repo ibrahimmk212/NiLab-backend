@@ -21,8 +21,11 @@ class DeliveryRepository {
         });
     }
 
-    async getAvailableDeliveries(): Promise<Delivery[]> {
-        return await DeliveryModel.find({ rider: null })
+    async getAvailableDeliveries(state: string): Promise<Delivery[]> {
+        return await DeliveryModel.find({
+            rider: null,
+            'pickup.state': state
+        })
             .populate({
                 path: 'order rider dispatch',
                 populate: {

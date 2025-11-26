@@ -49,9 +49,8 @@ class VendorProductController {
                 ...body,
                 vendor: vendor.id,
                 thumbnail:
-                    body.thumbnail ??
-                    'https://media.istockphoto.com/id/502474519/photo/homemade-grilled-barbecue-chicken.jpg?s=612x612&w=0&k=20&c=5wm-TATH7AH8n77VLfl3CY_CCGeP94TjqrsgB1rXpOg='
-                //TODO remove default
+                    body.thumbnail ||
+                    'https://via.placeholder.com/150?text=No+Image'
             });
             if (!newProduct) {
                 throw Error('Failed to create Product');
@@ -95,7 +94,7 @@ class VendorProductController {
             next: NextFunction
         ): Promise<void> => {
             const { vendor } = req;
-            // TODO set pagination and filter
+
             const product = await ProductService.getAll({
                 ...req.query,
                 vendorId: vendor.id

@@ -4,8 +4,11 @@ import VendorProductController from '../../../controllers/vendors/VendorProductC
 import productRequirement from '../../../middlewares/validator/requirements/product';
 import advancedQuery from '../../../middlewares/data/advancedQuery';
 import ProductModel from '../../../models/Product';
+import auth from '../../../middlewares/auth';
 
 const vendorProductRouter: Router = Router();
+
+vendorProductRouter.use(auth.vendorLocationIsSet);
 vendorProductRouter.put('/:id/upload-file', VendorProductController.upload);
 vendorProductRouter.post(
     '/create',

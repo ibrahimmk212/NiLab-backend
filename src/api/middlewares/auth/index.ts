@@ -232,6 +232,35 @@ class Auth {
         }
     }
 
+    async vendorLocationIsSet(
+        req: Request | any,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
+        const vendor = req.vendor;
+
+        if (!vendor) {
+            return res.status(STATUS.UNAUTHORIZED).json({
+                success: false,
+                message: 'Vendor not found'
+            });
+        }
+
+        if (
+            !vendor.location ||
+            !vendor.location.coordinates ||
+            vendor.location.coordinates.length !== 2
+        ) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'Vendor location not set',
+                code: 'VENDOR_LOCATION_NOT_SET'
+            });
+        }
+
+        next();
+    }
+
     async isRider(
         req: Request | any,
         res: Response,
