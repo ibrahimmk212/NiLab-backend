@@ -105,5 +105,6 @@ class DeliveryService {
         return await DeliveryRepository.getActiveDeliveries(riderId);
     }
 }
+//
 
 export default new DeliveryService();
