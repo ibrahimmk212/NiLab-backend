@@ -101,10 +101,7 @@ class OrderController {
                 additionalInfo: `${vendor.name} - ${vendor.phoneNumber}`,
                 buildingNumber: '',
                 city: vendor.location.city,
-                coordinates: [
-                    vendor.location.coordinates[1],
-                    vendor.location.coordinates[0]
-                ], //vendor.location.coordinates,
+                coordinates: vendor.location.coordinates,
                 label: 'Food Vendor',
                 postcode: vendor.location.zipcode,
                 state: vendor.location.state,
