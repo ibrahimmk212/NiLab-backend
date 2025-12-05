@@ -9,15 +9,15 @@ class WalletRepository {
     async findWalletById(walletId: string): Promise<Wallet | null> {
         return await WalletModel.findById(walletId);
     }
-    async debitLedger(
+    async debitPendingBalance(
         walletId: string,
         amount: number
     ): Promise<Wallet | null> {
         const wallet = await WalletModel.findById(walletId);
         if (!wallet) throw new Error('Wallet not found');
 
-        wallet.prevLegderBalance = wallet.ledgerBalance;
-        wallet.ledgerBalance -= amount;
+        wallet.prevPendingBalance = wallet.pendingBalance;
+        wallet.pendingBalance -= amount;
         await wallet.save();
 
         // await new WalletTransactionModel({
@@ -30,15 +30,15 @@ class WalletRepository {
 
         return wallet;
     }
-    async creditLedger(
+    async creditPendingBalance(
         walletId: string,
         amount: number
     ): Promise<Wallet | null> {
         const wallet = await WalletModel.findById(walletId);
         if (!wallet) throw new Error('Wallet not found');
 
-        wallet.prevLegderBalance = wallet.ledgerBalance;
-        wallet.ledgerBalance += amount;
+        wallet.prevPendingBalance = wallet.pendingBalance;
+        wallet.pendingBalance += amount;
         await wallet.save();
 
         // await new WalletTransactionModel({
@@ -58,10 +58,10 @@ class WalletRepository {
         const wallet = await WalletModel.findById(walletId);
         if (!wallet) throw new Error('Wallet not found');
 
-        wallet.prevLegderBalance = wallet.ledgerBalance;
-        wallet.prevBalance = wallet.balance;
-        wallet.balance -= amount;
-        wallet.ledgerBalance -= amount; // Assuming you want to debit both
+        wallet.prevPendingBalance = wallet.pendingBalance;
+        wallet.prevAvailableBalance = wallet.availableBalance;
+        wallet.availableBalance -= amount;
+        wallet.pendingBalance -= amount; // Assuming you want to debit both
         await wallet.save();
 
         // await new WalletTransactionModel({
@@ -81,10 +81,10 @@ class WalletRepository {
         const wallet = await WalletModel.findById(walletId);
         if (!wallet) throw new Error('Wallet not found');
 
-        wallet.prevLegderBalance = wallet.ledgerBalance;
-        wallet.prevBalance = wallet.balance;
-        wallet.balance += amount;
-        wallet.ledgerBalance += amount; // Assuming you want to credit both
+        wallet.prevPendingBalance = wallet.pendingBalance;
+        wallet.prevAvailableBalance = wallet.availableBalance;
+        wallet.availableBalance += amount;
+        wallet.pendingBalance += amount; // Assuming you want to credit both
         await wallet.save();
 
         // await new WalletTransactionModel({
@@ -97,15 +97,15 @@ class WalletRepository {
 
         return wallet;
     }
-    async debitBalance(
+    async debitAvailableBalance(
         walletId: string,
         amount: number
     ): Promise<Wallet | null> {
         const wallet = await WalletModel.findById(walletId);
         if (!wallet) throw new Error('Wallet not found');
 
-        wallet.prevBalance = wallet.balance;
-        wallet.balance -= amount;
+        wallet.prevAvailableBalance = wallet.availableBalance;
+        wallet.availableBalance -= amount;
         await wallet.save();
 
         // await new WalletTransactionModel({
@@ -118,15 +118,15 @@ class WalletRepository {
 
         return wallet;
     }
-    async creditBalance(
+    async creditAvailableBalance(
         walletId: string,
         amount: number
     ): Promise<Wallet | null> {
         const wallet = await WalletModel.findById(walletId);
         if (!wallet) throw new Error('Wallet not found');
 
-        wallet.prevBalance = wallet.balance;
-        wallet.balance += amount;
+        wallet.prevAvailableBalance = wallet.availableBalance;
+        wallet.availableBalance += amount;
         await wallet.save();
 
         // await new WalletTransactionModel({

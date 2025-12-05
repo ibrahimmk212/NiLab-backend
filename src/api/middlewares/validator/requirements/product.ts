@@ -9,6 +9,7 @@ const productRequirement = {
             .optional({ nullable: true })
             .default({ default: true }),
         body('description').isString().optional({ nullable: true }),
+        body('unitOfMeasure').isString().optional({ nullable: true }),
         // body('vendor').isString(),
         body('category').isString().optional({ nullable: true }),
         body('image').isArray().optional({ nullable: true }),
@@ -29,6 +30,7 @@ const productRequirement = {
             .optional({ nullable: true })
             .default({ default: true })
             .optional({ nullable: true }),
+        body('unitOfMeasure').isString().optional({ nullable: true }),
         body('description').isString().optional({ nullable: true }),
         // body('vendor').isString(),
         body('category').isString().optional({ nullable: true }),

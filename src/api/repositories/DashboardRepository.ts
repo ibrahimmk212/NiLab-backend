@@ -65,7 +65,7 @@ class DashboardRepository {
         return {
             completedDeliveries,
             pendingDeliveries,
-            earnings: earnings?.balance || 0
+            earnings: earnings?.availableBalance || 0
         };
     }
 

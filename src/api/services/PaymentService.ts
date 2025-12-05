@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 // services/PaymentService.ts
 
 import appConfig from '../../config/appConfig';
@@ -16,6 +18,7 @@ export class PaymentService {
             `${apiKey}:${secretKey}`
         ).toString('base64');
 
+        // TODO : Replace with .env variables
         const response = await axios.get(
             `https://api.monnify.com/api/v1/transactions/${transactionReference}`,
             {

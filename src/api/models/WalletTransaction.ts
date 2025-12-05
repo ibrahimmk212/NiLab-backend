@@ -1,43 +1,28 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-export interface Wallet extends Document {
-    orderId: mongoose.Types.ObjectId;
-    walletId: mongoose.Types.ObjectId;
+export interface WalletTransaction extends Document {
+    wallet: mongoose.Types.ObjectId;
     amount: number;
-    type: string;
-    balance: number;
-    ledgerBalance: number;
-    prevBalance: number;
-    prevLegderBalance: number;
-    transactions: mongoose.Types.ObjectId[];
+    type: 'credit' | 'debit';
+    category: 'order_payment' | 'withdrawal' | 'delivery_earning' | 'refund';
+    reference: string;
+    description?: string;
+    status: 'pending' | 'success' | 'failed';
+    meta?: any;
 }
 
-const walletSchema = new Schema<Wallet>(
+const transactionSchema = new Schema<WalletTransaction>(
     {
-        orderId: { type: Schema.Types.ObjectId, ref: 'Order', required: false },
-        walletId: {
-            type: Schema.Types.ObjectId,
-            ref: 'Wallet',
-            required: false
-        },
-        type: { type: String },
-        amount: { type: Number, default: 0 },
-        balance: { type: Number, default: 0 },
-        ledgerBalance: { type: Number, default: 0 },
-        prevBalance: { type: Number, default: 0 },
-        prevLegderBalance: { type: Number, default: 0 }
+        wallet: { type: Schema.Types.ObjectId, ref: 'Wallet', required: true },
+        amount: { type: Number, required: true },
+        type: { type: String, required: true },
+        category: { type: String, required: true },
+        description: { type: String },
+        reference: { type: String, unique: true },
+        status: { type: String, default: 'pending' },
+        meta: { type: Object }
     },
-    {
-        timestamps: true,
-        toJSON: {
-            virtuals: true
-        },
-        toObject: {
-            virtuals: true
-        }
-    }
+    { timestamps: true }
 );
 
-const WalletModel = mongoose.model<Wallet>('Wallet', walletSchema);
-
-export default WalletModel;
+export default mongoose.model('WalletTransaction', transactionSchema);

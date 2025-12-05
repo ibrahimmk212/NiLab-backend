@@ -1,7 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import OrderRepository from '../repositories/OrderRepository';
 import { Order } from '../models/Order';
-import { Transaction } from '../models/Transaction';
-import WalletService from './WalletService';
 import ConfigurationService from './ConfigurationService';
 
 class OrderService {
@@ -90,18 +89,6 @@ class OrderService {
     static async findOrderByReference(paymentReference: string) {
         return OrderRepository.findOrderByReference(paymentReference);
     }
-
-    // async payVendor(order: Order): Promise<Transaction | null> {
-    //  await OrderRepository.deleteOrder(orderId);
-    // const transaction = await
-    // const paid = WalletService.initCreditAccount({
-    //     amount:order.amount,
-    //     owner:order.vendor,reference:order.ref,remark,role,transactionId,transactionType
-    // })
-    // return;
-    // }
-
-    // Additional order-specific business logic...
 }
 
 export default new OrderService();

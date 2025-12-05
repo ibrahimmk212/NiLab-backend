@@ -104,7 +104,7 @@ class WalletService implements IWalletService {
                 currentBalance: currentBalance
             };
 
-        const updateWallet = await WalletRepository.debitBalance(
+        const updateWallet = await WalletRepository.debitAvailableBalance(
             userWallet?.id,
             amount
         );
@@ -126,7 +126,7 @@ class WalletService implements IWalletService {
         );
         if (!userWallet) return null;
 
-        const updateWallet = await WalletRepository.debitLedger(
+        const updateWallet = await WalletRepository.debitPendingBalance(
             userWallet?.id,
             amount
         );
@@ -152,7 +152,7 @@ class WalletService implements IWalletService {
         if (!userWallet)
             return { success: false, message: 'Failed to fetch wallet' };
 
-        const updateWallet = await WalletRepository.creditLedger(
+        const updateWallet = await WalletRepository.creditPendingBalance(
             userWallet?.id,
             amount
         );
@@ -178,7 +178,7 @@ class WalletService implements IWalletService {
         if (!userWallet)
             return { success: false, message: 'Failed to fetch user wallet' };
 
-        const updateWallet = await WalletRepository.creditBalance(
+        const updateWallet = await WalletRepository.creditAvailableBalance(
             userWallet?.id,
             amount
         );
