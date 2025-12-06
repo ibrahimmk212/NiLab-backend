@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import monnify from '../libraries/monnify';
 import { Wallet } from '../models/Wallet';
 import WalletRepository from '../repositories/WalletRepository';

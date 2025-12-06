@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import WalletModel, { Wallet } from '../models/Wallet';
 
 class WalletRepository {
@@ -128,15 +129,6 @@ class WalletRepository {
         wallet.prevAvailableBalance = wallet.availableBalance;
         wallet.availableBalance += amount;
         await wallet.save();
-
-        // await new WalletTransactionModel({
-        //     walletId,
-        //     amount,
-        //     type: 'credit',
-        //     balanceAfterTransaction: wallet.balance,
-        //     description: 'Credit balance'
-        // }).save();
-
         return wallet;
     }
 
