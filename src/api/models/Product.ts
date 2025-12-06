@@ -7,6 +7,7 @@ export interface Product extends Document {
     description: string;
     vendor: mongoose.Types.ObjectId;
     unitOfMeasure?: string;
+    stock: number;
     category: mongoose.Types.ObjectId;
     ratings: number;
     images: string;
@@ -22,6 +23,7 @@ const productSchema = new Schema<Product>(
         description: { type: String, required: true },
         vendor: { type: Schema.Types.ObjectId, ref: 'Vendor', required: true },
         unitOfMeasure: { type: String, required: false, default: 'pieces' },
+        stock: { type: Number, required: true, default: 0 },
         category: {
             type: Schema.Types.ObjectId,
             ref: 'Category',

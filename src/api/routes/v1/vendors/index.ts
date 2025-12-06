@@ -11,6 +11,7 @@ import vendorTransactionRouter from './transactions';
 import customerMarketCategoryRouter from './marketCategory';
 import vendorCategoryRouter from './categories';
 import vendorNotificationRouter from './notifications';
+import VendorDashboardRouter from './dashboard';
 
 const vendorsRouter: Router = Router();
 vendorsRouter.post('/login', VendorInfoController.login);
@@ -18,7 +19,7 @@ vendorsRouter.post('/login', VendorInfoController.login);
 vendorsRouter.use(auth.isVendor);
 
 vendorsRouter.get('/', VendorInfoController.currentUser);
-vendorsRouter.get('/dashboard', VendorInfoController.dashboard);
+vendorsRouter.get('/dashboard/sum', VendorInfoController.dashboard);
 
 vendorsRouter.put(
     '/',
@@ -48,5 +49,6 @@ vendorsRouter.use('/transactions', vendorTransactionRouter);
 vendorsRouter.use('/notifications', vendorNotificationRouter);
 vendorsRouter.use('/market-categories', customerMarketCategoryRouter);
 vendorsRouter.use('/categories', vendorCategoryRouter);
+vendorsRouter.use('/dashboard', VendorDashboardRouter);
 
 export default vendorsRouter;
