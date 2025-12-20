@@ -14,7 +14,7 @@ class AdminOrderController {
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Orders fetched successfully',
-                data: orders
+                ...orders
             });
         }
     );

@@ -14,7 +14,7 @@ class AdminTransactionController {
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Transactions fetched successfully',
-                data: transaction
+                ...transaction
             });
         }
     );

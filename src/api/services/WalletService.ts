@@ -5,6 +5,7 @@ import WalletRepository from '../repositories/WalletRepository';
 import { CreateWalletType, InitDebitType } from '../types/wallet';
 
 interface IWalletService {
+    getWallet(walletId: any): Promise<any>;
     createWallet(payload: CreateWalletType): Promise<any>;
     initDebitAccount(payload: InitDebitType): Promise<any>;
     confirmDebitAccount(payload: InitDebitType): Promise<any>;
@@ -15,6 +16,17 @@ interface IWalletService {
 }
 
 class WalletService implements IWalletService {
+    async getWallet(walletId: any): Promise<Wallet | any> {
+        const wallet = await WalletRepository.findWalletById(walletId);
+
+        if (!wallet) {
+            return {
+                success: false,
+                message: `Wallet not found`
+            };
+        }
+        return wallet;
+    }
     async createWallet(payload: CreateWalletType): Promise<Wallet | any> {
         const wallet = await WalletRepository.getWalletByOwner(
             payload.role,
@@ -216,6 +228,51 @@ class WalletService implements IWalletService {
             message: 'Wallet funded'
         };
     }
+
+    async adminFundAvailableWallet(payload: any): Promise<any> {
+        const { amount, owner, role } = payload;
+        const wallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
+
+        if (!wallet) return { success: false, message: 'Wallet not found' };
+
+        const updateWallet = await WalletRepository.creditAvailableBalance(
+            wallet?.id,
+            amount
+        );
+        if (!updateWallet)
+            return { success: false, message: 'Failed to fund wallet' };
+
+        return {
+            success: true,
+            message: 'Wallet funded'
+        };
+    }
+
+    async adminDeductAvailableWallet(payload: any): Promise<any> {
+        const { amount, owner, role } = payload;
+        const wallet: any = await WalletRepository.getWalletByOwner(
+            role,
+            owner
+        );
+
+        if (!wallet) return { success: false, message: 'Wallet not found' };
+
+        const updateWallet = await WalletRepository.debitAvailableBalance(
+            wallet?.id,
+            amount
+        );
+        if (!updateWallet)
+            return { success: false, message: 'Failed to fund wallet' };
+
+        return {
+            success: true,
+            message: 'Wallet funded'
+        };
+    }
+
     async directDebitWallet(payload: InitDebitType): Promise<any> {
         const { amount, owner, role } = payload;
         const wallet: any = await WalletRepository.getWalletByOwner(

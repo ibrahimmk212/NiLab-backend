@@ -24,6 +24,13 @@ router.use(
     customersRouter
 );
 
+router.use(
+    '/customer',
+    auth.authenticate,
+    auth.checkRoles(ROLE.USER),
+    customersRouter
+);
+
 router.use('/vendor', auth.isVendor, vendorsRouter);
 router.use(
     '/rider',

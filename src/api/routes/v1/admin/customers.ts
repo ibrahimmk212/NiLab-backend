@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { Validate, Requirements } from '../../../middlewares/validator';
 import Auth from '../../../middlewares/auth';
-import AdminRiderController from '../../../controllers/admin/AdminRiderController';
+import AdminCustomerController from '../../../controllers/admin/AdminCustomerController';
 import ridersRequirement from '../../../middlewares/validator/requirements/riders';
 
-const adminRidersRouter: Router = Router();
+const adminCustomersRouter: Router = Router();
 
-adminRidersRouter.get('/all', AdminRiderController.getAll);
-adminRidersRouter.get('/:id', AdminRiderController.getSingle);
+adminCustomersRouter.get('/all', AdminCustomerController.getCustomers);
+adminCustomersRouter.get('/:id', AdminCustomerController.getCustomerDetail);
+// adminCustomersRouter.get('/:id', AdminCustomerController.getSingle);
 
-adminRidersRouter.put('/:id/status', AdminRiderController.updateStatus);
+// adminCustomersRouter.put('/:id/status', AdminCustomerController.updateStatus);
 
-export default adminRidersRouter;
+export default adminCustomersRouter;

@@ -33,6 +33,8 @@ export interface User extends Document {
     kycStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected';
     resetPasswordToken: string;
     resetPasswordExpire: string;
+    status: 'active' | 'inactive' | 'suspended';
+    isBanned: boolean;
 
     deviceToken: string;
 
@@ -90,6 +92,13 @@ const userSchema = new Schema<User>(
             required: true,
             default: 'not_submitted'
         },
+        status: {
+            type: String,
+            enum: ['active', 'inactive', 'suspended'],
+            required: true,
+            default: 'active'
+        },
+        isBanned: { type: Boolean, required: true, default: false },
         resetPasswordToken: String,
         resetPasswordExpire: Date
     },
@@ -109,6 +118,12 @@ userSchema.virtual('kyc', {
     ref: 'Kyc',
     localField: '_id',
     foreignField: 'user',
+    justOne: true
+});
+userSchema.virtual('wallet', {
+    ref: 'Wallet',
+    localField: '_id',
+    foreignField: 'owner',
     justOne: true
 });
 

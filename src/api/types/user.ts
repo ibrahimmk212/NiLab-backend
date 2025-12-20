@@ -12,3 +12,7 @@ export type UpdateUserType = {
     firstName: string;
     lastName: string;
 };
+
+export type BanUserType = {
+    reasonForBan: string;
+};

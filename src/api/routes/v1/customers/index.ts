@@ -11,6 +11,7 @@ import customerFavouriteRouter from './favourites';
 import customerPromotionRouter from './promotions';
 import customerMarketCategoryRouter from './marketCategory';
 import customerProductRouter from './products';
+import customerWalletRouter from './wallets';
 
 const customersRouter: Router = Router();
 
@@ -23,6 +24,7 @@ customersRouter.use('/promotions', customerPromotionRouter);
 customersRouter.use('/categories', customerCategoryRouter);
 customersRouter.use('/notifications', customerNotificationRouter);
 customersRouter.use('/transactions', customerTransactionRouter);
+customersRouter.use('/wallets', customerWalletRouter);
 customersRouter.use('/favourites', customerFavouriteRouter);
 customersRouter.use('/favourites', customerFavouriteRouter);
 customersRouter.use('/market-categories', customerMarketCategoryRouter);

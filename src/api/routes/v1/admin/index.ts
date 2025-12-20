@@ -15,6 +15,7 @@ import adminRouter from './admins';
 import adminPromotionRouter from './promotions';
 import adminKycRouter from './kyc';
 import adminMarketCategoryRouter from './marketCategories';
+import adminCustomersRouter from './customers';
 
 const adminsRouter: Router = Router();
 
@@ -25,6 +26,7 @@ adminsRouter.use('/vendors', adminVendorRouter);
 adminsRouter.use('/market-categories', adminMarketCategoryRouter);
 adminsRouter.use('/orders', adminOrderRouter);
 adminsRouter.use('/riders', adminRidersRouter);
+adminsRouter.use('/customers', adminCustomersRouter);
 adminsRouter.use('/dispatches', adminDispatchRouter);
 adminsRouter.use('/collections', collectionRouter);
 adminsRouter.use('/categories', adminCategoryRouter);

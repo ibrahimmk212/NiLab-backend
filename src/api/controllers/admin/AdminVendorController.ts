@@ -80,7 +80,7 @@ class AdminVendorController {
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Venors fetched successfully',
-                data: vendors
+                ...vendors
             });
         }
     );

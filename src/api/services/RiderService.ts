@@ -23,10 +23,8 @@ class RiderService {
         return rider;
     }
 
-    async getRiders(): Promise<Rider[] | null> {
-        const riders = await RiderRepository.findRidersByOption({});
-
-        return riders;
+    async findAllRiders(options: any) {
+        return await RiderRepository.findAllRiders(options);
     }
 
     async getRiderDetail(riderId: string): Promise<Rider> {

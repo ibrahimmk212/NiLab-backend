@@ -7,32 +7,18 @@ import { LoginType } from '../../types/auth';
 import AuthService from '../../services/AuthService';
 import AdminService from '../../services/AdminService';
 
-class AdminUserController {
-    async createUser(
-        req: Request,
-        res: Response,
-        next: NextFunction
-    ): Promise<void> {
-        try {
-            const payload: CreateUserType = req.body;
-            const user = await UserService.createUser(payload);
-            res.status(200).send({
-                message: 'User created successfully',
-                data: user
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    getUsers = asyncHandler(
+class AdminCustomerController {
+    getCustomers = asyncHandler(
         async (
             req: Request,
             res: Response,
             next: NextFunction
         ): Promise<void> => {
             try {
-                const user = await UserService.getUsers(req.query);
+                const user = await UserService.getUsers({
+                    role: 'user',
+                    ...req.query
+                });
                 res.status(200).send({
                     message: 'Users fetched successfully',
                     ...user
@@ -43,24 +29,34 @@ class AdminUserController {
         }
     );
 
-    async getUserDetail(
+    async getCustomerDetail(
         req: Request,
         res: Response,
         next: NextFunction
     ): Promise<void> {
         try {
             const userId = req.params.id;
-            const user = await UserService.findUserById(userId);
+            const resp = await UserService.findCustomerUserById(userId);
+            if (resp.user.role !== 'user') {
+                res.status(404).send({
+                    message: 'User not found'
+                });
+            }
+
             res.status(200).send({
                 message: 'User details fetched successfully',
-                data: user
+                // data: {
+                //     ...resp.user.toJSON(),
+                //     orderCount: resp.orderCount
+                // }
+                data: resp
             });
         } catch (error) {
             next(error);
         }
     }
 
-    async updateUser(
+    async updateCustomer(
         req: Request,
         res: Response,
         next: NextFunction
@@ -71,45 +67,6 @@ class AdminUserController {
             await UserService.updateUser(userId, payload);
             res.status(200).send({
                 message: 'User updated successfully'
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    async banUser(
-        req: Request,
-        res: Response,
-        next: NextFunction
-    ): Promise<void> {
-        try {
-            const userId = req.params.id;
-            const payload: BanUserType = req.body;
-            await UserService.updateUser(userId, {
-                isbanned: true,
-                reasonForBan: payload.reasonForBan
-            });
-            res.status(200).send({
-                message: 'User banned successfully'
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    async unbanUser(
-        req: Request,
-        res: Response,
-        next: NextFunction
-    ): Promise<void> {
-        try {
-            const userId = req.params.id;
-            await UserService.updateUser(userId, {
-                isbanned: false,
-                reasonForBan: ''
-            });
-            res.status(200).send({
-                message: 'User unbanned successfully'
             });
         } catch (error) {
             next(error);
@@ -168,4 +125,4 @@ class AdminUserController {
     });
 }
 
-export default new AdminUserController();
+export default new AdminCustomerController();

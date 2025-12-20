@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as bcrypt from 'bcrypt';
 import UserRepository from '../repositories/UserRepository';
 import { Address, User } from '../models/User';
 import { CreateUserType } from '../types/user';
+import OrderRepository from '../repositories/OrderRepository';
 
 interface IUserService {
     createUser(payload: any): Promise<any>;
@@ -22,7 +24,6 @@ class UserService {
             throw new Error('phone must be unique');
         }
 
-
         return UserRepository.createUser({
             ...payload,
             password: payload.password
@@ -35,12 +36,24 @@ class UserService {
         }
         return user;
     }
+
+    async findCustomerUserById(id: string) {
+        const user: any = await UserRepository.findUserById(id);
+        const orderCount = await OrderRepository.countCustomerOrders(id);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return {
+            user,
+            orderCount
+        };
+    }
     async findByEmailOrPhone(email: string, phone: string) {
         const user = await UserRepository.findUserByEmailOrPhone(email, phone);
         return user;
     }
-    getUsers(): Promise<any[]> {
-        throw new Error('Method not implemented.');
+    getUsers(query: any): Promise<any[]> {
+        return UserRepository.findAll(query);
     }
 
     async getUserDetail(userId: string): Promise<any> {

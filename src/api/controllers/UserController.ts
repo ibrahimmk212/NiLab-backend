@@ -29,7 +29,7 @@ class UserController {
             next: NextFunction
         ): Promise<void> => {
             try {
-                const user = await UserService.getUsers();
+                const user = await UserService.getUsers(req.query);
                 res.status(200).send({
                     message: 'Users fetched successfully',
                     data: user

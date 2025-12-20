@@ -8,11 +8,11 @@ import { generateRandomNumbers } from '../../../utils/helpers';
 class AdminRiderController {
     getAll = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const riders = await RiderService.getRiders();
+            const riders = await RiderService.findAllRiders(req.query);
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Riders fetched successfully',
-                data: riders
+                ...riders
             });
         }
     );

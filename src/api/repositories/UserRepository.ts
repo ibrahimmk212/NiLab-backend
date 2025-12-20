@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import RiderModel from '../models/Rider';
 import UserModel, { Address, User } from '../models/User';
 import VendorModel from '../models/Vendor';
@@ -13,15 +14,78 @@ class UserRepository {
 
     // Find a user by ID
     async findUserById(userId: string, select = ''): Promise<User | null> {
-        const user = await UserModel.findById(userId).select(select);
+        const user = await UserModel.findById(userId)
+            .select(select)
+            .populate('wallet');
         return user;
+    }
+
+    async findAll(options: any): Promise<any> {
+        const page = parseInt(options.page as string, 10) || 1;
+        const limit = parseInt(options.limit as string, 10) || 10;
+        const skip = (page - 1) * limit;
+
+        const filter: any = {};
+
+        if (options.role) {
+            filter.role = options.role;
+        }
+
+        if (options.status) {
+            filter.status = options.status;
+        }
+
+        if (options.search) {
+            filter.$or = [
+                { firstName: { $regex: options.search, $options: 'i' } },
+                { lastName: { $regex: options.search, $options: 'i' } },
+                { email: { $regex: options.search, $options: 'i' } },
+                { phoneNumber: { $regex: options.search, $options: 'i' } }
+            ];
+        }
+
+        if (options.sortBy) {
+            options.sortBy = options.sortBy.replace(',', ' ');
+        } else {
+            options.sortBy = '-createdAt';
+        }
+
+        if (options.startDate && options.endDate) {
+            filter.createdAt = {
+                $gte: new Date(options.startDate),
+                $lte: new Date(options.endDate)
+            };
+        }
+
+        // virtually order counts for userIds
+        if (options.role === 'user') {
+            options.sortBy = '-orderCount ' + options.sortBy;
+        }
+
+        const [users, total] = await Promise.all([
+            UserModel.find(filter).sort(options.sortBy).skip(skip).limit(limit),
+            UserModel.countDocuments(filter)
+        ]);
+
+        return {
+            total,
+            count: users.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: users
+        };
     }
 
     // Find a user by email
     async findUserByEmail(email: string): Promise<User | null> {
         const user = await UserModel.findOne({ email })
             .select('+password')
-            .populate('kyc');
+            .populate('kyc wallet');
         return user;
     }
 

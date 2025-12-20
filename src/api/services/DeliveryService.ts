@@ -56,7 +56,12 @@ class DeliveryService {
         };
         const delivery = await DeliveryRepository.createDelivery(deliveryData);
         // TODO send notification to nearby riders
-        const riders = await RiderService.getRiders();
+        const riders = await RiderService.findAllRiders({
+            status: 'verified',
+            state: order.destination.state,
+            limit: 10000,
+            page: 1
+        });
         const riderMails = riders?.map((rider: any) => rider.email);
         emails.availableDelivery(riderMails?.toString() as string, {
             orderType: order.orderType,

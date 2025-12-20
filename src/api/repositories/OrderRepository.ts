@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from 'mongoose';
 import OrderModel, { Order } from '../models/Order';
 
@@ -46,6 +47,10 @@ class OrderRepository {
             // .limit(limit)
             .sort({ createdAt: -1 })
             .populate(this.populatedData);
+    }
+
+    async countCustomerOrders(customerId: any) {
+        return await OrderModel.countDocuments({ userId: customerId });
     }
     async findAll(options: any) {
         const page = Number(options.page) || 1;
