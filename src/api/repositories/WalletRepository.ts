@@ -52,8 +52,7 @@ class WalletRepository {
                 availableBalance: { $gte: amount } // 💥 prevents overdraft
             },
             {
-                $inc: { availableBalance: -amount },
-                $set: { prevAvailableBalance: '$availableBalance' }
+                $inc: { availableBalance: -amount }
             },
             { new: true, session }
         );

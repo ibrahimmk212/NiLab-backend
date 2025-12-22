@@ -118,6 +118,13 @@ vendorSchema.virtual('orders', {
     justOne: false
 });
 
+vendorSchema.virtual('user', {
+    ref: 'User',
+    localField: 'userId', // ✅ Vendor.userId
+    foreignField: '_id', // ✅ User._id
+    justOne: true
+});
+
 // reverse populate products
 vendorSchema.virtual('products', {
     ref: 'Product',

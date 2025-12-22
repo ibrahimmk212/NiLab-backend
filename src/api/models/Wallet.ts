@@ -21,7 +21,6 @@ const walletSchema = new Schema<Wallet>(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: true,
-            unique: true,
             index: true
         },
         availableBalance: { type: Number, default: 0 },
@@ -38,14 +37,18 @@ const walletSchema = new Schema<Wallet>(
 );
 
 // Ensure one wallet per user role
-// walletSchema.index({ role: 1, owner: 1 }, { unique: true });
+walletSchema.index({ role: 1, owner: 1 }, { unique: true });
 
-// Save previous values before update
-walletSchema.pre('save', function (next) {
-    if (!this.isNew) {
-        this.prevAvailableBalance = this.availableBalance;
-        this.prevPendingBalance = this.pendingBalance;
+walletSchema.pre('findOneAndUpdate', async function (next) {
+    const doc = await this.model.findOne(this.getQuery());
+
+    if (doc) {
+        this.set({
+            prevAvailableBalance: doc.availableBalance,
+            prevPendingBalance: doc.pendingBalance
+        });
     }
+
     next();
 });
 

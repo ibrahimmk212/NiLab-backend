@@ -71,11 +71,7 @@ class AdminVendorController {
         }
     );
     getAll = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
+        async (req: Request, res: Response): Promise<void> => {
             const vendors = await VendorService.getAll(req.query);
             res.status(STATUS.OK).send({
                 success: true,
@@ -84,7 +80,6 @@ class AdminVendorController {
             });
         }
     );
-
     getSingle = asyncHandler(
         async (
             req: Request,
@@ -101,13 +96,8 @@ class AdminVendorController {
             });
         }
     );
-
     update = asyncHandler(
-        async (
-            req: Request,
-            res: Response,
-            next: NextFunction
-        ): Promise<void> => {
+        async (req: Request, res: Response): Promise<void> => {
             const { id } = req.params;
             const { body } = req;
             const vendor = await VendorService.getById(id);

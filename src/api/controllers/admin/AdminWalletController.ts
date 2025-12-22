@@ -47,13 +47,13 @@ class AdminWalletController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { amount, owner, role, note } = req.body;
+            const { amount, owner, role, remark } = req.body;
             try {
                 const wallet = await WalletService.adminFundAvailableWallet({
                     amount,
                     owner,
                     role,
-                    note
+                    remark
                 });
                 res.status(200).send(wallet);
             } catch (error) {
@@ -68,18 +68,15 @@ class AdminWalletController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { amount, owner, role, note } = req.body;
+            const { amount, owner, role, remark } = req.body;
             try {
-                const wallet = await WalletService.adminFundAvailableWallet({
+                const wallet = await WalletService.adminDeductAvailableWallet({
                     amount,
                     owner,
                     role,
-                    note
+                    remark
                 });
-                res.status(200).send({
-                    message: 'Users fetched successfully',
-                    ...wallet
-                });
+                res.status(200).send(wallet);
             } catch (error) {
                 next(error);
             }

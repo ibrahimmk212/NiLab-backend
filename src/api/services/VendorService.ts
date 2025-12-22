@@ -7,7 +7,7 @@ interface IVendorService {
     create(payload: CreateVendorType): Promise<any>;
     getAll(data: any): Promise<Vendor[] | null>;
     get(vendorId: string): Promise<any>;
-    update(vendorId: string, data: any): Promise<boolean>;
+    update(vendorId: string, data: any): Promise<any>;
     // deleteVendor(vendorId: string): Promise<boolean>;
 }
 

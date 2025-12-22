@@ -240,17 +240,16 @@ class WalletService implements IWalletService {
         const { amount, owner, remark, role } = payload;
 
         if (!mongoose.Types.ObjectId.isValid(owner)) {
-            return { success: false, message: 'Invalid owner id' };
+            throw new Error('Invalid owner id');
         }
 
         const parsedAmount = Number(amount);
         if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            return { success: false, message: 'Invalid amount' };
+            throw new Error('Invalid amount');
         }
 
         const wallet = await WalletRepository.getWalletByOwner(role, owner);
-
-        if (!wallet) return { success: false, message: 'Wallet not found' };
+        if (!wallet) throw new Error('Wallet not found');
 
         const updated = await WalletRepository.creditAvailableBalance(
             wallet.id,
@@ -258,7 +257,7 @@ class WalletService implements IWalletService {
         );
 
         if (!updated) {
-            return { success: false, message: 'Failed to fund wallet' };
+            throw new Error('Failed to fund wallet');
         }
 
         const reference = `ADFUNDED-${Date.now()}-${randomBytes(4).toString(
@@ -287,16 +286,16 @@ class WalletService implements IWalletService {
         const { amount, owner, remark, role } = payload;
 
         if (!mongoose.Types.ObjectId.isValid(owner)) {
-            return { success: false, message: 'Invalid owner id' };
+            throw new Error('Invalid owner id');
         }
 
         const parsedAmount = Number(amount);
         if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            return { success: false, message: 'Invalid amount' };
+            throw new Error('Invalid amount');
         }
 
         const wallet = await WalletRepository.getWalletByOwner(role, owner);
-        if (!wallet) return { success: false, message: 'Wallet not found' };
+        if (!wallet) throw new Error('Wallet not found');
 
         const updated = await WalletRepository.debitAvailableBalance(
             wallet.id,
@@ -304,10 +303,10 @@ class WalletService implements IWalletService {
         );
 
         if (!updated) {
-            return { success: false, message: 'Failed to fund wallet' };
+            throw new Error('Failed to deduct wallet');
         }
 
-        const reference = `ADFUNDED-${Date.now()}-${randomBytes(4).toString(
+        const reference = `ADDEDUCTED-${Date.now()}-${randomBytes(4).toString(
             'hex'
         )}`;
 
@@ -317,15 +316,15 @@ class WalletService implements IWalletService {
             rider: role === 'rider' ? owner : undefined,
             reference,
             amount: parsedAmount,
-            type: 'CREDIT',
+            type: 'DEBIT',
             remark,
             status: 'successful'
         });
 
         return {
             success: true,
-            message: 'Wallet funded',
-            data: { wallet, transaction }
+            message: 'Wallet debited successfully',
+            data: { wallet: updated, transaction }
         };
     }
 
