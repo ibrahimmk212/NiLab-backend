@@ -73,12 +73,12 @@ class TransactionService {
 
         const paid = WalletService.initCreditAccount({
             amount: transaction.amount,
-            owner: transaction.vendor.toString(),
-            reference: transaction.order.toString(),
-            remark: transaction.remark,
-            role: 'vendor',
-            transactionId: transaction.id,
-            transactionType: transaction.type
+            owner: transaction.vendor,
+            // reference: transaction.order.toString(),
+            // remark: transaction.remark,
+            role: 'vendor'
+            // transactionId: transaction.id,
+            // transactionType: transaction.type
         });
         return transaction;
     }

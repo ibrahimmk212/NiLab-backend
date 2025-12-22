@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Wallet extends Document {
     role: 'user' | 'rider' | 'vendor';
-    owner: string; // mongoose.Types.ObjectId;
+    owner: mongoose.Types.ObjectId;
     availableBalance: number; // withdrawable
     pendingBalance: number; // escrow / waiting for order completion
 
@@ -18,9 +18,10 @@ const walletSchema = new Schema<Wallet>(
             required: true
         },
         owner: {
-            type: String, // mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: true,
+            unique: true,
             index: true
         },
         availableBalance: { type: Number, default: 0 },
@@ -37,7 +38,7 @@ const walletSchema = new Schema<Wallet>(
 );
 
 // Ensure one wallet per user role
-walletSchema.index({ role: 1, owner: 1 }, { unique: true });
+// walletSchema.index({ role: 1, owner: 1 }, { unique: true });
 
 // Save previous values before update
 walletSchema.pre('save', function (next) {

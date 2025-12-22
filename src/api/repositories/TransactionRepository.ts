@@ -1,9 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import mongoose from 'mongoose';
 import TransactionModel, { Transaction } from '../models/Transaction';
 
 class TransactionRepository {
-    async createTransaction(data: Partial<Transaction>): Promise<Transaction> {
+    async createTransaction(
+        data: Partial<Transaction>,
+        session?: mongoose.ClientSession
+    ): Promise<Transaction> {
         const transaction = new TransactionModel(data);
-        return await transaction.save();
+        return await transaction.save({ session });
     }
 
     async findTransactionById(
@@ -32,6 +37,7 @@ class TransactionRepository {
     ): Promise<Transaction[] | null> {
         return await TransactionModel.find({ user }).sort({ createdAt: -1 });
     }
+
     async getTransactionsByVendor(
         vendor: string
     ): Promise<Transaction[] | null> {
@@ -53,15 +59,9 @@ class TransactionRepository {
         );
     }
 
-    async deleteTransaction(
-        transactionId: string
-    ): Promise<Transaction | null> {
-        return await TransactionModel.findByIdAndDelete(transactionId, {
-            new: true
-        });
+    async deleteTransaction(transactionId: string): Promise<Transaction | any> {
+        return await TransactionModel.findByIdAndDelete(transactionId);
     }
-
-    // Additional transaction-specific methods...
 }
 
 export default new TransactionRepository();

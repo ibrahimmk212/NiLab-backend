@@ -45,11 +45,10 @@ class AdminCustomerController {
 
             res.status(200).send({
                 message: 'User details fetched successfully',
-                // data: {
-                //     ...resp.user.toJSON(),
-                //     orderCount: resp.orderCount
-                // }
-                data: resp
+                data: {
+                    ...resp.user.toJSON(),
+                    orderCount: resp.orderCount
+                }
             });
         } catch (error) {
             next(error);

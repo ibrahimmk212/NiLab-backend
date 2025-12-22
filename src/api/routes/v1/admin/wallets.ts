@@ -1,9 +1,15 @@
 import { Router } from 'express';
 import { Validate, Requirements } from '../../../middlewares/validator';
-import WalletController from '../../../controllers/customers/WalletController';
+import AdminWalletController from '../../../controllers/admin/AdminWalletController';
 
-const customerWalletRouter: Router = Router();
+const adminWalletRouter: Router = Router();
 
-customerWalletRouter.use('/', WalletController.getMyWallet);
+adminWalletRouter.get('/:walletId', AdminWalletController.getWallet);
+adminWalletRouter.get('/', AdminWalletController.getAllWallets);
+adminWalletRouter.post('/fund', AdminWalletController.fundUserAvailableWallet);
+adminWalletRouter.post(
+    '/deduct',
+    AdminWalletController.deductUserAvailableWallet
+);
 
-export default customerWalletRouter;
+export default adminWalletRouter;

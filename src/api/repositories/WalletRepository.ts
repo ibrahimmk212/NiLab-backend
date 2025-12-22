@@ -1,166 +1,189 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import mongoose from 'mongoose';
 import WalletModel, { Wallet } from '../models/Wallet';
 
 class WalletRepository {
-    async createWallet(data: Partial<Wallet>): Promise<Wallet> {
-        const wallet = new WalletModel(data);
-        return await wallet.save();
-    }
-
     async findWalletById(walletId: string): Promise<Wallet | null> {
-        return await WalletModel.findById(walletId);
-    }
-    async debitPendingBalance(
-        walletId: string,
-        amount: number
-    ): Promise<Wallet | null> {
-        const wallet = await WalletModel.findById(walletId);
-        if (!wallet) throw new Error('Wallet not found');
-
-        wallet.prevPendingBalance = wallet.pendingBalance;
-        wallet.pendingBalance -= amount;
-        await wallet.save();
-
-        // await new WalletTransactionModel({
-        //     walletId,
-        //     amount,
-        //     type: 'debit',
-        //     balanceAfterTransaction: wallet.ledgerBalance,
-        //     description: 'Debit ledger'
-        // }).save();
-
-        return wallet;
-    }
-    async creditPendingBalance(
-        walletId: string,
-        amount: number
-    ): Promise<Wallet | null> {
-        const wallet = await WalletModel.findById(walletId);
-        if (!wallet) throw new Error('Wallet not found');
-
-        wallet.prevPendingBalance = wallet.pendingBalance;
-        wallet.pendingBalance += amount;
-        await wallet.save();
-
-        // await new WalletTransactionModel({
-        //     walletId,
-        //     amount,
-        //     type: 'credit',
-        //     balanceAfterTransaction: wallet.ledgerBalance,
-        //     description: 'Credit ledger'
-        // }).save();
-
-        return wallet;
-    }
-    async debitFullBalance(
-        walletId: string,
-        amount: number
-    ): Promise<Wallet | null> {
-        const wallet = await WalletModel.findById(walletId);
-        if (!wallet) throw new Error('Wallet not found');
-
-        wallet.prevPendingBalance = wallet.pendingBalance;
-        wallet.prevAvailableBalance = wallet.availableBalance;
-        wallet.availableBalance -= amount;
-        wallet.pendingBalance -= amount; // Assuming you want to debit both
-        await wallet.save();
-
-        // await new WalletTransactionModel({
-        //     walletId,
-        //     amount,
-        //     type: 'debit',
-        //     balanceAfterTransaction: wallet.balance,
-        //     description: 'Debit balance'
-        // }).save();
-
-        return wallet;
-    }
-    async creditFullBalance(
-        walletId: string,
-        amount: number
-    ): Promise<Wallet | null> {
-        const wallet = await WalletModel.findById(walletId);
-        if (!wallet) throw new Error('Wallet not found');
-
-        wallet.prevPendingBalance = wallet.pendingBalance;
-        wallet.prevAvailableBalance = wallet.availableBalance;
-        wallet.availableBalance += amount;
-        wallet.pendingBalance += amount; // Assuming you want to credit both
-        await wallet.save();
-
-        // await new WalletTransactionModel({
-        //     walletId,
-        //     amount,
-        //     type: 'debit',
-        //     balanceAfterTransaction: wallet.balance,
-        //     description: 'Debit balance'
-        // }).save();
-
-        return wallet;
-    }
-    async debitAvailableBalance(
-        walletId: string,
-        amount: number
-    ): Promise<Wallet | null> {
-        const wallet = await WalletModel.findById(walletId);
-        if (!wallet) throw new Error('Wallet not found');
-
-        wallet.prevAvailableBalance = wallet.availableBalance;
-        wallet.availableBalance -= amount;
-        await wallet.save();
-
-        // await new WalletTransactionModel({
-        //     walletId,
-        //     amount,
-        //     type: 'credit',
-        //     balanceAfterTransaction: wallet.balance,
-        //     description: 'Credit balance'
-        // }).save();
-
-        return wallet;
-    }
-    async creditAvailableBalance(
-        walletId: string,
-        amount: number
-    ): Promise<Wallet | null> {
-        const wallet = await WalletModel.findById(walletId);
-        if (!wallet) throw new Error('Wallet not found');
-
-        wallet.prevAvailableBalance = wallet.availableBalance;
-        wallet.availableBalance += amount;
-        await wallet.save();
-        return wallet;
+        return WalletModel.findById(walletId);
     }
 
-    async updateWallet(
-        walletId: string,
-        updateData: Partial<Wallet>
-    ): Promise<Wallet | null> {
-        return await WalletModel.findByIdAndUpdate(walletId, updateData, {
-            new: true
-        });
-    }
-
-    // async getWalletByUser(userId: string) {
-    //     return await WalletModel.findOne({ userId });
-    // }
-
-    async getWalletByKey(key: string, value: any) {
-        console.log({ [key]: value });
-        return await WalletModel.findOne({ [key]: value });
+    async createWallet(payload: any) {
+        return await WalletModel.create(payload);
     }
 
     async getWalletByOwner(role: string, owner: any) {
-        return await WalletModel.findOne({ role, owner });
-    }
-
-    async deleteWallet(walletId: string): Promise<Wallet | null> {
-        return await WalletModel.findByIdAndDelete(walletId, {
-            new: true
+        return await WalletModel.findOne({
+            owner: new mongoose.Types.ObjectId(owner),
+            role
         });
     }
 
-    // Additional wallet-specific methods...
+    /* =========================
+       AVAILABLE BALANCE
+    ========================== */
+
+    async creditAvailableBalance(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ): Promise<Wallet | null> {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findByIdAndUpdate(
+            walletId,
+            {
+                $inc: { availableBalance: amount },
+                $set: { prevAvailableBalance: '$availableBalance' }
+            },
+            { new: true, session }
+        );
+    }
+
+    async debitAvailableBalance(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ): Promise<Wallet | null> {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findOneAndUpdate(
+            {
+                _id: walletId,
+                availableBalance: { $gte: amount } // 💥 prevents overdraft
+            },
+            {
+                $inc: { availableBalance: -amount },
+                $set: { prevAvailableBalance: '$availableBalance' }
+            },
+            { new: true, session }
+        );
+    }
+
+    /* =========================
+       PENDING BALANCE
+    ========================== */
+
+    async creditPendingBalance(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ): Promise<Wallet | null> {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findByIdAndUpdate(
+            walletId,
+            {
+                $inc: { pendingBalance: amount },
+                $set: { prevPendingBalance: '$pendingBalance' }
+            },
+            { new: true, session }
+        );
+    }
+
+    async debitPendingBalance(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ): Promise<Wallet | null> {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findOneAndUpdate(
+            {
+                _id: walletId,
+                pendingBalance: { $gte: amount }
+            },
+            {
+                $inc: { pendingBalance: -amount },
+                $set: { prevPendingBalance: '$pendingBalance' }
+            },
+            { new: true, session }
+        );
+    }
+
+    /* =========================
+       FULL BALANCE
+    ========================== */
+
+    async creditFullBalance(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ): Promise<Wallet | null> {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findByIdAndUpdate(
+            walletId,
+            {
+                $inc: {
+                    availableBalance: amount,
+                    pendingBalance: amount
+                }
+            },
+            { new: true, session }
+        );
+    }
+
+    async debitFullBalance(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ): Promise<Wallet | null> {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findOneAndUpdate(
+            {
+                _id: walletId,
+                availableBalance: { $gte: amount },
+                pendingBalance: { $gte: amount }
+            },
+            {
+                $inc: {
+                    availableBalance: -amount,
+                    pendingBalance: -amount
+                }
+            },
+            { new: true, session }
+        );
+    }
+
+    // Find all vendor
+    async findAllWallets(options: any) {
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const filter: Record<string, any> = {};
+
+        if (options.role) {
+            filter.role = options.role;
+        }
+
+        const [wallets, total] = await Promise.all([
+            WalletModel.find(filter)
+                .populate('categories marketCategory')
+                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .skip(skip)
+                .limit(limit),
+            WalletModel.countDocuments(filter)
+        ]);
+
+        return {
+            total,
+            count: wallets.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: wallets
+        };
+    }
+
+    async deleteWallet(walletId: string): Promise<any | null> {
+        return WalletModel.findByIdAndDelete(walletId);
+    }
 }
 
 export default new WalletRepository();

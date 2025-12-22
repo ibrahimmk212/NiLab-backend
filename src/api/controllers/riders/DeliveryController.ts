@@ -164,7 +164,7 @@ class DeliveryController {
                     order.deliveryFee +
                     order.vat,
                 rider: rider._id,
-                type: 'debit',
+                type: 'DEBIT',
                 remark: `Cash payment of ${order.paymentReference}`,
                 status: 'pending',
                 reference: reference
@@ -252,7 +252,7 @@ class DeliveryController {
             amount: transaction.amount,
             owner: rider.id,
             reference: transaction.reference,
-            remark: transaction.remark,
+            remark: transaction.remark || '',
             role: 'rider',
             transactionId: transaction.id,
             transactionType: transaction.type
@@ -290,7 +290,7 @@ class DeliveryController {
                 amount: vendorTransaction.amount,
                 owner: order.vendor._id.toString(),
                 reference: vendorTransaction.reference,
-                remark: vendorTransaction.remark,
+                remark: vendorTransaction.remark || '',
                 role: 'vendor',
                 transactionId: vendorTransaction.id,
                 transactionType: vendorTransaction.type
@@ -362,7 +362,7 @@ class DeliveryController {
                 amount: delivery.deliveryFee,
                 rider: rider.id,
                 order: delivery.order?._id,
-                type: 'credit',
+                type: 'CREDIT',
                 remark: 'Delivery Payment',
                 status: 'pending',
                 reference: order?.paymentReference

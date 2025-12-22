@@ -10,9 +10,29 @@ class AdminWalletController {
             next: NextFunction
         ): Promise<void> => {
             try {
-                const wallet = await WalletService.getWallet(req.params.id);
+                const wallet = await WalletService.getWallet(
+                    req.params.walletId
+                );
                 res.status(200).send({
-                    message: 'Users fetched successfully',
+                    message: 'Wallet fetched successfully',
+                    data: wallet
+                });
+            } catch (error) {
+                next(error);
+            }
+        }
+    );
+
+    getAllWallets = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            try {
+                const wallet = await WalletService.getAllWallets(req.query);
+                res.status(200).send({
+                    message: 'Wallets fetched successfully',
                     ...wallet
                 });
             } catch (error) {
@@ -27,12 +47,34 @@ class AdminWalletController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { amount, owner, role } = req.body;
+            const { amount, owner, role, note } = req.body;
             try {
                 const wallet = await WalletService.adminFundAvailableWallet({
                     amount,
                     owner,
-                    role
+                    role,
+                    note
+                });
+                res.status(200).send(wallet);
+            } catch (error) {
+                next(error);
+            }
+        }
+    );
+
+    deductUserAvailableWallet = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { amount, owner, role, note } = req.body;
+            try {
+                const wallet = await WalletService.adminFundAvailableWallet({
+                    amount,
+                    owner,
+                    role,
+                    note
                 });
                 res.status(200).send({
                     message: 'Users fetched successfully',

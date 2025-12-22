@@ -125,7 +125,7 @@ class RiderWalletController {
             const transaction = await TransactionService.createTransaction({
                 amount: amount,
                 rider: rider._id,
-                type: 'debit',
+                type: 'DEBIT',
                 remark: 'Withdrawal to bank',
                 status: 'pending',
                 reference: reference
@@ -160,7 +160,7 @@ class RiderWalletController {
                 currency: 'NGN',
                 destinationAccountNumber: accountNumber,
                 destinationBankCode: bankCode,
-                narration: transaction.remark,
+                narration: transaction.remark || '',
                 reference: transaction.reference,
                 sourceAccountNumber: appConfig.monnify.walletNumber
             });

@@ -16,11 +16,13 @@ import adminPromotionRouter from './promotions';
 import adminKycRouter from './kyc';
 import adminMarketCategoryRouter from './marketCategories';
 import adminCustomersRouter from './customers';
+import adminWalletRouter from './wallets';
 
 const adminsRouter: Router = Router();
 
 adminsRouter.get('/', AdminMainController.currentUser);
 adminsRouter.use('/users', usersRouter);
+adminsRouter.use('/wallets', adminWalletRouter);
 adminsRouter.use('/admins', adminRouter);
 adminsRouter.use('/vendors', adminVendorRouter);
 adminsRouter.use('/market-categories', adminMarketCategoryRouter);

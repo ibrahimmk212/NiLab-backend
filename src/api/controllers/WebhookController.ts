@@ -50,7 +50,7 @@ class WebhookController {
             amount: eventData.amountPaid,
             user: order.user,
             order: order.id,
-            type: 'debit',
+            type: 'DEBIT',
             remark: 'Order Payment',
             status: 'successful',
             reference: order.paymentReference

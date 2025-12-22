@@ -6,7 +6,6 @@ export interface File extends Document {
     size: number;
     type: string;
     fileId: string;
-    
 }
 
 const fileSchema = new Schema<File>(
@@ -15,7 +14,7 @@ const fileSchema = new Schema<File>(
         url: { type: String, required: true },
         size: { type: Number, required: true },
         type: { type: String, required: true },
-        fileId: { type: String, required: true }       
+        fileId: { type: String, required: true }
     },
     {
         timestamps: true,

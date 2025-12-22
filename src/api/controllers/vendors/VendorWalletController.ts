@@ -124,7 +124,7 @@ class VendorWalletController {
             const transaction = await TransactionService.createTransaction({
                 amount: amount,
                 vendor: vendor._id,
-                type: 'debit',
+                type: 'CREDIT',
                 remark: 'Withdrawal to bank',
                 status: 'pending',
                 reference: reference
@@ -159,7 +159,7 @@ class VendorWalletController {
                 currency: 'NGN',
                 destinationAccountNumber: accountNumber,
                 destinationBankCode: bankCode,
-                narration: transaction.remark,
+                narration: transaction.remark || '',
                 reference: transaction.reference,
                 sourceAccountNumber: appConfig.monnify.walletNumber
             });

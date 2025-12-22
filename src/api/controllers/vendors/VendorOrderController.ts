@@ -176,7 +176,7 @@ class VendorOrderController {
                     amount: order.amount,
                     vendor: order.vendor._id,
                     order: order.id,
-                    type: 'credit',
+                    type: 'CREDIT',
                     remark: 'Order Payment',
                     status: 'pending',
                     reference: order.paymentReference
@@ -186,7 +186,7 @@ class VendorOrderController {
                     amount: transaction.amount,
                     owner: order.vendor.id.toString(),
                     reference: transaction.reference,
-                    remark: transaction.remark,
+                    remark: transaction.remark || '',
                     role: 'vendor',
                     transactionId: transaction.id,
                     transactionType: 'credit'
