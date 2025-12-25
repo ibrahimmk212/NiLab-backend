@@ -54,7 +54,7 @@ function startServer(): Server {
     server.on('listening', onListening);
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (err: any, promise) => {
-        console.log(`Error: ${err?.message}`);
+        console.log(`Error: ${err}`);
         // Close the server and exit process
         server.close(() => process.exit(1));
     });
