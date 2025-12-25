@@ -4,10 +4,10 @@ export interface Transaction extends Document {
     order?: mongoose.Types.ObjectId;
 
     // Roles involved
-    user: mongoose.Types.ObjectId; // customer (required)
-    vendor?: mongoose.Types.ObjectId; // restaurant
-    rider?: mongoose.Types.ObjectId; // courier
-
+    userId: mongoose.Types.ObjectId; // customer (required)
+    // vendorId?: mongoose.Types.ObjectId; // restaurant
+    // riderId?: mongoose.Types.ObjectId; // courier
+    role: 'user' | 'rider' | 'vendor';
     reference: string;
     amount: number;
 
@@ -23,24 +23,29 @@ const transactionSchema = new Schema<Transaction>(
             ref: 'Order'
         },
 
-        user: {
+        userId: {
             type: Schema.Types.ObjectId,
             ref: 'User',
             required: true,
             index: true
         },
-
-        vendor: {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
-            index: true
+        role: {
+            type: String,
+            enum: ['user', 'vendor', 'rider'],
+            required: true
         },
 
-        rider: {
-            type: Schema.Types.ObjectId,
-            ref: 'User',
-            index: true
-        },
+        // vendorId: {
+        //     type: Schema.Types.ObjectId,
+        //     ref: 'User',
+        //     index: true
+        // },
+
+        // riderId: {
+        //     type: Schema.Types.ObjectId,
+        //     ref: 'User',
+        //     index: true
+        // },
 
         reference: {
             type: String,
@@ -71,8 +76,23 @@ const transactionSchema = new Schema<Transaction>(
             required: true
         }
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+        toJSON: {
+            virtuals: true
+        },
+        toObject: {
+            virtuals: true
+        }
+    }
 );
+
+transactionSchema.virtual('user', {
+    ref: 'User',
+    localField: 'userId',
+    foreignField: '_id',
+    justOne: true
+});
 
 const TransactionModel = mongoose.model<Transaction>(
     'Transaction',

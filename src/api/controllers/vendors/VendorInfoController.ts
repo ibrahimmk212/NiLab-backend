@@ -3,7 +3,7 @@ import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import VendorService from '../../services/VendorService';
 import WalletRepository from '../../repositories/WalletRepository';
-import { uploadFileToS3 } from '../../../utils/s3';
+// import { uploadFileToS3 } from '../../../utils/s3';
 import WalletService from '../../services/WalletService';
 import { LoginType } from '../../types/auth';
 import AuthService from '../../services/AuthService';
@@ -237,14 +237,14 @@ class VendorInfoController {
             if (!req?.files?.file) throw Error('File Not selected');
             file.name = `${Date.now()}_${file.name.replace(/ /g, '_')}`;
 
-            const upload = await uploadFileToS3(file, 'banners/');
-            const updated = await VendorService.update(vendor.id, {
-                banner: upload?.url
-            });
+            // const upload = await uploadFileToS3(file, 'banners/');
+            // const updated = await VendorService.update(vendor.id, {
+            //     banner: upload?.url
+            // });
             res.status(STATUS.CREATED).send({
                 success: true,
-                message: 'Banner Updated Successfully.',
-                data: updated
+                message: 'Banner Updated Successfully.'
+                // data: updated
             });
         }
     );

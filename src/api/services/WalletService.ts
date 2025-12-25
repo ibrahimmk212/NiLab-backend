@@ -23,12 +23,25 @@ class WalletService implements IWalletService {
         const wallet = await WalletRepository.findWalletById(walletId);
 
         if (!wallet) {
-            return {
-                success: false,
-                message: `Wallet not found`
-            };
+            throw new Error(`Wallet not found`);
         }
         return wallet;
+    }
+
+    async getOrCreateWallet(payload: CreateWalletType): Promise<Wallet | any> {
+        const wallet = await WalletRepository.getWalletByOwner(
+            payload.role,
+            payload.owner
+        );
+
+        if (wallet) {
+            return wallet;
+        }
+
+        return await WalletRepository.createWallet({
+            role: payload.role,
+            owner: payload.owner
+        });
     }
 
     async getAllWallets(options: any) {
@@ -109,10 +122,7 @@ class WalletService implements IWalletService {
             owner
         );
         if (!userWallet) {
-            return {
-                success: false,
-                message: `Wallet not found`
-            };
+            throw new Error(`Wallet not found`);
         }
 
         const currentBalance = userWallet.balance;
@@ -151,11 +161,7 @@ class WalletService implements IWalletService {
             amount
         );
 
-        if (!updateWallet)
-            return {
-                success: false,
-                message: 'Failed to confirm wallet debit'
-            };
+        if (!updateWallet) throw new Error(`Failed to confirm wallet debit`);
 
         return {
             success: true,
@@ -169,8 +175,7 @@ class WalletService implements IWalletService {
             owner
         );
 
-        if (!userWallet)
-            return { success: false, message: 'Failed to fetch wallet' };
+        if (!userWallet) throw new Error('Failed to fetch wallet');
 
         const updateWallet = await WalletRepository.creditPendingBalance(
             userWallet?.id,
@@ -265,9 +270,10 @@ class WalletService implements IWalletService {
         )}`;
 
         const transaction = await TransactionRepository.createTransaction({
-            user: role === 'user' ? owner : undefined,
-            vendor: role === 'vendor' ? owner : undefined,
-            rider: role === 'rider' ? owner : undefined,
+            userId: owner,
+            role,
+            // vendorId: role === 'vendor' ? owner : undefined,
+            // riderId: role === 'rider' ? owner : undefined,
             reference,
             amount: parsedAmount,
             type: 'CREDIT',
@@ -311,9 +317,10 @@ class WalletService implements IWalletService {
         )}`;
 
         const transaction = await TransactionRepository.createTransaction({
-            user: role === 'user' ? owner : undefined,
-            vendor: role === 'vendor' ? owner : undefined,
-            rider: role === 'rider' ? owner : undefined,
+            userId: owner, //role === 'user' ? owner : undefined,
+            // vendorId: role === 'vendor' ? owner : undefined,
+            // riderId: role === 'rider' ? owner : undefined,
+            role,
             reference,
             amount: parsedAmount,
             type: 'DEBIT',

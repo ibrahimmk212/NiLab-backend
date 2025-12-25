@@ -4,7 +4,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import ProductService from '../../services/ProductService';
 import CategoryService from '../../services/CategoryService';
 import VendorService from '../../../api/services/VendorService';
-import { uploadFileToS3 } from '../../../utils/s3';
+// import { uploadFileToS3 } from '../../../utils/s3';
 import path from 'path';
 
 class VendorProductController {
@@ -25,15 +25,15 @@ class VendorProductController {
             if (!req?.files?.file) throw Error('File Not selected');
             file.name = `${Date.now()}_${file.name.replace(/ /g, '_')}`;
 
-            const upload = await uploadFileToS3(file, 'thumbnails/');
-            const updated = await ProductService.update(id, {
-                thumbnail: upload?.url
-            });
+            // const upload = await uploadFileToS3(file, 'thumbnails/');
+            // const updated = await ProductService.update(id, {
+            //     thumbnail: upload?.url
+            // });
 
             res.status(STATUS.CREATED).send({
                 success: true,
-                message: 'Product Updated Successfully.',
-                data: updated
+                message: 'Product Updated Successfully.'
+                // data: updated
             });
         }
     );

@@ -29,7 +29,7 @@ const riderSchema = new Schema<Rider>(
         email: { type: String, required: false },
         city: { type: String, required: false },
         gender: { type: String, required: false, default: 'male' },
-        vehicle: { type: String, required: false },
+        vehicle: { type: String, required: true, default: 'bicycle' },
         ratings: { type: Number, default: 0 },
         status: { type: String, required: true, default: 'verified' },
         available: {
@@ -61,6 +61,13 @@ riderSchema.virtual('orders', {
     localField: '_id',
     foreignField: 'riderId',
     justOne: false
+});
+
+riderSchema.virtual('user', {
+    ref: 'User',
+    localField: 'userId', // ✅ Vendor.userId
+    foreignField: '_id', // ✅ User._id
+    justOne: true
 });
 
 // reverse populate dispatches

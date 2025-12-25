@@ -114,7 +114,7 @@ class VendorOrderController {
             res: Response,
             next: NextFunction
         ): Promise<any> => {
-            const { vendor, body, params } = req;
+            const { vendor, user, body, params } = req;
             const { id } = params;
             const status:
                 | 'pending'
@@ -174,7 +174,7 @@ class VendorOrderController {
                 });
                 const transaction = await TransactionService.createTransaction({
                     amount: order.amount,
-                    vendor: order.vendor._id,
+                    userId: user.id,
                     order: order.id,
                     type: 'CREDIT',
                     remark: 'Order Payment',

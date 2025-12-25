@@ -4,7 +4,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import ProductService from '../../services/ProductService';
 import CategoryService from '../../services/CategoryService';
 import VendorService from '../../services/VendorService';
-import { uploadFileToS3 } from '../../../utils/s3';
+// import { uploadFileToS3 } from '../../../utils/s3';
 import path from 'path';
 
 class ProductController {

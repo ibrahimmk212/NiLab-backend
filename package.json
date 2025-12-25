@@ -38,7 +38,6 @@
     "homepage": "https://github.com/mzahmerd/mds-food-api#readme",
     "dependencies": {
         "@types/redis": "^4.0.11",
-        "aws-sdk": "^2.1430.0",
         "axios": "^1.6.7",
         "bcrypt": "^5.1.1",
         "cloudinary": "^2.7.0",

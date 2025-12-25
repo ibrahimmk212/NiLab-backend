@@ -48,7 +48,7 @@ class WebhookController {
 
         const transaction = await TransactionService.createTransaction({
             amount: eventData.amountPaid,
-            user: order.user,
+            userId: order.user,
             order: order.id,
             type: 'DEBIT',
             remark: 'Order Payment',

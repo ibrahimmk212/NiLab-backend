@@ -8,11 +8,15 @@ class RiderRepository {
     }
 
     async findRiderById(riderId: string): Promise<Rider | null> {
-        return await RiderModel.findById(riderId).populate('userId');
+        return await RiderModel.findById(riderId).populate(
+            'user wallet vehicle'
+        );
     }
 
     async findByKey(key: string, value: string): Promise<Rider | null> {
-        return await RiderModel.findOne({ [key]: value }).populate('userId');
+        return await RiderModel.findOne({ [key]: value }).populate(
+            'user wallet vehicle'
+        );
     }
     // find Riders options
     async findRidersByOption(
@@ -70,7 +74,8 @@ class RiderRepository {
             RiderModel.find(filter)
                 .sort(options.sortBy)
                 .skip(skip)
-                .limit(limit),
+                .limit(limit)
+                .populate('user wallet vehicle'),
             RiderModel.countDocuments(filter)
         ]);
 
@@ -92,7 +97,7 @@ class RiderRepository {
     async findCityRiders(city: string): Promise<Rider[]> {
         return await RiderModel.find({
             city: city
-        }).populate('userId');
+        }).populate('user wallet vehicle');
     }
 
     async updateRider(
@@ -101,7 +106,7 @@ class RiderRepository {
     ): Promise<Rider | null> {
         return await RiderModel.findByIdAndUpdate(riderId, updateData, {
             new: true
-        }).populate('userId');
+        }).populate('user wallet vehicle');
     }
 
     async deleteRider(riderId: string): Promise<Rider | null> {

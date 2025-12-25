@@ -124,7 +124,8 @@ class RiderWalletController {
             const reference = currentTimestamp().toString();
             const transaction = await TransactionService.createTransaction({
                 amount: amount,
-                rider: rider._id,
+                userId: rider.userId,
+                role: 'rider',
                 type: 'DEBIT',
                 remark: 'Withdrawal to bank',
                 status: 'pending',

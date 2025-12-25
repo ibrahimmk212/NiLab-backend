@@ -1,4 +1,4 @@
-import { ConfigService } from 'aws-sdk';
+// import { ConfigService } from 'aws-sdk';
 import { Configuration, ICity, IState } from '../models/Configuration';
 import ConfigurationRepository from '../repositories/ConfigurationRepository';
 interface IConfigurationService {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import TransactionRepository from '../repositories/TransactionRepository';
 import { Transaction } from '../models/Transaction';
 import WalletService from './WalletService';
@@ -27,8 +28,8 @@ class TransactionService {
         );
     }
 
-    async getAll(): Promise<Transaction[] | null> {
-        return await TransactionRepository.findAll();
+    async getAll(options: any): Promise<any> {
+        return await TransactionRepository.findAll(options);
     }
 
     async getTransactionsByVendor(
@@ -73,7 +74,7 @@ class TransactionService {
 
         const paid = WalletService.initCreditAccount({
             amount: transaction.amount,
-            owner: transaction.vendor,
+            owner: transaction.userId,
             // reference: transaction.order.toString(),
             // remark: transaction.remark,
             role: 'vendor'

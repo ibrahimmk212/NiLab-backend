@@ -4,6 +4,7 @@ import { ROLE, STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import RiderService from '../../services/RiderService';
 import { generateRandomNumbers } from '../../../utils/helpers';
+import WalletService from '../../services/WalletService';
 
 class AdminRiderController {
     getAll = asyncHandler(
@@ -24,12 +25,24 @@ class AdminRiderController {
             next: NextFunction
         ): Promise<void> => {
             const { id } = req.params;
-            const rider = await RiderService.getRiderDetail(id);
+            const rider: any = await RiderService.getRiderDetail(id);
+            const getWallet = await WalletService.getOrCreateWallet({
+                role: 'rider',
+                owner: rider.user.id
+            });
+            let wallet = null;
+            if (getWallet) {
+                wallet = getWallet;
+            }
+
             if (!rider) throw new Error('Rider not available');
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Rider fetched successfully',
-                data: rider
+                data: {
+                    ...rider.toJSON(),
+                    wallet
+                }
             });
         }
     );

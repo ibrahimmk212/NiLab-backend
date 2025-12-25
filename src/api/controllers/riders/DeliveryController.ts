@@ -163,7 +163,8 @@ class DeliveryController {
                     order.serviceFee +
                     order.deliveryFee +
                     order.vat,
-                rider: rider._id,
+                userId: rider.userId,
+                role: 'rider',
                 type: 'DEBIT',
                 remark: `Cash payment of ${order.paymentReference}`,
                 status: 'pending',
@@ -360,7 +361,8 @@ class DeliveryController {
 
             const transaction = await TransactionService.createTransaction({
                 amount: delivery.deliveryFee,
-                rider: rider.id,
+                userId: rider.userId,
+                role: 'rider',
                 order: delivery.order?._id,
                 type: 'CREDIT',
                 remark: 'Delivery Payment',

@@ -15,12 +15,12 @@ const AppConfig = {
         defaultNearbyDistance:
             parseInt(<string>process.env.DEFAULT_NEARBY_DISTANCE) || 1000
     },
-    aws: {
-        awsKey: process.env.AWS_ACCESS_KEY_ID,
-        awsSecret: process.env.AWS_SECRET_ACCESS_KEY as string,
-        awsBucket: process.env.S3_BUCKET,
-        awsRegion: process.env.S3_REGION
-    },
+    // aws: {
+    //     awsKey: process.env.AWS_ACCESS_KEY_ID,
+    //     awsSecret: process.env.AWS_SECRET_ACCESS_KEY as string,
+    //     awsBucket: process.env.S3_BUCKET,
+    //     awsRegion: process.env.S3_REGION
+    // },
     db: {
         mongo_url: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/mds-food'
     },

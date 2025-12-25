@@ -17,8 +17,49 @@ class TransactionRepository {
         return await TransactionModel.findById(transactionId);
     }
 
-    async findAll(): Promise<Transaction[] | null> {
-        return await TransactionModel.find().sort({ createdAt: -1 });
+    // Find all vendor
+    async findAll(options: any) {
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const skip = (page - 1) * limit;
+
+        const filter: Record<string, any> = {};
+
+        if (options.user) {
+            filter.userId = options.user;
+        }
+
+        if (options.reference) {
+            filter.reference = options.reference;
+        }
+        if (options.amount) {
+            filter.amount = options.amount;
+        }
+
+        const [transactions, total] = await Promise.all([
+            TransactionModel.find(filter)
+                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .skip(skip)
+                .limit(limit)
+                .populate({
+                    path: 'user',
+                    select: 'firstName lastName email phone'
+                }),
+            TransactionModel.countDocuments(filter)
+        ]);
+
+        return {
+            total,
+            count: transactions.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: transactions
+        };
     }
 
     async findTransactionByReference(

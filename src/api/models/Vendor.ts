@@ -33,6 +33,13 @@ export interface Vendor extends Document {
     banner: string;
     location: Location;
     bankAccount?: BankAccount;
+    identityType: string;
+    identityVerificationStatus:
+        | 'not_submitted'
+        | 'pending'
+        | 'verified'
+        | 'failed';
+    identityNumber: string;
     acceptDelivery: boolean;
     openingHour: string;
     closingHour: string;
@@ -97,7 +104,14 @@ const vendorSchema = new Schema<Vendor>(
         },
         // lat: { type: Number },
         // lng: { type: Number },
-        status: { type: String, required: false, default: 'inactive' }
+        status: { type: String, required: false, default: 'inactive' },
+        identityType: { type: String, required: false },
+        identityVerificationStatus: {
+            type: String,
+            required: false,
+            default: 'not_submitted'
+        },
+        identityNumber: { type: String, required: false, default: 'inactive' }
     },
     {
         timestamps: true,

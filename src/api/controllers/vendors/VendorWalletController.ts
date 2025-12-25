@@ -123,7 +123,7 @@ class VendorWalletController {
             const reference = currentTimestamp().toString();
             const transaction = await TransactionService.createTransaction({
                 amount: amount,
-                vendor: vendor._id,
+                userId: vendor.userId,
                 type: 'CREDIT',
                 remark: 'Withdrawal to bank',
                 status: 'pending',

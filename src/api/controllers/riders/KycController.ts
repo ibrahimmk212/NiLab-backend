@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import { STATUS } from '../../../constants';
 import { currentTimestamp } from '../../../utils/helpers';
-import { uploadFileToS3 } from '../../../utils/s3';
+// import { uploadFileToS3 } from '../../../utils/s3';
 
 class KycController {
     upload = asyncHandler(
@@ -14,12 +14,12 @@ class KycController {
 
             file.name = `${currentTimestamp()}_${file.name.replace(/ /g, '_')}`;
 
-            const upload = await uploadFileToS3(file, 'kyc/');
+            // const upload = await uploadFileToS3(file, 'kyc/');
 
             res.status(STATUS.CREATED).send({
                 success: true,
-                message: 'File Updated Successfully.',
-                data: upload
+                message: 'File Updated Successfully.'
+                // data: upload
             });
         }
     );
