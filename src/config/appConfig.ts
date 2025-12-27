@@ -32,15 +32,15 @@ const AppConfig = {
         contractCode: process.env.CONTRACT_CODE as string,
         walletNumber: process.env.WALLET_NUMBER as string
     },
-    nodemailer: {
+    mailer: {
         service: process.env.SMTP_SERVICE,
-        port: process.env.SMTP_PORT,
+        port: process.env.EMAIL_PORT,
 
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASSWORD,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
 
         fromName: process.env.FROM_NAME,
-        fromEmail: process.env.FROM_EMAIL
+        fromEmail: process.env.EMAIL_FROM
     },
     corsWhiteList: ['*']
     // corsWhiteList: (process.env.CORS_WHITELIST as string) || ''

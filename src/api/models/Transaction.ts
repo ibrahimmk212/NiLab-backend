@@ -2,15 +2,10 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Transaction extends Document {
     order?: mongoose.Types.ObjectId;
-
-    // Roles involved
     userId: mongoose.Types.ObjectId; // customer (required)
-    // vendorId?: mongoose.Types.ObjectId; // restaurant
-    // riderId?: mongoose.Types.ObjectId; // courier
     role: 'user' | 'rider' | 'vendor';
     reference: string;
     amount: number;
-
     type: 'CREDIT' | 'DEBIT';
     status: 'pending' | 'successful' | 'failed' | 'reversed';
     remark?: string;

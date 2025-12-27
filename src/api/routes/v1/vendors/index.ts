@@ -12,6 +12,7 @@ import customerMarketCategoryRouter from './marketCategory';
 import vendorCategoryRouter from './categories';
 import vendorNotificationRouter from './notifications';
 import VendorDashboardRouter from './dashboard';
+import vendorPayoutRouter from './payout';
 
 const vendorsRouter: Router = Router();
 vendorsRouter.post('/login', VendorInfoController.login);
@@ -50,5 +51,6 @@ vendorsRouter.use('/notifications', vendorNotificationRouter);
 vendorsRouter.use('/market-categories', customerMarketCategoryRouter);
 vendorsRouter.use('/categories', vendorCategoryRouter);
 vendorsRouter.use('/dashboard', VendorDashboardRouter);
+vendorsRouter.use('/payouts', vendorPayoutRouter);
 
 export default vendorsRouter;

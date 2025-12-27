@@ -17,6 +17,7 @@ import adminKycRouter from './kyc';
 import adminMarketCategoryRouter from './marketCategories';
 import adminCustomersRouter from './customers';
 import adminWalletRouter from './wallets';
+import adminPayoutRouter from './payout';
 
 const adminsRouter: Router = Router();
 
@@ -37,6 +38,7 @@ adminsRouter.use('/notifications', adminNotificationRouter);
 adminsRouter.use('/transactions', adminTransactionRouter);
 adminsRouter.use('/promotions', adminPromotionRouter);
 adminsRouter.use('/kyc', adminKycRouter);
+adminsRouter.use('/payouts', adminPayoutRouter);
 
 adminsRouter.post('/login', AdminUserController.login);
 adminsRouter.get('/dashboard', AdminMainController.dashboard);

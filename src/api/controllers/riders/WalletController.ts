@@ -21,7 +21,7 @@ class RiderWalletController {
 
             const wallet = await WalletService.getMyWallet({
                 role: 'rider',
-                owner: rider.id
+                owner: rider.userId
             });
 
             if (!wallet) {

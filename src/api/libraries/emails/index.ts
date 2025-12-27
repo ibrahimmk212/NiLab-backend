@@ -1,4 +1,3 @@
-import transporter from '../../../utils/nodemailer';
 import appConfig from '../../../config/appConfig';
 import {
     IRiderWelcome,
@@ -18,6 +17,7 @@ import {
     IRiderDeliveryPaymentReceipt
 } from './types';
 import { getTemplate } from './templates';
+import { mailTransporter } from '../../../utils/mail/mailer';
 
 const sendEmail = async (
     email: string,
@@ -25,8 +25,8 @@ const sendEmail = async (
     htmlToSend: string
 ) => {
     try {
-        const info = await transporter.sendMail({
-            from: `${appConfig.nodemailer.fromName} <${appConfig.nodemailer.fromEmail}>`,
+        const info = await mailTransporter.sendMail({
+            from: `${appConfig.mailer.fromName} <${appConfig.mailer.fromEmail}>`,
             to: email,
             subject,
             html: htmlToSend
@@ -41,37 +41,37 @@ class EmailTemplate {
     customerWelcome = async (email: string, data: IWelcomeEmail) => {
         const welcomeTemplate = getTemplate('customerWelcome');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 
     riderWelcome = async (email: string, data: IRiderWelcome) => {
         const welcomeTemplate = getTemplate('riderWelcome');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 
     verifyEmail = async (email: string, data: IVerifyEmail) => {
         const welcomeTemplate = getTemplate('verifyEmail');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: Verify Email', htmlContent);
+        await sendEmail(email, 'Terminus: Verify Email', htmlContent);
     };
 
     forgotPassword = async (email: string, data: IForgotPassword) => {
         const welcomeTemplate = getTemplate('forgotPassword');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: Password Reset OTP', htmlContent);
+        await sendEmail(email, 'Terminus: Password Reset OTP', htmlContent);
     };
 
     vendorOnboarding = async (email: string, data: IVendorOnboarding) => {
         const welcomeTemplate = getTemplate('vendorOnboarding');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 
     vendorSuspended = async (email: string, data: IVendorAccountSuspension) => {
         const welcomeTemplate = getTemplate('vendorSuspension');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: Account Suspended', htmlContent);
+        await sendEmail(email, 'Terminus: Account Suspended', htmlContent);
     };
     vendorBankUpdate = async (
         email: string,
@@ -79,24 +79,24 @@ class EmailTemplate {
     ) => {
         const welcomeTemplate = getTemplate('vendorBankUpdate');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: Bank Details Update', htmlContent);
+        await sendEmail(email, 'Terminus: Bank Details Update', htmlContent);
     };
 
     riderVerified = async (email: string, data: IRiderAccountVerified) => {
         const welcomeTemplate = getTemplate('riderVerified');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: Account Verified', htmlContent);
+        await sendEmail(email, 'Terminus: Account Verified', htmlContent);
     };
     riderSuspended = async (email: string, data: IRiderAccountSuspended) => {
         const welcomeTemplate = getTemplate('riderSuspended');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: Account Suspended', htmlContent);
+        await sendEmail(email, 'Terminus: Account Suspended', htmlContent);
     };
 
     vendorOrder = async (email: string, data: IVendorNewOrder) => {
         const welcomeTemplate = getTemplate('vendorOrder');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: New Order', htmlContent);
+        await sendEmail(email, 'Terminus: New Order', htmlContent);
     };
 
     orderPaymentReceipt = async (
@@ -105,17 +105,13 @@ class EmailTemplate {
     ) => {
         const welcomeTemplate = getTemplate('orderPaymentReceipt');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(
-            email,
-            'MDS Foods: Order Payment Complete',
-            htmlContent
-        );
+        await sendEmail(email, 'Terminus: Order Payment Complete', htmlContent);
     };
 
     orderConfirmation = async (email: string, data: IOrderConfirmation) => {
         const welcomeTemplate = getTemplate('customerWelcome');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 
     availableDelivery = async (
@@ -124,7 +120,7 @@ class EmailTemplate {
     ) => {
         const welcomeTemplate = getTemplate('availableDelivery');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'MDS Foods: New Delivery', htmlContent);
+        await sendEmail(email, 'Terminus: New Delivery', htmlContent);
     };
 
     deliveryConfirmation = async (
@@ -133,7 +129,7 @@ class EmailTemplate {
     ) => {
         const welcomeTemplate = getTemplate('deliveryConfirmation');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 
     customerDeliveryCode = async (
@@ -142,13 +138,13 @@ class EmailTemplate {
     ) => {
         const welcomeTemplate = getTemplate('customerDeliveryCode');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 
     deliveryOrder = async (email: string, data: IDeliveryStatusUpdate) => {
         const welcomeTemplate = getTemplate('deliveryOrder');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 
     deliveryPayment = async (
@@ -157,7 +153,7 @@ class EmailTemplate {
     ) => {
         const welcomeTemplate = getTemplate('deliveryPayment');
         const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to MDS Foods', htmlContent);
+        await sendEmail(email, 'Welcome to Terminus', htmlContent);
     };
 }
 

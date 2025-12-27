@@ -28,10 +28,9 @@ class AuthController {
 
         // Login notification for test
         const notificationDetail: any = {
-            message: 'Welcome to Nilab!',
+            message: 'Welcome to Terminus!',
             title: 'Successfully logged in'
         };
-
         if (user.role === 'admin') {
             const admin = await AdminService.getByUserId(user.id);
 

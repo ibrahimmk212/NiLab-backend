@@ -52,4 +52,5 @@ walletSchema.pre('findOneAndUpdate', async function (next) {
     next();
 });
 
-export default mongoose.model<Wallet>('Wallet', walletSchema);
+const WalletModel = mongoose.model<Wallet>('Wallet', walletSchema);
+export default WalletModel;
