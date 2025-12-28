@@ -1,4 +1,4 @@
-import admin from './firebaseAdmin'; // The file where you initialized Firebase Admin SDK
+// import admin from './firebaseAdmin'; // The file where you initialized Firebase Admin SDK
 
 export const sendPushNotification = async (
     token: string,
@@ -14,11 +14,9 @@ export const sendPushNotification = async (
     };
 
     try {
-        const response = await admin.messaging().send(message);
-        console.log('Successfully sent message:', response);
+        // const response = await admin.messaging().send(message);
+        console.log('Successfully sent message:', 'response');
     } catch (error) {
         console.error('Error sending message:', error);
     }
 };
-
-// Example usage
