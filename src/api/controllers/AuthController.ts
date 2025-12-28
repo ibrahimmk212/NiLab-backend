@@ -252,7 +252,7 @@ class AuthController {
             const payload: SignUpType = {
                 firstName: 'Admin',
                 lastName: 'Account',
-                email: 'admin@mdsfoods.com',
+                email: 'admin@terminus.com',
                 phoneNumber: '09012345678',
                 gender: 'male',
                 role: 'admin',
