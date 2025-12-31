@@ -15,11 +15,11 @@ class VendorWalletController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { vendor }: any = req;
+            const { vendor, userdata }: any = req;
 
-            const wallet = await WalletService.getMyWallet({
+            const wallet = await WalletService.getOrCreateWallet({
                 role: 'vendor',
-                owner: vendor.id
+                owner: userdata.id
             });
 
             if (!wallet) {

@@ -26,6 +26,7 @@ class AdminRiderController {
         ): Promise<void> => {
             const { id } = req.params;
             const rider: any = await RiderService.getRiderDetail(id);
+            if (!rider) throw new Error('Rider not available');
             const getWallet = await WalletService.getOrCreateWallet({
                 role: 'rider',
                 owner: rider.user.id
@@ -35,7 +36,6 @@ class AdminRiderController {
                 wallet = getWallet;
             }
 
-            if (!rider) throw new Error('Rider not available');
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Rider fetched successfully',

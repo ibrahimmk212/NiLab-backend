@@ -5,6 +5,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import VendorService from './../../services/VendorService';
 import { generateRandomNumbers } from '../../../utils/helpers';
 import emails from '../../libraries/emails';
+import WalletService from '../../services/WalletService';
 
 class AdminVendorController {
     create = asyncHandler(
@@ -89,10 +90,22 @@ class AdminVendorController {
             const { id } = req.params;
             const vendor = await VendorService.get(id);
             if (!vendor) throw new Error('Vendor not available');
+
+            const getWallet = await WalletService.getOrCreateWallet({
+                role: 'vendor',
+                owner: vendor.user.id
+            });
+            let wallet = null;
+            if (getWallet) {
+                wallet = getWallet;
+            }
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Vendor fetched successfully',
-                data: vendor
+                data: {
+                    ...vendor.toJSON(),
+                    wallet
+                }
             });
         }
     );
