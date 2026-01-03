@@ -12,7 +12,10 @@ class VendorController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const vendors = await VendorService.getAll(req.query);
+            const vendors = await VendorService.getAll({
+                status: 'active',
+                ...req.query
+            });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Vendors fetched successfully',
@@ -70,7 +73,7 @@ class VendorController {
                 Number(latitude),
                 Number(longitude),
                 Number(maxDistance),
-                req.query
+                { status: 'active', ...req.query }
             );
             // vendors.map((vendor: Vendor) => vendor.populate('categories'));
             res.status(STATUS.OK).json({

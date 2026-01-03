@@ -4,7 +4,7 @@ import AdminKycController from '../../../controllers/admin/AdminKycController';
 const adminKycRouter = Router();
 
 adminKycRouter.get('/', AdminKycController.getKycs);
-adminKycRouter.get('/:id', AdminKycController.getKycDetails);
+adminKycRouter.get('/user/:id', AdminKycController.getKycDetails);
 adminKycRouter.put('/:id/status', AdminKycController.updateKycStatus);
 adminKycRouter.put('/:id/address', AdminKycController.updateKycAddress);
 adminKycRouter.put('/:id/identity', AdminKycController.updateKycIdentity);

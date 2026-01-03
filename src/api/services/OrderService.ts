@@ -15,19 +15,47 @@ class OrderService {
     async getOrderByReference(paymentReference: string): Promise<Order | null> {
         return await OrderRepository.findOrderByReference(paymentReference);
     }
+    // async calculateDeliveryFee2(distance: number): Promise<number> {
+    //     const config = await ConfigurationService.getConfiguration();
+    //     if (!config) return 0;
+    //     const deliveryFee = distance * config.deliveryFee;
+    //     return Math.min(deliveryFee, config.maxDeliveryFee);
+    // }
+
+    // async calculateServiceFee2(deliveryFee: number): Promise<number> {
+    //     const config = await ConfigurationService.getConfiguration();
+    //     if (!config) return 0;
+
+    //     const serviceFee = (deliveryFee * config.serviceFee) / 100;
+    //     return Math.min(serviceFee, config.maxServiceFee);
+    // }
+
     async calculateDeliveryFee(distance: number): Promise<number> {
         const config = await ConfigurationService.getConfiguration();
         if (!config) return 0;
-        const deliveryFee = distance * config.deliveryFee;
-        return Math.min(deliveryFee, config.maxDeliveryFee);
+
+        // distance is usually in meters from Google Maps/GeoLib,
+        // converting to KM if feePerKm is per kilometer
+        const distanceInKm = distance / 1000;
+
+        const totalDeliveryFee =
+            config.baseDeliveryFee + distanceInKm * config.feePerKm;
+
+        return totalDeliveryFee;
     }
 
-    async calculateServiceFee(deliveryFee: number): Promise<number> {
+    /**
+     * Logic: Taking a percentage of the vendor's sale.
+     * In the new model, we use 'vendorCommission' instead of 'serviceFee'.
+     */
+    async calculateServiceFee(subTotal: number): Promise<number> {
         const config = await ConfigurationService.getConfiguration();
         if (!config) return 0;
 
-        const serviceFee = (deliveryFee * config.serviceFee) / 100;
-        return Math.min(serviceFee, config.maxServiceFee);
+        // We use vendorCommission (e.g., 15%) of the food/product price
+        const commissionAmount = (subTotal * config.vendorCommission) / 100;
+
+        return commissionAmount;
     }
     async getAll(options: any): Promise<any> {
         return await OrderRepository.findAll(options);

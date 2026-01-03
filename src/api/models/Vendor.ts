@@ -111,7 +111,7 @@ const vendorSchema = new Schema<Vendor>(
             required: false,
             default: 'not_submitted'
         },
-        identityNumber: { type: String, required: false, default: 'inactive' }
+        identityNumber: { type: String, required: false }
     },
     {
         timestamps: true,

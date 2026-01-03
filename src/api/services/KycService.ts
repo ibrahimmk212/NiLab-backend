@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import KycRepository from '../repositories/KycRepository';
 import { Types } from 'mongoose';
 import { Kyc } from '../models/Kyc';
+import UserRepository from '../repositories/UserRepository';
 
 class KycService {
     async createKyc(
@@ -11,6 +13,9 @@ class KycService {
             ...kycData,
             user: userId,
             role: 'rider'
+        });
+        await UserRepository.updateUser(`${userId}`, {
+            kycStatus: 'pending'
         });
         return kyc;
     }
@@ -32,9 +37,15 @@ class KycService {
 
     async updateKycStatus(
         kycId: Types.ObjectId,
-        status: string,
+        status: 'pending' | 'not_submitted' | 'approved' | 'rejected',
         message?: string
     ): Promise<Kyc | null> {
+        const kyc: any = await KycRepository.getKycById(kycId);
+        if (!kyc) throw new Error('KYC not found!');
+        // update kycstatus on user record
+        await UserRepository.updateUser(kyc.user.id, {
+            kycStatus: status
+        });
         return await KycRepository.updateKycStatus(kycId, status, message);
     }
 
