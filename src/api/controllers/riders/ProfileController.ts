@@ -8,6 +8,7 @@ import { LoginType, RiderSignUpType, VerifyOTP } from '../../types/auth';
 import jwt from '../../../utils/jwt';
 import WalletService from '../../services/WalletService';
 import emails from '../../libraries/emails';
+import ConfigurationService from '../../services/ConfigurationService';
 
 class ProfileController {
     currentUser = asyncHandler(
@@ -20,10 +21,12 @@ class ProfileController {
                 owner: rider.id
             });
 
+            const systemConfig = await ConfigurationService.getConfiguration();
+
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'User fetched successfully',
-                data: { user: userdata, rider, wallet }
+                data: { user: userdata, rider, wallet, systemConfig }
             });
         }
     );

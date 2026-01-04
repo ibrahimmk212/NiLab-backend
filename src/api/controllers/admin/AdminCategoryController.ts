@@ -29,7 +29,7 @@ class AdminCategoryController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const product = await CategoryService.getAll();
+            const product = await CategoryService.getAll(req.query);
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',

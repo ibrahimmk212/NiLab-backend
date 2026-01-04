@@ -103,7 +103,12 @@ class ProductController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const categories = await CategoryService.getAll();
+            const { vendor } = req.params;
+            const categories = await CategoryService.getAll({
+                vendor: vendor,
+                status: 'active',
+                ...req.query
+            });
             res.status(STATUS.OK).send({
                 message: 'Categories fetched successfully',
                 data: categories

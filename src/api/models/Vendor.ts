@@ -79,8 +79,18 @@ const vendorSchema = new Schema<Vendor>(
         ],
         phoneNumber: { type: String, required: false },
         ratings: { type: Number, default: 0 },
-        logo: { type: String },
-        banner: { type: String },
+        logo: {
+            type: String,
+            required: true,
+            default:
+                'https://res.cloudinary.com/dqisroa03/image/upload/v1767521304/1767521302003.jpg'
+        },
+        banner: {
+            type: String,
+            required: true,
+            default:
+                'https://res.cloudinary.com/dqisroa03/image/upload/v1767521141/1767521138883.jpg'
+        },
         location: {
             // GeoJSON Point
             type: { type: String, enum: ['Point'], default: 'Point' },

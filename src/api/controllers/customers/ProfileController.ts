@@ -1,18 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import UserService from '../../services/UserService';
 import AuthService from '../../services/AuthService';
 import { Address } from '../../models/User';
+import ConfigurationService from '../../services/ConfigurationService';
 
 class ProfileController {
     currentUser = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
             const user = await UserService.findUserById(req.userdata.id);
+            const systemConfig = await ConfigurationService.getConfiguration();
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'User fetched successfully',
-                data: user
+                data: { ...user.toObject(), systemConfig }
             });
         }
     );
