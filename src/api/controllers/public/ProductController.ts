@@ -59,24 +59,19 @@ class ProductController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const query = req.query;
-            const limit = parseInt(query.limit as string) || 10;
-            const page = parseInt(query.page as string) || 1;
-            const search = (query.search as string) || '';
-            const options: Record<string, unknown> = {
+            const {
+                page = '1',
+                limit = '10',
+                sortBy = 'createdAt',
+                sortOrder = 'desc',
                 search,
-                limit,
-                page
-            };
-            const product = await ProductService.searchProducts(
-                search,
-                limit,
-                page,
-                options
-            );
+                ...restFilters
+            } = req.query;
+
+            const result = await ProductService.getAll(req.query);
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
-                data: product
+                ...result
             });
         }
     );

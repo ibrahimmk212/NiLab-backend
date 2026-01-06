@@ -7,6 +7,7 @@ export interface Category extends Document {
     description?: string;
     vendor?: mongoose.Types.ObjectId;
     status: 'active' | 'inactive';
+    isDeleted: boolean;
     deletedAt?: Date | null;
 }
 
@@ -22,6 +23,7 @@ const categorySchema = new Schema<Category>(
             default: 'active',
             index: true
         },
+        isDeleted: { type: Boolean, required: true, default: false },
         deletedAt: {
             type: Date,
             default: null,

@@ -7,6 +7,6 @@ vendorCategoryRouter.get('/:id', VendorProductCategoryController.getSingle);
 vendorCategoryRouter.get('/', VendorProductCategoryController.getAll);
 vendorCategoryRouter.post('/', VendorProductCategoryController.create);
 vendorCategoryRouter.put('/:id', VendorProductCategoryController.update);
-// vendorCategoryRouter.delete('/:id', VendorProductCategoryController.delete);
+vendorCategoryRouter.delete('/:id', VendorProductCategoryController.delete);
 
 export default vendorCategoryRouter;

@@ -9,7 +9,7 @@ import auth from '../../../middlewares/auth';
 const vendorProductRouter: Router = Router();
 
 vendorProductRouter.use(auth.vendorLocationIsSet);
-vendorProductRouter.put('/:id/upload-file', VendorProductController.upload);
+// vendorProductRouter.put('/:id/upload-file', VendorProductController.upload);
 vendorProductRouter.post(
     '/create',
     Validate(productRequirement.create),
@@ -40,5 +40,6 @@ vendorProductRouter.put(
     // Validate(productRequirement.updateStatus),
     VendorProductController.updateAvailability
 );
+vendorProductRouter.delete('/:id', VendorProductController.delete);
 
 export default vendorProductRouter;

@@ -27,5 +27,8 @@ class CategoryService implements ICategoryService {
     async getAll(options: any): Promise<any> {
         return CategoryRepository.findAll(options);
     }
+    async delete(id: string): Promise<any> {
+        return CategoryRepository.deleteCategory(id);
+    }
 }
 export default new CategoryService();

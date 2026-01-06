@@ -77,6 +77,22 @@ class VendorProductCategoryController {
             });
         }
     );
+
+    delete = asyncHandler(
+        async (req: any, res: Response, next: NextFunction): Promise<void> => {
+            const { id } = req.params;
+            // check if category belongs to vendor
+            const categoryToDelete = await CategoryService.find(id);
+            if (categoryToDelete.vendor.toString() !== req.vendor.id) {
+                throw new Error('Category not found');
+            }
+            await CategoryService.delete(id);
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Category Deleted Successfully'
+            });
+        }
+    );
 }
 
 export default new VendorProductCategoryController();

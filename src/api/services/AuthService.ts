@@ -164,12 +164,12 @@ class AuthService implements IAuthService {
         if (!user) {
             throw new Error('User not found');
         }
-        // const hashedPassword = bcrypt.hashSync(
-        //     password,
-        //     appConfig.app.hashSalt
-        // );
+        const hashedPassword = bcrypt.hashSync(
+            password,
+            appConfig.app.hashSalt
+        );
 
-        user.password = password;
+        user.password = hashedPassword;
 
         await UserRepository.updateUser(user.id, user);
 

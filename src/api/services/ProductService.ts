@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import ProductRepository from '../repositories/ProductRepository';
 import ProductModel, { Product } from '../models/Product';
 import { CreateProductType } from '../types/product';
@@ -10,54 +11,44 @@ interface IProductService {
     // delete(userId: string): Promise<boolean>;
 }
 
+type UserRole = 'admin' | 'vendor' | 'user';
+
 class ProductService implements IProductService {
     async create(payload: CreateProductType): Promise<any> {
         return await ProductRepository.createProduct(payload);
     }
 
-    async findById(id: string): Promise<Product | null> {
-        return await ProductRepository.findProductById(id);
+    async findById(
+        id: string,
+        role: UserRole = 'user'
+    ): Promise<Product | null> {
+        return await ProductRepository.findProductById(id, role);
     }
-    async getAll(data: any): Promise<any> {
-        return await ProductRepository.getAll(data);
+    async getAll(data: any, role: UserRole = 'user'): Promise<any> {
+        return await ProductRepository.getAll(data, role);
     }
-    async getAllByVendor(vendorId: any): Promise<Product[] | null> {
-        return await ProductRepository.getAllByVendor(vendorId);
-    }
+    // async getAllByVendor(
+    //     vendorId: any,
+    //     role: UserRole = 'vendor'
+    // ): Promise<Product[] | null> {
+    //     return await ProductRepository.getAllByVendor(vendorId, role);
+    // }
 
-    async getAllByCategory(categoryId: any): Promise<Product[] | null> {
-        return await ProductRepository.getAllByCategory(categoryId);
-    }
-    async getProductsByOption(
-        options: Record<string, unknown>,
-        limit: number,
-        page: number
-    ): Promise<any> {
-        return await ProductRepository.findProductsByOption(
-            options,
-            limit,
-            page
-        );
-    }
-
-    async searchProducts(
-        search: string,
-        limit: number,
-        page: number,
-        queryParams: any
-    ): Promise<any> {
-        return await ProductRepository.searchProducts(
-            search,
-            limit,
-            page,
-            queryParams
-        );
-    }
+    // async getAllByCategory(
+    //     categoryId: any,
+    //     role: UserRole = 'user'
+    // ): Promise<Product[] | null> {
+    //     return await ProductRepository.getAllByCategory(categoryId);
+    // }
     async update(
         productId: string,
         updateData: Partial<Product>
     ): Promise<any> {
         return await ProductRepository.updateProduct(productId, updateData);
+    }
+
+    async delete(productId: string): Promise<any> {
+        return await ProductRepository.deleteProduct(productId);
     }
 }
 export default new ProductService();
