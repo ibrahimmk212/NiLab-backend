@@ -242,27 +242,6 @@ class ProductRepository {
         const limit = Number(options.limit) || 10;
         const skip = (page - 1) * limit;
 
-        // repair db record
-        // update all to not deleted where deletedAt is null and change status to active
-        await ProductModel.updateMany(
-            { isDeleted: { $ne: true }, deletedAt: { $ne: null } },
-            {
-                isDeleted: false,
-                status: 'active',
-                deletedAt: null,
-                isAvailable: true
-            }
-        );
-        await ProductModel.updateMany(
-            { isDeleted: { $ne: true } },
-            {
-                isDeleted: false,
-                status: 'active',
-                deletedAt: null,
-                isAvailable: true
-            }
-        );
-
         // 1. Filter ONLY for the Product's own status
         const filter: any = {};
         if (role !== 'admin') {
