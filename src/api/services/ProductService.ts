@@ -25,6 +25,7 @@ class ProductService implements IProductService {
         return await ProductRepository.findProductById(id, role);
     }
     async getAll(data: any, role: UserRole = 'user'): Promise<any> {
+        console.log('Service Data:', data);
         return await ProductRepository.getAll(data, role);
     }
 

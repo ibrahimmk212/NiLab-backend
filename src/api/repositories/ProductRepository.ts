@@ -274,18 +274,6 @@ class ProductRepository {
         if (options.price) filter.price = { $gte: Number(options.price) };
         if (options.search) filter.$text = { $search: options.search };
 
-        // delete all isAvailable fields from the records
-        const migrationResult = await ProductModel.updateMany(
-            {},
-            {
-                // 1. Delete the old field
-                $unset: { isAvailable: '' },
-                // 2. Ensure the new field is set to true (or a default)
-                // This ensures the query { available: true } actually finds them
-                $set: { available: true }
-            }
-        );
-
         // 2. Execute Query
         const [products, total] = await Promise.all([
             ProductModel.find(filter)

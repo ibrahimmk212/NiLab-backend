@@ -8,28 +8,6 @@ import VendorService from '../../services/VendorService';
 import path from 'path';
 
 class ProductController {
-    // createCategory = asyncHandler(
-    //     async (
-    //         req: Request | any,
-    //         res: Response,
-    //         next: NextFunction
-    //     ): Promise<void> => {
-    //         const newCategory = await CategoryService.create({
-    //             ...req.body,
-    //             vendor: req.vendor._id
-    //         });
-    //         if (!newCategory)
-    //             res.status(STATUS.BAD_REQUEST).send({
-    //                 success: false,
-    //                 message: 'Failed to create Product'
-    //             });
-    //         res.status(STATUS.OK).send({
-    //             success: true,
-    //             message: 'Product Created Successfully',
-    //             data: newCategory
-    //         });
-    //     }
-    // );
     getAll = asyncHandler(
         async (
             req: Request | any,
@@ -44,7 +22,8 @@ class ProductController {
                 search,
                 category,
                 minPrice,
-                name
+                name,
+                vendorId
             } = req.query;
 
             const result = await ProductService.getAll(
@@ -54,7 +33,8 @@ class ProductController {
                     search,
                     category,
                     minPrice,
-                    name
+                    name,
+                    vendorId
                 },
                 'user'
             );
@@ -77,7 +57,8 @@ class ProductController {
                 search,
                 category,
                 minPrice,
-                name
+                name,
+                vendorId
             } = req.query;
 
             const result = await ProductService.getAll(
@@ -88,7 +69,8 @@ class ProductController {
                     category,
                     minPrice,
                     search,
-                    available: true
+                    available: true,
+                    vendorId
                 },
                 'user'
             );

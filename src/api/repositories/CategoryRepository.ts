@@ -56,9 +56,15 @@ class CategoryRepository {
             filter.status = 'active';
         }
 
-        if (options.vendor) filter.vendor = options.vendor;
+        if (options.vendorId) filter.vendorId = options.vendorId;
         if (options.status) filter.status = options.status;
         if (options.name) filter.name = { $regex: options.name, $options: 'i' };
+        if (options.search) {
+            filter.$or = [
+                { name: { $regex: options.search, $options: 'i' } },
+                { description: { $regex: options.search, $options: 'i' } }
+            ];
+        }
 
         const [categories, total] = await Promise.all([
             CategoryModel.find(filter)

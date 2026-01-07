@@ -16,7 +16,8 @@ class ProductController {
             const page = req.query.page
                 ? parseInt(req.query.page as string, 10)
                 : 1;
-            const { name, search, category, minPrice, stock } = req.query;
+            const { name, search, category, minPrice, stock, vendorId } =
+                req.query;
             const products = await ProductService.getAll(
                 {
                     limit,
@@ -26,7 +27,8 @@ class ProductController {
                     category,
                     minPrice,
                     stock,
-                    available: true
+                    available: true,
+                    vendorId
                 },
                 'user'
             );

@@ -112,7 +112,7 @@ class VendorProductController {
             const { vendor, body, params } = req;
             const { id } = params;
 
-            const getProduct = await ProductService.findById(id);
+            const getProduct = await ProductService.findById(id, 'vendor');
 
             if (!getProduct) {
                 throw Error('Product not found');
