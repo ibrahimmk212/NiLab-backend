@@ -47,11 +47,22 @@ class VendorProductController {
             next: NextFunction
         ): Promise<void> => {
             const { vendor } = req;
+            const limit = Number(req.query.limit) || 10;
+            const page = Number(req.query.page) || 1;
+            const { search, category, minPrice, name, available, stock } =
+                req.query;
 
             const product = await ProductService.getAll(
                 {
-                    ...req.query,
-                    vendorId: vendor.id
+                    search,
+                    category,
+                    minPrice,
+                    name,
+                    available,
+                    limit,
+                    page,
+                    vendorId: vendor.id,
+                    stock
                 },
                 'vendor'
             );
@@ -137,7 +148,7 @@ class VendorProductController {
                 throw Error('Product not found');
             }
 
-            product.isAvailable = !product.isAvailable;
+            product.available = !product.available;
             await product.save();
             res.status(STATUS.OK).send({
                 success: true,

@@ -10,7 +10,26 @@ class ProductController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const products = await ProductService.getAll(req.query);
+            const limit = req.query.limit
+                ? parseInt(req.query.limit as string, 10)
+                : 10;
+            const page = req.query.page
+                ? parseInt(req.query.page as string, 10)
+                : 1;
+            const { name, search, category, minPrice, stock } = req.query;
+            const products = await ProductService.getAll(
+                {
+                    limit,
+                    page,
+                    name,
+                    search,
+                    category,
+                    minPrice,
+                    stock,
+                    available: true
+                },
+                'user'
+            );
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'products fetched successfully',
@@ -66,7 +85,10 @@ class ProductController {
             const { userdata }: any = req;
             const { productId } = req.params;
 
-            const product: any = await ProductService.findById(productId);
+            const product: any = await ProductService.findById(
+                productId,
+                'user'
+            );
             const favourites: [] = product.favourites;
             product.favourite = false;
 

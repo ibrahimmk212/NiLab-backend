@@ -82,12 +82,12 @@ class VendorOrderController {
             const order = await OrderService.getOrderById(id);
             if (!order) {
                 return res
-                    .status(STATUS.OK)
+                    .status(STATUS.NOT_FOUND)
                     .json({ success: false, message: 'Order not found' });
             }
 
             if (order.vendor != vendor.id) {
-                return res.status(STATUS.OK).json({
+                return res.status(STATUS.FORBIDDEN).json({
                     success: false,
                     message: 'You dont have access to this order'
                 });
@@ -95,7 +95,7 @@ class VendorOrderController {
 
             const update = await OrderService.updateOrder(id, body);
             if (!update) {
-                return res.status(STATUS.OK).json({
+                return res.status(STATUS.BAD_REQUEST).json({
                     success: false,
                     message: 'Failed to update order'
                 });
@@ -127,13 +127,13 @@ class VendorOrderController {
             const order = await OrderService.getOrderById(id);
             if (!order) {
                 return res
-                    .status(STATUS.OK)
+                    .status(STATUS.NOT_FOUND)
                     .json({ success: false, message: 'Order not found' });
             }
 
             // console.log(order.vendor.id, '-', vendor.id);
             if (order.vendor.id !== vendor.id) {
-                return res.status(STATUS.OK).json({
+                return res.status(STATUS.FORBIDDEN).json({
                     success: false,
                     message: 'Order not belong to you'
                 });
@@ -141,11 +141,11 @@ class VendorOrderController {
 
             if (!['preparing', 'prepared', 'canceled'].includes(status)) {
                 return res
-                    .status(STATUS.OK)
+                    .status(STATUS.BAD_REQUEST)
                     .json({ success: false, message: 'Invalid status' });
             }
             if (order.status == 'canceled') {
-                return res.status(STATUS.OK).json({
+                return res.status(STATUS.BAD_REQUEST).json({
                     success: false,
                     message:
                         'Order already canceled, you cannot update this order'
@@ -153,7 +153,7 @@ class VendorOrderController {
             }
 
             if (!order.paymentCompleted)
-                return res.status(STATUS.OK).json({
+                return res.status(STATUS.CONFLICT).json({
                     success: false,
                     message:
                         'Order not paid, please wait for customer to complete payment'

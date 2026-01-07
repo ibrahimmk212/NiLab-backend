@@ -27,19 +27,7 @@ class ProductService implements IProductService {
     async getAll(data: any, role: UserRole = 'user'): Promise<any> {
         return await ProductRepository.getAll(data, role);
     }
-    // async getAllByVendor(
-    //     vendorId: any,
-    //     role: UserRole = 'vendor'
-    // ): Promise<Product[] | null> {
-    //     return await ProductRepository.getAllByVendor(vendorId, role);
-    // }
 
-    // async getAllByCategory(
-    //     categoryId: any,
-    //     role: UserRole = 'user'
-    // ): Promise<Product[] | null> {
-    //     return await ProductRepository.getAllByCategory(categoryId);
-    // }
     async update(
         productId: string,
         updateData: Partial<Product>

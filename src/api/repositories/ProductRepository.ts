@@ -212,6 +212,14 @@ class ProductRepository {
             filter.status = 'active';
         }
 
+        if (role === 'vendor') {
+            // For vendors, we might want to add additional filters in the future
+        }
+
+        if (role === 'user') {
+            filter.available = true;
+        }
+
         const product = await ProductModel.findOne(filter)
             .populate({
                 path: 'category',
@@ -244,15 +252,39 @@ class ProductRepository {
 
         // 1. Filter ONLY for the Product's own status
         const filter: any = {};
+        // Base filters
         if (role !== 'admin') {
             filter.isDeleted = false;
             filter.status = 'active';
         }
 
-        // Additional filters
+        // Availability (VERY IMPORTANT)
+        if (role === 'user') {
+            filter.available = true;
+        } else if (options.available !== undefined) {
+            filter.available = options.available === 'true';
+        }
+
+        // Other filters
         if (options.vendorId) filter.vendor = options.vendorId;
         if (options.categoryId) filter.category = options.categoryId;
         if (options.name) filter.name = { $regex: options.name, $options: 'i' };
+        if (options.stock !== undefined)
+            filter.stock = { $gte: Number(options.stock) };
+        if (options.price) filter.price = { $gte: Number(options.price) };
+        if (options.search) filter.$text = { $search: options.search };
+
+        // delete all isAvailable fields from the records
+        const migrationResult = await ProductModel.updateMany(
+            {},
+            {
+                // 1. Delete the old field
+                $unset: { isAvailable: '' },
+                // 2. Ensure the new field is set to true (or a default)
+                // This ensures the query { available: true } actually finds them
+                $set: { available: true }
+            }
+        );
 
         // 2. Execute Query
         const [products, total] = await Promise.all([
@@ -269,8 +301,7 @@ class ProductRepository {
                 .populate('vendor')
                 .sort({ createdAt: -1 })
                 .skip(skip)
-                .limit(limit)
-                .lean(), // lean() makes it a plain JS object for better performance
+                .limit(limit),
             ProductModel.countDocuments(filter)
         ]);
 
@@ -288,31 +319,31 @@ class ProductRepository {
         };
     }
 
-    async getAllByVendor(
-        vendorId: string,
-        role: UserRole = 'vendor'
-    ): Promise<Product[]> {
-        const filter: any = { vendor: new mongoose.Types.ObjectId(vendorId) };
+    // async getAllByVendor(
+    //     vendorId: string,
+    //     role: UserRole = 'vendor'
+    // ): Promise<Product[]> {
+    //     const filter: any = { vendor: new mongoose.Types.ObjectId(vendorId) };
 
-        if (role !== 'admin') {
-            filter.isDeleted = false;
-            filter.status = 'active';
-        }
+    //     if (role !== 'admin') {
+    //         filter.isDeleted = false;
+    //         filter.status = 'active';
+    //     }
 
-        const products = await ProductModel.find(filter)
-            .populate({
-                path: 'category'
-                // if category is inactive or deleted, it will be null
-                // match makes it to return empty product
-            })
-            .populate('vendor favourites')
-            .sort({ name: 'asc' });
+    //     const products = await ProductModel.find(filter)
+    //         .populate({
+    //             path: 'category'
+    //             // if category is inactive or deleted, it will be null
+    //             // match makes it to return empty product
+    //         })
+    //         .populate('vendor favourites')
+    //         .sort({ name: 'asc' });
 
-        // Filter out products with inactive categories in JS for simple lists
-        return role === 'admin'
-            ? products
-            : products.filter((p) => p.category !== null);
-    }
+    //     // Filter out products with inactive categories in JS for simple lists
+    //     return role === 'admin'
+    //         ? products
+    //         : products.filter((p) => p.category !== null);
+    // }
 
     async updateProduct(
         productId: string,

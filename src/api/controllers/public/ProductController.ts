@@ -42,10 +42,22 @@ class ProductController {
                 sortBy = 'createdAt',
                 sortOrder = 'desc',
                 search,
-                ...restFilters
+                category,
+                minPrice,
+                name
             } = req.query;
 
-            const result = await ProductService.getAll(req.query);
+            const result = await ProductService.getAll(
+                {
+                    page,
+                    limit,
+                    search,
+                    category,
+                    minPrice,
+                    name
+                },
+                'user'
+            );
             // TODO populate categories
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
@@ -62,13 +74,24 @@ class ProductController {
             const {
                 page = '1',
                 limit = '10',
-                sortBy = 'createdAt',
-                sortOrder = 'desc',
                 search,
-                ...restFilters
+                category,
+                minPrice,
+                name
             } = req.query;
 
-            const result = await ProductService.getAll(req.query);
+            const result = await ProductService.getAll(
+                {
+                    limit,
+                    page,
+                    name,
+                    category,
+                    minPrice,
+                    search,
+                    available: true
+                },
+                'user'
+            );
             res.status(STATUS.OK).send({
                 message: 'Products fetched successfully',
                 ...result
@@ -82,7 +105,7 @@ class ProductController {
             next: NextFunction
         ): Promise<void> => {
             const { id } = req.params;
-            const product = await ProductService.findById(id);
+            const product = await ProductService.findById(id, 'user');
 
             if (!product) throw new Error('Product not foud');
             res.status(STATUS.OK).send({

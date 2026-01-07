@@ -5,14 +5,7 @@ import advancedQuery from '../../../middlewares/data/advancedQuery';
 import ProductModel from '../../../models/Product';
 
 const productRouter: Router = Router();
-productRouter.get(
-    '/',
-    advancedQuery(ProductModel),
-    ProductController.getAll
-);
-productRouter.get(
-    '/categories',
-    ProductController.getAllCategories
-);
+productRouter.get('/', ProductController.getAll);
+productRouter.get('/categories', ProductController.getAllCategories);
 productRouter.get('/:id', ProductController.getSingle);
 export default productRouter;
