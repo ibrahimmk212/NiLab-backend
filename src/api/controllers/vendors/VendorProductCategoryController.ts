@@ -7,9 +7,18 @@ import { slugify } from '../../../utils/helpers';
 
 class VendorProductCategoryController {
     getAll = asyncHandler(async (req: any, res: Response): Promise<void> => {
+        const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
+        const page = req.query.page ? parseInt(req.query.page, 10) : 1;
+        req.query.limit = limit;
+        req.query.page = page;
+        const name = req.query.name ? String(req.query.name) : undefined;
+        const search = req.query.search ? String(req.query.search) : undefined;
         const productCategory = await CategoryService.getAll({
             vendor: req.vendor.id,
-            ...req.query
+            limit,
+            page,
+            name,
+            search
         });
         res.status(STATUS.OK).send({
             success: true,
