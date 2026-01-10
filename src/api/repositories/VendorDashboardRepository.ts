@@ -28,7 +28,7 @@ export class VendorDashboardRepository {
                             $cond: [
                                 {
                                     $in: [
-                                        '$status',
+                                        '$status', // note the quotes around $status
                                         [
                                             'pending',
                                             'preparing',
@@ -102,5 +102,12 @@ export class VendorDashboardRepository {
             { isAvailable },
             { new: true, runValidators: true }
         ).select('isAvailable name');
+    }
+
+    async getVendorTotalProducts(vendorId: mongoose.Types.ObjectId) {
+        return await ProductModel.countDocuments({
+            vendor: vendorId,
+            isDeleted: { $ne: true }
+        });
     }
 }

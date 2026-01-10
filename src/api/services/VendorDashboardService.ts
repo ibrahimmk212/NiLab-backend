@@ -11,14 +11,21 @@ export class VendorDashboardService {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
 
-        const [stats, recentOrders, revenueHistory, lowStock, vendor]: any =
-            await Promise.all([
-                repo.getVendorMetrics(vendorId, todayStart),
-                repo.getRecentOrders(vendorId),
-                repo.getWeeklyRevenue(vendorId),
-                repo.getLowStockItems(vendorId),
-                repo.getVendorProfile(vendorId)
-            ]);
+        const [
+            stats,
+            recentOrders,
+            revenueHistory,
+            lowStock,
+            vendor,
+            productsCount
+        ]: any = await Promise.all([
+            repo.getVendorMetrics(vendorId, todayStart),
+            repo.getRecentOrders(vendorId),
+            repo.getWeeklyRevenue(vendorId),
+            repo.getLowStockItems(vendorId),
+            repo.getVendorProfile(vendorId),
+            repo.getVendorTotalProducts(vendorId)
+        ]);
 
         // Optional: Map YYYY-MM-DD to "Mon", "Tue" here if frontend needs it simple
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -31,7 +38,7 @@ export class VendorDashboardService {
             vendor,
             metrics: {
                 // Adjusting to match your vendor profile selection
-                walletBalance: vendor?.walletBalance || 0,
+                productsCount,
                 todaySales: stats[0]?.todayNetSales || 0,
                 activeOrders: stats[0]?.activeOrders || 0,
                 rating: vendor?.ratings || 0
