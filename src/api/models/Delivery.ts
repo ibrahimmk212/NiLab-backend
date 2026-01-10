@@ -2,9 +2,19 @@ import mongoose, { Document, Schema } from 'mongoose';
 import DispatchModel from './Dispatch';
 import { currentTimestamp } from './../../utils/helpers';
 import OrderRepository from '../repositories/OrderRepository';
-import { OrderAddress } from './Order';
 import UserService from '../services/UserService';
 import { sendPushNotification } from '../libraries/firebase';
+
+export type OrderAddress = {
+    coordinates: number[];
+    street: string;
+    city: string;
+    state: string;
+    postcode: string;
+    buildingNumber: string;
+    label: string;
+    additionalInfo: string;
+};
 
 export interface Delivery extends Document {
     order: mongoose.Types.ObjectId;
@@ -12,7 +22,13 @@ export interface Delivery extends Document {
     dispatch: mongoose.Types.ObjectId | null;
     deliveryCode: string;
     deliveryFee: number;
-    status: 'pending' | 'in-transit' | 'delivered' | 'canceled';
+    status:
+        | 'pending'
+        | 'accepted'
+        | 'picked'
+        | 'in-transit'
+        | 'delivered'
+        | 'canceled';
     pickup: OrderAddress;
     destination: OrderAddress;
     senderDetails: {

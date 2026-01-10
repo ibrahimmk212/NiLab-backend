@@ -30,18 +30,6 @@ const transactionSchema = new Schema<Transaction>(
             required: true
         },
 
-        // vendorId: {
-        //     type: Schema.Types.ObjectId,
-        //     ref: 'User',
-        //     index: true
-        // },
-
-        // riderId: {
-        //     type: Schema.Types.ObjectId,
-        //     ref: 'User',
-        //     index: true
-        // },
-
         reference: {
             type: String,
             required: true,

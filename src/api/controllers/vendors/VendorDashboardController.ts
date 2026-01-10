@@ -1,127 +1,47 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response } from 'express';
-import DashboardService from '../../services/DashboardService';
+// controllers/DashboardController.ts
+import { Response } from 'express';
+import { VendorDashboardService } from '../../services/VendorDashboardService';
+import { asyncHandler } from '../../middlewares/handlers/async';
 
-class DashboardController {
-    async vendorDashboardSummary(req: any, res: Response) {
+const dashboardService = new VendorDashboardService();
+
+class VendorDashboardController {
+    getVendorDashboardData = asyncHandler(async (req: any, res: Response) => {
+        // req.vendor.id should be provided by your auth middleware
         const vendorId = req.vendor.id;
-        const data = await DashboardService.getVendorDashboard(vendorId);
-        return res.json({
-            success: true,
-            message: 'Vendor dashboard fetched successfully',
-            data
-        });
-    }
 
-    async vendorSalesAnalytics(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
-        const period =
-            (req.query.period as 'daily' | 'weekly' | 'monthly' | 'yearly') ||
-            'monthly';
-        const data = await DashboardService.getVendorSalesAnalytics(
-            vendorId,
-            period
-        );
-        return res.json({
-            success: true,
-            message: 'Vendor sales analytics fetched successfully',
-            data
-        });
-    }
-
-    async vendorOrdersStatusCount(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
-        const data = await DashboardService.getVendorOrdersStatusCount(
+        const dashboardData = await dashboardService.fetchVendorDashboard(
             vendorId
         );
-        return res.json({
-            success: true,
-            message: 'Vendor orders status count fetched successfully',
-            data
-        });
-    }
 
-    async vendorTopSellingProducts(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
-        const limit = parseInt(req.query.limit as string) || 5;
-        const data = await DashboardService.getVendorTopSellingProducts(
-            vendorId,
-            limit
-        );
-        return res.json({
+        return res.status(200).json({
             success: true,
-            message: 'Vendor top selling products fetched successfully',
-            data
+            data: dashboardData
         });
-    }
+    });
 
-    async vendorLowStockProducts(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
-        const threshold = parseInt(req.query.threshold as string) || 5;
-        const data = await DashboardService.getVendorLowStockProducts(
-            vendorId,
-            threshold
-        );
-        return res.json({
-            success: true,
-            message: 'Vendor low stock products fetched successfully',
-            data
-        });
-    }
-
-    async getVendorAvailabilityStatus(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
-        const data = await DashboardService.getVendorAvailabilityStatus(
-            vendorId
-        );
-        return res.json({
-            success: true,
-            message: 'Vendor availability status fetched successfully',
-            data
-        });
-    }
-
-    async updateVendorAvailabilityStatus(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
+    toggleStoreStatus = asyncHandler(async (req: any, res: Response) => {
+        const vendorId = req.vendor.id;
         const { isAvailable } = req.body;
-        const data = await DashboardService.updateVendorAvailabilityStatus(
+
+        if (typeof isAvailable !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'isAvailable status must be a boolean'
+            });
+        }
+
+        const result = await dashboardService.toggleVendorAvailability(
             vendorId,
             isAvailable
         );
-        return res.json({
-            success: true,
-            message: 'Vendor availability status updated successfully',
-            data
-        });
-    }
 
-    async vendorRecentOrders(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
-        const limit = parseInt(req.query.limit as string) || 5;
-        const data = await DashboardService.getVendorRecentOrders(
-            vendorId,
-            limit
-        );
-        return res.json({
+        return res.status(200).json({
             success: true,
-            message: 'Vendor recent orders fetched successfully',
-            data
+            message: `Store is now ${result.isAvailable ? 'Open' : 'Closed'}`,
+            data: result
         });
-    }
-
-    async vendorCustomerReviews(req: Request, res: Response) {
-        const vendorId = (req as any).vendor.id;
-        const limit = parseInt(req.query.limit as string) || 5;
-        const data = await DashboardService.getVendorCustomerReviews(
-            vendorId,
-            limit
-        );
-        return res.json({
-            success: true,
-            message: 'Vendor customer reviews fetched successfully',
-            data
-        });
-    }
+    });
 }
 
-export default new DashboardController();
+export default new VendorDashboardController();
