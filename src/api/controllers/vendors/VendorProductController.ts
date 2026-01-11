@@ -49,13 +49,13 @@ class VendorProductController {
             const { vendor } = req;
             const limit = Number(req.query.limit) || 10;
             const page = Number(req.query.page) || 1;
-            const { search, category, minPrice, name, available, stock } =
+            const { search, categoryId, minPrice, name, available, stock } =
                 req.query;
 
             const product = await ProductService.getAll(
                 {
                     search,
-                    category,
+                    categoryId,
                     minPrice,
                     name,
                     available,
