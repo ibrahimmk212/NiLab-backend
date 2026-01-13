@@ -10,7 +10,8 @@ class AdminTransactionController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const transaction = await TransactionService.getAll(req.params);
+            const transaction = await TransactionService.getAll(req.query);
+
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Transactions fetched successfully',

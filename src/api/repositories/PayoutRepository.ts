@@ -180,6 +180,7 @@ class PayoutRepository {
         if (options.bankName) filter.bankName = options.bankName;
         if (options.accountName) filter.accountName = options.accountName;
         if (options.status) filter.status = options.status;
+        if (options.userId) filter.userId = options.userId;
 
         const [payouts, total, summary] = await Promise.all([
             PayoutModel.find(filter)

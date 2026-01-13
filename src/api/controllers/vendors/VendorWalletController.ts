@@ -48,11 +48,12 @@ class VendorWalletController {
             const { vendor }: any = req;
 
             const transactions =
-                await TransactionService.getTransactionsByVendor(vendor.id);
+                // await TransactionService.getTransactionsByVendor(vendor.id);
+                await TransactionService.getAll({}); //{ vendorId: vendor.id });
             // console.log(transactions);
             res.status(STATUS.OK).send({
                 message: 'Transactions Fetchd successfully',
-                data: transactions
+                ...transactions
             });
         }
     );

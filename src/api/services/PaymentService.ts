@@ -8,6 +8,8 @@ import emails from '../libraries/emails';
 import Monnify from '../libraries/monnify';
 import axios from 'axios';
 import OrderModel from '../models/Order';
+import WalletService from './WalletService';
+import WalletRepository from '../repositories/WalletRepository';
 
 export class PaymentService {
     // Verify payment (optional: to double-check in webhook)
@@ -69,6 +71,65 @@ export class PaymentService {
                 code: 'INVALID_REQUEST',
                 message:
                     'Invalid request: your order is either paid or pay on delivery'
+            };
+        }
+
+        if (order.paymentType === 'wallet') {
+            // get wallet and check balance
+            const walletBalance = await WalletRepository.getWalletByOwner(
+                userdata.role,
+                userdata.id
+            );
+
+            if (!walletBalance) {
+                return {
+                    valid: false,
+                    code: 'WALLET_NOT_FOUND',
+                    message: 'Wallet not found. Please fund your wallet.'
+                };
+            }
+
+            if (walletBalance.availableBalance < order.amount) {
+                return {
+                    valid: false,
+                    code: 'INSUFFICIENT_BALANCE',
+                    message: 'Insufficient wallet balance.'
+                };
+            }
+
+            // debit wallet
+            const updatedWallet = await WalletRepository.debitAvailableBalance(
+                walletBalance._id,
+                order.amount
+            );
+
+            if (!updatedWallet) {
+                return {
+                    valid: false,
+                    code: 'WALLET_DEBIT_FAILED',
+                    message: 'Failed to debit wallet. Please try again.'
+                };
+            }
+
+            // mark order as paid
+            order.paymentCompleted = true;
+            order.transactionReference = `WALLET_${currentTimestamp()}${
+                userdata.id
+            }`;
+            await order.save();
+            // send email
+            emails.orderPaymentReceipt(userdata.email, {
+                orderId: order.code?.toString(),
+                orderItems: order.products,
+                totalAmount: order.amount,
+                vendorName: ''
+            });
+
+            return {
+                valid: true,
+                message: 'Payment successful via wallet.',
+                order,
+                payment: null
             };
         }
 

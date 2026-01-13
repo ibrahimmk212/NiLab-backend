@@ -26,7 +26,7 @@ class TransactionRepository {
         const filter: Record<string, any> = {};
 
         if (options.user) {
-            filter.userId = options.user;
+            filter.user = options.user;
         }
 
         if (options.reference) {
