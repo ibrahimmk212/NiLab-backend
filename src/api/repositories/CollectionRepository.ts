@@ -3,12 +3,12 @@ import CollectionModel, { Collection } from '../models/Collection';
 interface ICollectionRepository {
     createCollection(payload: Partial<Collection>): Promise<Collection>;
     getCollections(): Promise<Collection[]>;
-    getCollectionDetail(collectionId: string): Promise<Collection | null>;
+    getCollectionDetail(CollectionId: string): Promise<Collection | null>;
     updateCollection(
-        collectionId: string,
+        CollectionId: string,
         payload: Partial<Collection>
     ): Promise<boolean>;
-    deleteCollection(collectionId: string): Promise<boolean>;
+    deleteCollection(CollectionId: string): Promise<boolean>;
 }
 
 class CollectionRepository implements ICollectionRepository {
@@ -20,8 +20,8 @@ class CollectionRepository implements ICollectionRepository {
         return CollectionModel.find();
     }
 
-    getCollectionDetail(collectionId: string): Promise<Collection | null> {
-        return CollectionModel.findById(collectionId);
+    getCollectionDetail(CollectionId: string): Promise<Collection | null> {
+        return CollectionModel.findById(CollectionId);
     }
     getCollectionsByKey(key: string, val: string): Promise<Collection[]> {
         return CollectionModel.find({
@@ -29,19 +29,19 @@ class CollectionRepository implements ICollectionRepository {
         });
     }
     async updateCollection(
-        collectionId: string,
+        CollectionId: string,
         payload: Partial<Collection>
     ): Promise<boolean> {
         const updatedCollectionCount = await CollectionModel.findByIdAndUpdate(
-            collectionId,
+            CollectionId,
             payload
         );
         return !!updatedCollectionCount;
     }
 
-    async deleteCollection(collectionId: string): Promise<boolean> {
+    async deleteCollection(CollectionId: string): Promise<boolean> {
         const deletedCollectionCount = await CollectionModel.deleteOne({
-            id: collectionId
+            id: CollectionId
         });
         return !!deletedCollectionCount;
     }

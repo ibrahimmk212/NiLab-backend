@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Wallet extends Document {
-    role: 'user' | 'rider' | 'vendor';
+    role: 'user' | 'rider' | 'vendor' | 'system';
     owner: mongoose.Types.ObjectId;
     availableBalance: number; // withdrawable
     pendingBalance: number; // escrow / waiting for order completion
@@ -14,7 +14,7 @@ const walletSchema = new Schema<Wallet>(
     {
         role: {
             type: String,
-            enum: ['user', 'rider', 'vendor'],
+            enum: ['user', 'rider', 'vendor', 'system'],
             required: true
         },
         owner: {

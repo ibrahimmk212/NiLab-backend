@@ -133,6 +133,8 @@ export class PaymentService {
             };
         }
 
+        // if not wallet, proceed to monnify payment
+
         const totalAmount =
             order.amount + order.deliveryFee + order.serviceFee + order.vat;
 

@@ -4,10 +4,10 @@ import { Collection } from '../models/Collection';
 interface ICollectionService {
     createCollection(payload: Partial<Collection>): Promise<Collection>;
     getCollections(): Promise<Collection[]>;
-    getCollectionDetail(collectionId: string): Promise<Collection>;
+    getCollectionDetail(CollectionId: string): Promise<Collection>;
     getUserCollections(userId: number): Promise<Collection[]>;
 
-    updateCollection(collectionId: string, data: Collection): Promise<boolean>;
+    updateCollection(CollectionId: string, data: Collection): Promise<boolean>;
 }
 
 class CollectionService implements ICollectionService {
@@ -19,42 +19,42 @@ class CollectionService implements ICollectionService {
         return CollectionRepository.getCollections();
     }
 
-    async getCollectionDetail(collectionId: string): Promise<Collection> {
-        const collection = await CollectionRepository.getCollectionDetail(
-            collectionId
+    async getCollectionDetail(CollectionId: string): Promise<Collection> {
+        const Collection = await CollectionRepository.getCollectionDetail(
+            CollectionId
         );
 
-        if (!collection) {
+        if (!Collection) {
             throw new Error('Collection not found');
         }
 
-        return collection;
+        return Collection;
     }
     async getUserCollections(userId: number): Promise<Collection[]> {
-        const collection = await CollectionRepository.getCollectionsByKey(
+        const Collection = await CollectionRepository.getCollectionsByKey(
             'userId',
             userId as unknown as string
         );
 
-        if (!collection) {
+        if (!Collection) {
             throw new Error('Collection not found');
         }
 
-        return collection;
+        return Collection;
     }
     async updateCollection(
-        collectionId: string,
+        CollectionId: string,
         payload: Collection
     ): Promise<boolean> {
-        const collection = await CollectionRepository.getCollectionDetail(
-            collectionId
+        const Collection = await CollectionRepository.getCollectionDetail(
+            CollectionId
         );
 
-        if (!collection) {
+        if (!Collection) {
             throw new Error('Collection not found');
         }
 
-        return CollectionRepository.updateCollection(collectionId, payload);
+        return CollectionRepository.updateCollection(CollectionId, payload);
     }
 }
 

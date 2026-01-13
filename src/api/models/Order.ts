@@ -45,7 +45,7 @@ export interface Order extends Document {
     discount?: mongoose.Types.ObjectId;
     totalAmount: number;
     orderType: 'products' | 'package';
-    paymentType: 'card' | 'transfer' | 'cash';
+    paymentType: 'card' | 'transfer' | 'cash' | 'wallet' | 'online';
     paymentReference: string;
     transactionReference: string;
     paymentCompleted: boolean;

@@ -7,7 +7,7 @@ import ridersRouter from './riders';
 import adminsRouter from './admin';
 import auth from '../../middlewares/auth';
 import { ROLE } from '../../../constants';
-import webhookRouter from './webhooks';
+// import webhookRouter from './webhooks';
 import publicRouter from './public';
 import fileRouter from './file';
 import dashboardRouter from './dashboard';
@@ -15,7 +15,7 @@ import dashboardRouter from './dashboard';
 const router: Router = Router();
 router.use('/', mainRouter);
 
-router.use('/webhook', webhookRouter);
+// router.use('/webhook', webhookRouter);
 
 router.use(
     '/customers',
