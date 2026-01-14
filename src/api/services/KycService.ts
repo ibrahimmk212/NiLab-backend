@@ -37,7 +37,7 @@ class KycService {
 
     async updateKycStatus(
         kycId: Types.ObjectId,
-        status: 'pending' | 'not_submitted' | 'approved' | 'rejected',
+        status: 'pending' | 'not_submitted' | 'verified' | 'rejected',
         message?: string
     ): Promise<Kyc | null> {
         const kyc: any = await KycRepository.getKycById(kycId);

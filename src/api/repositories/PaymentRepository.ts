@@ -1,36 +1,53 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Types } from 'mongoose';
-import PaymentModel, { Payment } from '../models/Payment';
-import WalletModel from '../models/Wallet';
-import TransactionModel from '../models/Transaction';
-
-type CreatePaymentDTO = {
-    order: string;
-    user: string;
-    provider: 'MONNIFY' | 'WALLET';
-    channel?: 'CARD' | 'TRANSFER' | 'USSD';
-    paymentReference: string;
-    amount: number;
-};
+import { ClientSession } from 'mongoose';
+import CollectionModel, { Collection } from '../models/Collection';
 
 class PaymentRepository {
-    //  Request a payment
-
-    static async createPayment(paymentData: CreatePaymentDTO) {
-        const payment = new PaymentModel(paymentData);
-        return await payment.save();
+    /**
+     * Create a new collection record (Audit log of the payment)
+     */
+    async createCollection(
+        data: Partial<Collection>,
+        session?: ClientSession
+    ): Promise<Collection> {
+        const collection = new CollectionModel(data);
+        const result = await collection.save({ session });
+        return result;
     }
 
-    static async getPaymentById(id: string) {
-        return await PaymentModel.findById(id);
+    /**
+     * Look up a collection by our internal NanoID reference
+     */
+    async findByInternalReference(
+        internalReference: string
+    ): Promise<Collection | null> {
+        return await CollectionModel.findOne({ internalReference });
     }
 
-    static async getPaymentsByUser(userId: string) {
-        return await PaymentModel.find({ user: userId });
+    /**
+     * Look up by Gateway's Transaction Reference (Idempotency Check)
+     */
+    async findByTransactionReference(
+        transactionReference: string
+    ): Promise<Collection | null> {
+        return await CollectionModel.findOne({ transactionReference });
     }
 
-    static async getPaymentsByOrder(orderId: string) {
-        return await PaymentModel.find({ order: orderId });
+    /**
+     * Update collection status (e.g., when a webhook confirms a pending transfer)
+     */
+    async updateCollectionStatus(
+        internalReference: string,
+        status: Collection['status'],
+        responseData: any,
+        session?: ClientSession
+    ): Promise<Collection | null> {
+        return await CollectionModel.findOneAndUpdate(
+            { internalReference },
+            { status, responseData },
+            { new: true, session }
+        );
     }
 }
+
 export default new PaymentRepository();

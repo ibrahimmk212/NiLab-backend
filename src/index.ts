@@ -10,6 +10,7 @@ import { Server as socketServer } from 'socket.io';
 import http from 'http';
 import emails from './api/libraries/emails';
 import { sendPushNotification } from './api/libraries/firebase';
+import { initializePointZero } from './scripts/initializeSystem';
 
 const PORT = AppConfig.app.port;
 

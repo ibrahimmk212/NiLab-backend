@@ -25,7 +25,7 @@ class AdminOrderController {
             next: NextFunction
         ): Promise<void> => {
             const { id } = req.params;
-            const orders = await OrderService.getOrdersByVendor(id, {});
+            const orders = await OrderService.getAll({ vendorId: id });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Orders fetched successfully',

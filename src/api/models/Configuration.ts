@@ -44,6 +44,8 @@ export interface Configuration extends Document {
     riderCommission: number; // Platform cut from rider delivery fee (%)
     packageCommission: number; // Flat or % for parcel services
 
+    baseServiceFee: number;
+
     // Tax & Discounts
     vatRate: number;
     payOnDeliveryDiscount: number;
@@ -57,6 +59,7 @@ const configurationSchema = new Schema<Configuration>(
     {
         nearbyDistance: { type: Number, default: 5000 },
         baseDeliveryFee: { type: Number, default: 200 },
+        baseServiceFee: { type: Number, default: 200 },
         feePerKm: { type: Number, default: 50 },
 
         vendorCommission: { type: Number, default: 15 },

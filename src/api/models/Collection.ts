@@ -18,8 +18,11 @@ export interface Collection extends Document {
     settlementAmount: number;
     paymentStatus: string;
     customer: any;
-    status: 'pending' | 'successful' | 'failed' | 'refunded';
+    status: 'pending' | 'success' | 'failed' | 'refunded';
     responseData?: any;
+    orderId: mongoose.Types.ObjectId;
+    walletId: mongoose.Types.ObjectId;
+    internalReference: string;
 }
 
 const collectionSchema = new Schema<Collection>(
@@ -46,7 +49,10 @@ const collectionSchema = new Schema<Collection>(
         paymentStatus: { type: String, required: false },
         customer: { type: Schema.Types.Map, required: false },
         status: { type: String, required: false },
-        responseData: { type: Schema.Types.Map, required: false }
+        responseData: { type: Schema.Types.Map, required: false },
+        orderId: { type: Schema.Types.ObjectId, ref: 'Order' },
+        walletId: { type: Schema.Types.ObjectId, ref: 'Wallet' },
+        internalReference: { type: String, unique: true }
     },
     {
         timestamps: true,

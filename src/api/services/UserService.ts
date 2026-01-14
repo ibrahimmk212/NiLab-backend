@@ -39,13 +39,13 @@ class UserService {
 
     async findCustomerUserById(id: string) {
         const user: any = await UserRepository.findUserById(id);
-        const orderCount = await OrderRepository.countCustomerOrders(id);
+        // const orderCount = await OrderRepository.(id);
         if (!user) {
             throw new Error('User not found');
         }
         return {
-            user,
-            orderCount
+            user
+            // orderCount
         };
     }
     async findByEmailOrPhone(email: string, phone: string) {

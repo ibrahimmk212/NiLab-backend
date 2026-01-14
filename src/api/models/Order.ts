@@ -22,13 +22,14 @@ export type OrderAddress = {
     label: string;
     additionalInfo: string;
 };
+
 export interface Order extends Document {
     user: mongoose.Types.ObjectId;
     vendor: mongoose.Types.ObjectId;
     rider?: mongoose.Types.ObjectId;
     dispatch?: mongoose.Types.ObjectId;
-    code: number;
-    commision?: number;
+    code: string; // Changed to string to support clean alphanumeric NanoIDs
+    commission: number; // Fixed typo from 'commision'
     products: OrderItem[];
     package: {
         description: string;
@@ -44,36 +45,28 @@ export interface Order extends Document {
     discountAmount: number;
     discount?: mongoose.Types.ObjectId;
     totalAmount: number;
-    orderType: 'products' | 'package';
+    orderType: 'products' | 'delivery';
     paymentType: 'card' | 'transfer' | 'cash' | 'wallet' | 'online';
-    paymentReference: string;
-    transactionReference: string;
+    paymentReference: string; // The NanoID Reference (ORD-XXXXXXXX)
+    transactionReference: string; // Reference for the Wallet Transaction
     paymentCompleted: boolean;
     vat: number;
     deliveryAccepted: boolean;
     deliveryAddress: string;
     deliveryLocation: number[];
-
     pickup: OrderAddress;
     destination: OrderAddress;
-    senderDetails: {
-        name: string;
-        contactNumber: string;
-    };
-    receiverDetails: {
-        name: string;
-        contactNumber: string;
-    };
+    senderDetails: { name: string; contactNumber: string };
+    receiverDetails: { name: string; contactNumber: string };
     pickupTime: string;
     acceptedAt: number;
     preparedAt: number;
     dispatchedAt: number;
-    deliveredAt: number;
+    deliveredAt: number; // TODO handle date format later
     canceledAt: number;
     canceledReason: string;
-
-    completed?: boolean;
-    status?:
+    completed: boolean;
+    status:
         | 'pending'
         | 'preparing'
         | 'prepared'
@@ -88,17 +81,19 @@ interface IOrderModel extends Model<Order> {
 
 const orderSchema = new Schema<Order>(
     {
-        user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        vendor: {
+        user: {
             type: Schema.Types.ObjectId,
-            ref: 'Vendor'
+            ref: 'User',
+            required: true,
+            index: true
         },
-        rider: { type: Schema.Types.ObjectId, ref: 'Rider' },
+        vendor: { type: Schema.Types.ObjectId, ref: 'Vendor', index: true },
+        rider: { type: Schema.Types.ObjectId, ref: 'Rider', index: true },
         dispatch: { type: Schema.Types.ObjectId, ref: 'Dispatch' },
         discount: { type: Schema.Types.ObjectId, ref: 'Discount' },
         package: {
-            description: { type: String, required: false },
-            image: { type: String, required: false }
+            description: { type: String },
+            image: { type: String }
         },
         products: [
             {
@@ -113,26 +108,62 @@ const orderSchema = new Schema<Order>(
                 price: { type: Number, required: true }
             }
         ],
-        code: { type: Number, required: true },
-        status: { type: String, required: true, default: 'pending' },
-        orderType: { type: String, required: true, default: 'products' },
-        paymentCompleted: { type: Boolean, required: false, default: false },
+        // Unique Clean Code for Customer/Rider (e.g., 6-digit or NanoID)
+        code: { type: String, required: true, unique: true, index: true },
+
+        status: {
+            type: String,
+            required: true,
+            default: 'pending',
+            enum: [
+                'pending',
+                'preparing',
+                'prepared',
+                'dispatched',
+                'delivered',
+                'canceled'
+            ],
+            index: true
+        },
+        orderType: {
+            type: String,
+            required: true,
+            default: 'products',
+            enum: ['products', 'package']
+        },
+        paymentCompleted: { type: Boolean, default: false },
         amount: { type: Number, required: true },
-        commision: { type: Number, required: false },
+        commission: { type: Number, default: 0 },
         deliveryFee: { type: Number, required: true, default: 0 },
         serviceFee: { type: Number, required: true, default: 0 },
         discountAmount: { type: Number, required: true, default: 0 },
-        totalAmount: { type: Number, required: false },
-        paymentType: { type: String, required: true },
-        paymentReference: { type: String, required: false },
-        transactionReference: { type: String, required: false },
+        totalAmount: { type: Number, required: true },
+        paymentType: {
+            type: String,
+            required: true,
+            enum: ['card', 'transfer', 'cash', 'wallet', 'online']
+        },
+        // Using NanoID for these unique references
+        paymentReference: {
+            type: String,
+            unique: true,
+            sparse: true,
+            index: true
+        },
+        transactionReference: {
+            type: String,
+            unique: true,
+            sparse: true,
+            index: true
+        },
+
         vat: { type: Number, required: true, default: 0 },
-        pickupLocation: { type: [Number], required: false },
-        rated: { type: Boolean, required: true, default: false },
-        delivery: { type: Boolean, required: true, default: false },
-        deliveryAccepted: { type: Boolean, required: true, default: false },
-        deliveryAddress: { type: String, required: false },
-        deliveryLocation: { type: [Number], required: false },
+        pickupLocation: { type: [Number], index: '2dsphere' },
+        rated: { type: Boolean, default: false },
+        delivery: { type: Boolean, default: false },
+        deliveryAccepted: { type: Boolean, default: false },
+        deliveryAddress: { type: String },
+        deliveryLocation: { type: [Number], index: '2dsphere' },
 
         pickup: {
             coordinates: [Number],
@@ -154,105 +185,102 @@ const orderSchema = new Schema<Order>(
             label: String,
             additionalInfo: String
         },
-        receiverDetails: {
-            name: String,
-            contactNumber: String
-        },
-        senderDetails: {
-            name: String,
-            contactNumber: String
-        },
+        receiverDetails: { name: String, contactNumber: String },
+        senderDetails: { name: String, contactNumber: String },
         pickupTime: String,
 
-        completed: { type: Boolean, required: true, default: false },
-        completedBy: { type: String, required: false },
-        acceptedAt: { type: Number, required: false },
-        preparedAt: { type: Number, required: false },
-        dispatchedAt: { type: Number, required: false },
-        deliveredAt: { type: Number, required: false },
-        canceledAt: { type: Number, required: false },
-        canceledReason: { type: String, required: false }
+        completed: { type: Boolean, default: false, index: true },
+        completedBy: { type: String, enum: ['user', 'vendor', 'rider'] },
+        acceptedAt: { type: Number },
+        preparedAt: { type: Number },
+        dispatchedAt: { type: Number },
+        deliveredAt: { type: Number },
+        canceledAt: { type: Number },
+        canceledReason: { type: String }
     },
     {
         timestamps: true,
-        toJSON: {
-            virtuals: true
-        },
-        toObject: {
-            virtuals: true
-        }
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true }
     }
 );
 
-// Pre-save hook
+// Indexes for common queries
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ status: 1, vendor: 1 });
+
+// Pre-save hook for status timestamps and side-effects
 orderSchema.pre<Order>('save', async function (next) {
+    // Logic for when vendor accepts order
     if (
         this.isModified('status') &&
         this.status === 'preparing' &&
-        this.orderType == 'products'
+        this.orderType === 'products'
     ) {
         this.acceptedAt = currentTimestamp();
 
-        const delivery = await DeliveryService.createDelivery(this._id);
-        if (!delivery) {
-            console.log(delivery);
-            throw new Error('Delivery not created, please try again.');
-        }
-        const customer = await UserService.getUserDetail(
-            this.user._id.toString()
-        );
-        if (customer && customer.deviceToken) {
-            await sendPushNotification(
-                customer.deviceToken,
-                'Order Accepted',
-                `Dear ${customer.firstName}/nYour order has been accepted and currently being prepared.`
+        try {
+            const delivery = await DeliveryService.createDelivery(this._id);
+            if (!delivery) throw new Error('Delivery creation failed');
+
+            const customer = await UserService.getUserDetail(
+                this.user.toString()
             );
+            if (customer?.deviceToken) {
+                await sendPushNotification(
+                    customer.deviceToken,
+                    'Order Accepted',
+                    `Dear ${customer.firstName}, your order has been accepted and is being prepared.`
+                );
+            }
+        } catch (error: any) {
+            return next(error);
         }
-    } else if (this.isModified('status') && this.status === 'prepared') {
+    }
+
+    // Logic for when food is ready
+    else if (this.isModified('status') && this.status === 'prepared') {
         this.preparedAt = currentTimestamp();
-        const customer = await UserService.getUserDetail(
-            this.user._id.toString()
-        );
-        if (customer && customer.deviceToken) {
+        const customer = await UserService.getUserDetail(this.user.toString());
+        if (customer?.deviceToken) {
             await sendPushNotification(
                 customer.deviceToken,
                 'Food is ready',
-                `Dear ${customer.firstName}/nYour order has been prepared. waiting for rider to come and pick it up.`
+                `Dear ${customer.firstName}, your order is ready for pickup.`
             );
         }
-        // Cast this.constructor to IOrderModel to access custom static methods
         (this.constructor as IOrderModel).getAverageReadyTime(this.vendor);
     }
+
     next();
 });
 
-// Static method
 orderSchema.statics.getAverageReadyTime = async function (vendorId: any) {
     const obj = await this.aggregate([
-        { $match: { vendor: vendorId } },
+        {
+            $match: {
+                vendor: vendorId,
+                preparedAt: { $exists: true },
+                acceptedAt: { $exists: true }
+            }
+        },
         {
             $group: {
                 _id: '$vendor',
                 averageReadyTime: {
-                    $avg: {
-                        $subtract: ['$preparedAt', '$acceptedAt']
-                    }
+                    $avg: { $subtract: ['$preparedAt', '$acceptedAt'] }
                 }
             }
         }
     ]);
 
     if (obj.length > 0) {
-        try {
-            await mongoose.model('Vendor').findByIdAndUpdate(vendorId, {
-                averageReadyTime: obj[0].averageReadyTime
-            });
-        } catch (error) {
-            console.error(error);
-        }
+        await mongoose.model('Vendor').findByIdAndUpdate(vendorId, {
+            averageReadyTime: obj[0].averageReadyTime
+        });
     }
 };
 
-const OrderModel = mongoose.model<Order>('Order', orderSchema);
+const OrderModel = mongoose.model<Order, IOrderModel>('Order', orderSchema);
 
 export default OrderModel;

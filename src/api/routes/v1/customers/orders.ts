@@ -6,7 +6,7 @@ const customerOrderRouter: Router = Router();
 
 customerOrderRouter
     .route('/')
-    .get(orderController.getOrders)
+    .get(orderController.getAllOrder)
     .post(Validate(Requirements.createOrder), orderController.createOrder);
 
 customerOrderRouter
@@ -22,7 +22,7 @@ customerOrderRouter
     .route('/:orderId/delivery')
     .get(
         Validate(Requirements.getOrderDetail),
-        orderController.getOrderDelivery
+        orderController.getOrderDetails
     );
 
 customerOrderRouter

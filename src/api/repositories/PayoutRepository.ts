@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import PayoutModel, { Payout } from '../models/Payout';
 import WalletModel from '../models/Wallet';
 import TransactionModel from '../models/Transaction';
@@ -13,137 +13,154 @@ class PayoutRepository {
         bankName: string,
         accountNumber: string,
         accountName: string
-    ): Promise<Payout> {
-        if (!Types.ObjectId.isValid(userId)) {
-            throw new Error('Invalid user id');
+    ) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const wallet = await WalletModel.findOneAndUpdate(
+                {
+                    owner: userId,
+                    role: { $in: ['vendor', 'rider'] },
+                    availableBalance: { $gte: amount }
+                },
+                {
+                    $inc: {
+                        availableBalance: -amount,
+                        pendingBalance: amount
+                    }
+                },
+                { new: true, session }
+            );
+
+            if (!wallet) throw new Error('Insufficient balance');
+
+            const existing = await PayoutModel.exists(
+                { userId, status: 'pending' }
+                // { session }  TODO - add session support
+            );
+            if (existing) throw new Error('Pending payout exists');
+
+            const payout = await PayoutModel.create(
+                [
+                    {
+                        userId,
+                        walletId: wallet._id,
+                        amount,
+                        bankName,
+                        accountNumber,
+                        accountName
+                    }
+                ],
+                { session }
+            );
+
+            await session.commitTransaction();
+            return payout[0];
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
         }
-
-        const parsedAmount = Number(amount);
-        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            throw new Error('Invalid payout amount');
-        }
-
-        // 🚫 Check for existing pending payout
-        const existingPending = await PayoutModel.exists({
-            userId,
-            status: 'pending'
-        });
-
-        if (existingPending) {
-            throw new Error('You already have a pending payout request');
-        }
-
-        // 🔐 Atomic wallet update (safe)
-        const wallet = await WalletModel.findOneAndUpdate(
-            {
-                owner: userId,
-                availableBalance: { $gte: parsedAmount }
-            },
-            {
-                $inc: {
-                    availableBalance: -parsedAmount,
-                    pendingBalance: parsedAmount
-                }
-            },
-            { new: true }
-        );
-
-        if (!wallet) {
-            throw new Error('Insufficient balance');
-        }
-
-        const payout = await PayoutModel.create({
-            userId,
-            amount: parsedAmount,
-            status: 'pending',
-            bankName,
-            accountNumber,
-            accountName
-        });
-
-        return payout;
     }
 
     //  complete (approve) payout
     async completePayout(payoutId: string) {
-        const payout = await PayoutModel.findById(payoutId);
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-        if (!payout || payout.status !== 'pending') {
-            throw new Error('Invalid payout');
+        try {
+            const payout = await PayoutModel.findOne({
+                _id: payoutId,
+                status: 'pending'
+            }).session(session);
+
+            if (!payout) throw new Error('Invalid payout');
+
+            const wallet = await WalletModel.findOneAndUpdate(
+                {
+                    _id: payout.walletId,
+                    pendingBalance: { $gte: payout.amount }
+                },
+                {
+                    $inc: { pendingBalance: -payout.amount }
+                },
+                { new: true, session }
+            );
+
+            if (!wallet) throw new Error('Pending balance insufficient');
+
+            await TransactionModel.create(
+                [
+                    {
+                        userId: payout.userId,
+                        role: wallet.role,
+                        reference: `PAYOUT-${payout._id}`,
+                        amount: payout.amount,
+                        type: 'DEBIT',
+                        category: 'ADMIN',
+                        status: 'successful',
+                        remark: 'Payout completed'
+                    }
+                ],
+                { session }
+            );
+
+            payout.status = 'completed';
+            await payout.save({ session });
+
+            await session.commitTransaction();
+            return payout;
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
         }
-
-        const amount = Number(payout.amount);
-        if (!Number.isFinite(amount)) {
-            throw new Error('Invalid payout amount');
-        }
-
-        const wallet = await WalletModel.findOne({
-            owner: payout.userId
-        });
-
-        if (!wallet) {
-            throw new Error('Wallet not found');
-        }
-
-        if (wallet.pendingBalance < amount) {
-            throw new Error('Pending balance insufficient');
-        }
-
-        wallet.prevPendingBalance = wallet.pendingBalance;
-        wallet.pendingBalance = Number(wallet.pendingBalance) - amount;
-
-        await wallet.save();
-
-        await TransactionModel.create({
-            userId: payout.userId,
-            role: 'user',
-            reference: `PAYOUT-${Date.now()}`,
-            amount,
-            type: 'DEBIT',
-            status: 'successful',
-            remark: 'Payout completed'
-        });
-
-        payout.status = 'completed';
-        await payout.save();
-
-        return payout;
     }
 
     // Reject Payout
     async rejectPayout(payoutId: string, reason: string) {
-        const payout = await PayoutModel.findById(payoutId);
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-        if (!payout || payout.status !== 'pending') {
-            throw new Error('Invalid payout');
+        try {
+            const payout = await PayoutModel.findOne({
+                _id: payoutId,
+                status: 'pending'
+            }).session(session);
+
+            if (!payout) throw new Error('Invalid payout');
+
+            const wallet = await WalletModel.findOneAndUpdate(
+                {
+                    _id: payout.walletId,
+                    pendingBalance: { $gte: payout.amount }
+                },
+                {
+                    $inc: {
+                        pendingBalance: -payout.amount,
+                        availableBalance: payout.amount
+                    }
+                },
+                { new: true, session }
+            );
+
+            if (!wallet) throw new Error('Wallet rollback failed');
+
+            payout.status = 'rejected';
+            payout.rejectionReason = reason;
+            await payout.save({ session });
+
+            await session.commitTransaction();
+            return payout;
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
         }
-
-        const amount = Number(payout.amount);
-        if (!Number.isFinite(amount)) {
-            throw new Error('Invalid payout amount');
-        }
-
-        const wallet = await WalletModel.findOne({
-            owner: payout.userId
-        });
-
-        if (!wallet) {
-            throw new Error('Wallet not found');
-        }
-
-        wallet.prevAvailableBalance = wallet.availableBalance;
-        wallet.prevPendingBalance = wallet.pendingBalance;
-
-        wallet.pendingBalance = Number(wallet.pendingBalance) - amount;
-        wallet.availableBalance = Number(wallet.availableBalance) + amount;
-
-        await wallet.save();
-
-        payout.status = 'rejected';
-        payout.rejectionReason = reason;
-        await payout.save();
-
-        return payout;
     }
 
     // Create a new payout

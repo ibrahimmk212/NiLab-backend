@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from 'mongoose';
 import WalletModel, { Wallet } from '../models/Wallet';
+import { create } from 'domain';
 
 class WalletRepository {
     async findWalletById(walletId: string): Promise<Wallet | null> {
@@ -8,14 +9,29 @@ class WalletRepository {
     }
 
     async createWallet(payload: any) {
-        return await WalletModel.create(payload);
+        return WalletModel.create(payload);
     }
 
-    async getWalletByOwner(role: string, owner: any) {
-        return await WalletModel.findOne({
-            owner: new mongoose.Types.ObjectId(owner),
-            role
-        });
+    async getWalletByOwner(
+        role: string,
+        owner?: any,
+        session?: mongoose.ClientSession
+    ): Promise<Wallet | null> {
+        const query: any = { role };
+
+        if (role !== 'system') {
+            query.owner = new mongoose.Types.ObjectId(owner);
+        }
+
+        return WalletModel.findOneAndUpdate(
+            query,
+            { $setOnInsert: query },
+            {
+                new: true,
+                upsert: true,
+                session
+            }
+        );
     }
 
     /* =========================
@@ -26,15 +42,12 @@ class WalletRepository {
         walletId: string,
         amount: number,
         session?: mongoose.ClientSession
-    ): Promise<Wallet | null> {
+    ) {
         if (amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findByIdAndUpdate(
             walletId,
-            {
-                $inc: { availableBalance: amount },
-                $set: { prevAvailableBalance: '$availableBalance' }
-            },
+            { $inc: { availableBalance: amount } },
             { new: true, session }
         );
     }
@@ -43,38 +56,30 @@ class WalletRepository {
         walletId: string,
         amount: number,
         session?: mongoose.ClientSession
-    ): Promise<Wallet | null> {
+    ) {
         if (amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findOneAndUpdate(
-            {
-                _id: walletId,
-                availableBalance: { $gte: amount } // 💥 prevents overdraft
-            },
-            {
-                $inc: { availableBalance: -amount }
-            },
+            { _id: walletId, availableBalance: { $gte: amount } },
+            { $inc: { availableBalance: -amount } },
             { new: true, session }
         );
     }
 
     /* =========================
-       PENDING BALANCE
+       PENDING BALANCE (ESCROW)
     ========================== */
 
     async creditPendingBalance(
         walletId: string,
         amount: number,
         session?: mongoose.ClientSession
-    ): Promise<Wallet | null> {
+    ) {
         if (amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findByIdAndUpdate(
             walletId,
-            {
-                $inc: { pendingBalance: amount },
-                $set: { prevPendingBalance: '$pendingBalance' }
-            },
+            { $inc: { pendingBalance: amount } },
             { new: true, session }
         );
     }
@@ -83,84 +88,27 @@ class WalletRepository {
         walletId: string,
         amount: number,
         session?: mongoose.ClientSession
-    ): Promise<Wallet | null> {
+    ) {
         if (amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findOneAndUpdate(
-            {
-                _id: walletId,
-                pendingBalance: { $gte: amount }
-            },
-            {
-                $inc: { pendingBalance: -amount },
-                $set: { prevPendingBalance: '$pendingBalance' }
-            },
+            { _id: walletId, pendingBalance: { $gte: amount } },
+            { $inc: { pendingBalance: -amount } },
             { new: true, session }
         );
     }
 
-    /* =========================
-       FULL BALANCE
-    ========================== */
-
-    async creditFullBalance(
-        walletId: string,
-        amount: number,
-        session?: mongoose.ClientSession
-    ): Promise<Wallet | null> {
-        if (amount <= 0) throw new Error('Invalid amount');
-
-        return WalletModel.findByIdAndUpdate(
-            walletId,
-            {
-                $inc: {
-                    availableBalance: amount,
-                    pendingBalance: amount
-                }
-            },
-            { new: true, session }
-        );
-    }
-
-    async debitFullBalance(
-        walletId: string,
-        amount: number,
-        session?: mongoose.ClientSession
-    ): Promise<Wallet | null> {
-        if (amount <= 0) throw new Error('Invalid amount');
-
-        return WalletModel.findOneAndUpdate(
-            {
-                _id: walletId,
-                availableBalance: { $gte: amount },
-                pendingBalance: { $gte: amount }
-            },
-            {
-                $inc: {
-                    availableBalance: -amount,
-                    pendingBalance: -amount
-                }
-            },
-            { new: true, session }
-        );
-    }
-
-    // Find all vendor
     async findAllWallets(options: any) {
         const page = options.page || 1;
         const limit = options.limit || 10;
         const skip = (page - 1) * limit;
 
         const filter: Record<string, any> = {};
-
-        if (options.role) {
-            filter.role = options.role;
-        }
+        if (options.role) filter.role = options.role;
 
         const [wallets, total] = await Promise.all([
             WalletModel.find(filter)
-                .populate('categories marketCategory')
-                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
             WalletModel.countDocuments(filter)
@@ -172,16 +120,54 @@ class WalletRepository {
             pagination: {
                 page,
                 limit,
-                totalPages: Math.ceil(total / limit),
-                hasNextPage: page * limit < total,
-                hasPrevPage: page > 1
+                totalPages: Math.ceil(total / limit)
             },
             data: wallets
         };
     }
 
-    async deleteWallet(walletId: string): Promise<any | null> {
-        return WalletModel.findByIdAndDelete(walletId);
+    async releasePendingToAvailable(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ) {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findOneAndUpdate(
+            {
+                _id: walletId,
+                pendingBalance: { $gte: amount }
+            },
+            {
+                $inc: {
+                    pendingBalance: -amount,
+                    availableBalance: amount
+                }
+            },
+            { new: true, session }
+        );
+    }
+
+    async rollbackPendingToAvailable(
+        walletId: string,
+        amount: number,
+        session?: mongoose.ClientSession
+    ) {
+        if (amount <= 0) throw new Error('Invalid amount');
+
+        return WalletModel.findOneAndUpdate(
+            {
+                _id: walletId,
+                pendingBalance: { $gte: amount }
+            },
+            {
+                $inc: {
+                    pendingBalance: -amount,
+                    availableBalance: amount
+                }
+            },
+            { new: true, session }
+        );
     }
 }
 

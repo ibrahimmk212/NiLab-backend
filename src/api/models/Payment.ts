@@ -13,7 +13,7 @@ export interface Payment extends Document {
     amount: number;
     currency: 'NGN';
 
-    status: 'PENDING' | 'SUCCESS' | 'FAILED';
+    status: 'pending' | 'success' | 'failed';
 
     rawResponse?: any; // webhook payload
 }
@@ -34,8 +34,8 @@ const paymentSchema = new Schema<Payment>(
 
         status: {
             type: String,
-            enum: ['PENDING', 'SUCCESS', 'FAILED'],
-            default: 'PENDING'
+            enum: ['pending', 'success', 'failed`'],
+            default: 'pending'
         },
 
         rawResponse: { type: Schema.Types.Mixed }

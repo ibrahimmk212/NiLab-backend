@@ -77,9 +77,7 @@ class AdminRiderController {
             const { status } = req.body;
 
             if (!['suspend', 'verified'].includes(status)) {
-                throw Error(
-                    'Invalid status, only suspended and verified are allowed'
-                );
+                throw Error('Invalid status, only suspended and  are allowed');
             }
             const update = await RiderService.updateRider(id, { status });
             if (!update) {

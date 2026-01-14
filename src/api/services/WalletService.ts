@@ -2,10 +2,12 @@
 import { randomBytes } from 'crypto';
 import monnify from '../libraries/monnify';
 import { Wallet } from '../models/Wallet';
+import { Order } from '../models/Order';
 import TransactionRepository from '../repositories/TransactionRepository';
 import WalletRepository from '../repositories/WalletRepository';
 import { CreateWalletType, InitDebitType } from '../types/wallet';
 import mongoose from 'mongoose';
+import ConfigurationModel from '../models/Configuration';
 
 interface IWalletService {
     getWallet(walletId: any): Promise<any>;
@@ -18,7 +20,7 @@ interface IWalletService {
     directDebitWallet(payload: InitDebitType): Promise<any>;
 }
 
-class WalletService implements IWalletService {
+class WalletService {
     async getWallet(walletId: any): Promise<Wallet | any> {
         const wallet = await WalletRepository.findWalletById(walletId);
 
@@ -26,6 +28,99 @@ class WalletService implements IWalletService {
             throw new Error(`Wallet not found`);
         }
         return wallet;
+    }
+
+    async getSystemWallet() {
+        let wallet = await WalletRepository.getWalletByOwner('system');
+
+        if (!wallet) {
+            wallet = await WalletRepository.createWallet({ role: 'system' });
+        }
+
+        return wallet;
+    }
+
+    async adminFundAvailableWallet(payload: any) {
+        const { amount, owner, role, remark } = payload;
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const wallet = await WalletRepository.getWalletByOwner(role, owner);
+            if (!wallet) throw new Error('Wallet not found');
+
+            const updated = await WalletRepository.creditAvailableBalance(
+                wallet.id,
+                amount,
+                session
+            );
+
+            await TransactionRepository.createTransaction(
+                {
+                    userId: owner,
+                    role,
+                    reference: `ADMIN-CREDIT-${Date.now()}`,
+                    amount,
+                    type: 'CREDIT',
+                    category: 'ADMIN',
+                    remark,
+                    status: 'successful'
+                },
+                session
+            );
+
+            await session.commitTransaction();
+            return { success: true, data: updated };
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
+        }
+    }
+
+    async adminDeductAvailableWallet(payload: any) {
+        const { amount, owner, role, remark } = payload;
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const wallet = await WalletRepository.getWalletByOwner(role, owner);
+            if (!wallet) throw new Error('Wallet not found');
+
+            if (wallet.availableBalance < amount)
+                throw new Error('Insufficient balance');
+
+            const updated = await WalletRepository.debitAvailableBalance(
+                wallet.id,
+                amount,
+                session
+            );
+
+            await TransactionRepository.createTransaction(
+                {
+                    userId: owner,
+                    role,
+                    reference: `ADMIN-DEBIT-${Date.now()}`,
+                    amount,
+                    type: 'DEBIT',
+                    category: 'ADMIN',
+                    remark,
+                    status: 'successful'
+                },
+                session
+            );
+
+            await session.commitTransaction();
+            return { success: true, data: updated };
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
+        }
     }
 
     async getOrCreateWallet(payload: CreateWalletType): Promise<Wallet | any> {
@@ -115,39 +210,28 @@ class WalletService implements IWalletService {
         return wallet;
     }
 
-    async initDebitAccount(payload: any): Promise<any> {
+    async initDebitAccount(payload: any) {
         const { amount, owner, role } = payload;
-        const userWallet: any = await WalletRepository.getWalletByOwner(
-            role,
-            owner
-        );
-        if (!userWallet) {
-            throw new Error(`Wallet not found`);
+
+        const wallet = await WalletRepository.getWalletByOwner(role, owner);
+        if (!wallet) throw new Error('Wallet not found');
+
+        if (wallet.availableBalance < amount) {
+            return { success: false, message: 'Insufficient balance' };
         }
 
-        const currentBalance = userWallet.balance;
-        // Check if funds is sufficient
-        if (currentBalance < amount)
-            return {
-                success: false,
-                message: `Insufficient Funds, Could not debit, available is ${currentBalance}`,
-                currentBalance: currentBalance
-            };
-
-        const updateWallet = await WalletRepository.debitAvailableBalance(
-            userWallet?.id,
+        const updated = await WalletRepository.debitAvailableBalance(
+            wallet.id,
             amount
         );
 
-        if (!updateWallet)
-            return { success: false, message: 'Failed to Debit wallet' };
-
         return {
             success: true,
-            message: 'Wallet Debited',
-            data: updateWallet
+            message: 'Wallet debited',
+            data: updated
         };
     }
+
     async confirmDebitAccount(payload: InitDebitType): Promise<any> {
         const { amount, owner, role } = payload;
         const userWallet: any = await WalletRepository.getWalletByOwner(
@@ -219,142 +303,135 @@ class WalletService implements IWalletService {
             message: 'Wallet credit confirmed'
         };
     }
-    async fundWallet(payload: InitDebitType): Promise<any> {
-        const { amount, owner, role } = payload;
-        const wallet: any = await WalletRepository.getWalletByOwner(
-            role,
-            owner
-        );
+    async transfer({
+        from,
+        to,
+        amount,
+        reference,
+        remark,
+        type,
+        category
+    }: {
+        from: { role: string; owner?: string };
+        to: { role: string; owner?: string };
+        amount: number;
+        reference: string;
+        remark: string;
+        type: 'CREDIT' | 'DEBIT';
+        category: 'ORDER' | 'COMMISSION' | 'DELIVERY' | 'ADMIN';
+    }) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-        if (!wallet) return { success: false, message: 'Wallet not found' };
+        try {
+            const fromWallet = await WalletRepository.getWalletByOwner(
+                from.role,
+                from.owner
+            );
+            const toWallet = await WalletRepository.getWalletByOwner(
+                to.role,
+                to.owner
+            );
 
-        const updateWallet = await WalletRepository.creditFullBalance(
-            wallet?.id,
-            amount
-        );
-        if (!updateWallet)
-            return { success: false, message: 'Failed to fund wallet' };
+            if (!fromWallet || !toWallet) throw new Error('Wallet not found');
 
-        return {
-            success: true,
-            message: 'Wallet funded'
-        };
+            if (fromWallet.availableBalance < amount)
+                throw new Error('Insufficient balance');
+
+            await WalletRepository.debitAvailableBalance(
+                fromWallet.id,
+                amount,
+                session
+            );
+
+            await WalletRepository.creditAvailableBalance(
+                toWallet.id,
+                amount,
+                session
+            );
+
+            await TransactionRepository.createTransaction(
+                {
+                    fromWallet: fromWallet.id,
+                    toWallet: toWallet.id,
+                    reference,
+                    amount,
+                    type,
+                    category,
+                    remark,
+                    status: 'successful'
+                },
+                session
+            );
+
+            await session.commitTransaction();
+            return { success: true };
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
+        }
     }
 
-    async adminFundAvailableWallet(payload: any): Promise<any> {
-        const { amount, owner, remark, role } = payload;
+    async settleCompletedOrder(order: Order) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-        if (!mongoose.Types.ObjectId.isValid(owner)) {
-            throw new Error('Invalid owner id');
+        try {
+            const config = await ConfigurationModel.findOne();
+            if (!config) throw new Error('Config missing');
+
+            const vendorWallet = await WalletRepository.getWalletByOwner(
+                'vendor',
+                order.vendor,
+                session
+            );
+
+            if (!vendorWallet) throw new Error('Vendor wallet not found');
+
+            const systemWallet = await WalletRepository.getWalletByOwner(
+                'system'
+            );
+
+            if (!systemWallet) throw new Error('System wallet not found');
+
+            const vendorCommission =
+                (order.amount * config.vendorCommission) / 100;
+
+            const vendorNet = order.amount - vendorCommission;
+
+            await WalletRepository.releasePendingToAvailable(
+                vendorWallet.id,
+                vendorNet,
+                session
+            );
+
+            await WalletRepository.releasePendingToAvailable(
+                systemWallet.id,
+                vendorCommission + order.serviceFee,
+                session
+            );
+
+            await TransactionRepository.createTransaction(
+                {
+                    reference: `ORDER_SETTLEMENT_${order._id}`,
+                    amount: vendorNet,
+                    type: 'CREDIT',
+                    category: 'ORDER',
+                    role: 'vendor',
+                    status: 'successful'
+                },
+                session
+            );
+
+            await session.commitTransaction();
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
         }
-
-        const parsedAmount = Number(amount);
-        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            throw new Error('Invalid amount');
-        }
-
-        const wallet = await WalletRepository.getWalletByOwner(role, owner);
-        if (!wallet) throw new Error('Wallet not found');
-
-        const updated = await WalletRepository.creditAvailableBalance(
-            wallet.id,
-            parsedAmount
-        );
-
-        if (!updated) {
-            throw new Error('Failed to fund wallet');
-        }
-
-        const reference = `ADFUNDED-${Date.now()}-${randomBytes(4).toString(
-            'hex'
-        )}`;
-
-        const transaction = await TransactionRepository.createTransaction({
-            userId: owner,
-            role,
-            // vendorId: role === 'vendor' ? owner : undefined,
-            // riderId: role === 'rider' ? owner : undefined,
-            reference,
-            amount: parsedAmount,
-            type: 'CREDIT',
-            remark,
-            status: 'successful'
-        });
-
-        return {
-            success: true,
-            message: 'Wallet funded',
-            data: { wallet, transaction }
-        };
-    }
-
-    async adminDeductAvailableWallet(payload: any): Promise<any> {
-        const { amount, owner, remark, role } = payload;
-
-        if (!mongoose.Types.ObjectId.isValid(owner)) {
-            throw new Error('Invalid owner id');
-        }
-
-        const parsedAmount = Number(amount);
-        if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-            throw new Error('Invalid amount');
-        }
-
-        const wallet = await WalletRepository.getWalletByOwner(role, owner);
-        if (!wallet) throw new Error('Wallet not found');
-
-        const updated = await WalletRepository.debitAvailableBalance(
-            wallet.id,
-            parsedAmount
-        );
-
-        if (!updated) {
-            throw new Error('Failed to deduct wallet');
-        }
-
-        const reference = `ADDEDUCTED-${Date.now()}-${randomBytes(4).toString(
-            'hex'
-        )}`;
-
-        const transaction = await TransactionRepository.createTransaction({
-            userId: owner, //role === 'user' ? owner : undefined,
-            // vendorId: role === 'vendor' ? owner : undefined,
-            // riderId: role === 'rider' ? owner : undefined,
-            role,
-            reference,
-            amount: parsedAmount,
-            type: 'DEBIT',
-            remark,
-            status: 'successful'
-        });
-
-        return {
-            success: true,
-            message: 'Wallet debited successfully',
-            data: { wallet: updated, transaction }
-        };
-    }
-
-    async directDebitWallet(payload: InitDebitType): Promise<any> {
-        const { amount, owner, role } = payload;
-        const wallet: any = await WalletRepository.getWalletByOwner(
-            role,
-            owner
-        );
-
-        if (!wallet) return null;
-
-        const updateWallet = await WalletRepository.debitFullBalance(
-            wallet?.id,
-            amount
-        );
-        if (!updateWallet)
-            return { success: false, message: 'Failed wallet debit' };
-
-        return {
-            success: true,
-            message: 'Wallet debited'
-        };
     }
 }
 

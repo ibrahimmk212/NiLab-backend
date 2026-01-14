@@ -111,9 +111,9 @@ class VendorInfoController {
                 };
             });
 
-            const orders = await OrderService.getOrdersByVendor(vendor.id, {});
+            const orders = await OrderService.getAll({ vendorId: vendor.id });
             // [];
-            analytics.latestOrderData = orders?.slice(0, 5);
+            // analytics.latestOrderData = orders?.slice(0, 5);
 
             res.status(STATUS.OK).send({
                 success: true,

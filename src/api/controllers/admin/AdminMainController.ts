@@ -22,55 +22,55 @@ class AdminMainController {
             // const startDate = new Date('2024-01-01');
             // const endDate = new Date('2024-03-31');
             const analytics: any = {};
-            const {
-                salesRevenue,
-                salesMargin,
-                ordersMargin,
-                salesReport,
-                productsSoldByCategory,
-                topSellingProducts
-            } = await OrderService.adminAnalytics(startDate, endDate);
+            // const {
+            //     salesRevenue,
+            //     salesMargin,
+            //     ordersMargin,
+            //     salesReport,
+            //     productsSoldByCategory,
+            //     topSellingProducts
+            // } = await OrderService.adminAnalytics(startDate, endDate);
 
-            analytics.statisticData = {
-                revenue: {
-                    value: salesRevenue.amount,
-                    growShrink: salesMargin
-                },
-                orders: {
-                    value: salesRevenue.count,
-                    growShrink: ordersMargin
-                }
-            };
-            analytics.salesReportData = {
-                series: [
-                    {
-                        name: 'Food Orders',
-                        data: salesReport.map(
-                            (order: any) => order.dailyRevenue
-                        )
-                    }
-                ],
-                categories: salesReport.map((order: any) => order._id)
-            };
+            // analytics.statisticData = {
+            //     revenue: {
+            //         value: salesRevenue.amount,
+            //         growShrink: salesMargin
+            //     },
+            //     orders: {
+            //         value: salesRevenue.count,
+            //         growShrink: ordersMargin
+            //     }
+            // };
+            // analytics.salesReportData = {
+            //     series: [
+            //         {
+            //             name: 'Food Orders',
+            //             data: salesReport.map(
+            //                 (order: any) => order.dailyRevenue
+            //             )
+            //         }
+            //     ],
+            //     categories: salesReport.map((order: any) => order._id)
+            // };
 
-            analytics.salesByCategoriesData = {
-                labels: productsSoldByCategory.map((data: any) => data._id),
-                data: productsSoldByCategory.map((data: any) => data.count)
-            };
+            // analytics.salesByCategoriesData = {
+            //     labels: productsSoldByCategory.map((data: any) => data._id),
+            //     data: productsSoldByCategory.map((data: any) => data.count)
+            // };
 
-            analytics.topProductsData = topSellingProducts.map((data: any) => {
-                return {
-                    id: data._id,
-                    name: data.productName,
-                    img: data.thumbnail,
-                    amount: data.totalPrice,
-                    sold: data.totalQuantity
-                };
-            });
+            // analytics.topProductsData = topSellingProducts.map((data: any) => {
+            //     return {
+            //         id: data._id,
+            //         name: data.productName,
+            //         img: data.thumbnail,
+            //         amount: data.totalPrice,
+            //         sold: data.totalQuantity
+            //     };
+            // });
 
             const orders = await OrderService.getAll(req.query);
             // [];
-            analytics.latestOrderData = orders?.slice(0, 5);
+            // analytics.latestOrderData = orders?.slice(0, 5);
 
             res.status(STATUS.OK).send({
                 success: true,

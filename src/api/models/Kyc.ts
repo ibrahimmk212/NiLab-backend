@@ -10,7 +10,7 @@ export interface Address {
     postcode: string;
     buildingNumber: string;
     addressDocument: string;
-    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
     message: string;
 }
 
@@ -18,7 +18,7 @@ export interface NextOfKin {
     name: string;
     phone: string;
     address: string;
-    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
     message: string;
 }
 
@@ -27,7 +27,7 @@ export interface Guarantor {
     address: string;
     phone: string;
     identityDocument: string;
-    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
     message: string;
 }
 
@@ -40,7 +40,7 @@ export interface Identity {
         | 'other';
     identityNumber: string;
     identityDocument: string;
-    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
     message: string;
 }
 
@@ -52,7 +52,7 @@ export interface Kyc extends Document {
     guarantor: Guarantor;
     user: mongoose.Types.ObjectId;
     role: 'user' | 'vendor' | 'rider';
-    status: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
     message: string;
 }
 
@@ -69,7 +69,7 @@ const kycSchema = new Schema<Kyc>(
             addressDocument: { type: String, required: false },
             status: {
                 type: String,
-                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
                 default: 'not_submitted'
             },
             message: { type: String, required: false }
@@ -84,7 +84,7 @@ const kycSchema = new Schema<Kyc>(
             identityDocument: { type: String, required: false },
             status: {
                 type: String,
-                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
                 default: 'not_submitted'
             },
             message: { type: String, required: false }
@@ -95,7 +95,7 @@ const kycSchema = new Schema<Kyc>(
             address: { type: String, required: false },
             status: {
                 type: String,
-                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
                 default: 'not_submitted'
             },
             message: { type: String, required: false }
@@ -107,7 +107,7 @@ const kycSchema = new Schema<Kyc>(
             identityDocument: { type: String, required: false },
             status: {
                 type: String,
-                enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
                 default: 'not_submitted'
             },
             message: { type: String, required: false }
@@ -121,7 +121,7 @@ const kycSchema = new Schema<Kyc>(
         message: { type: String, required: false },
         status: {
             type: String,
-            enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+            enum: ['not_submitted', 'pending', 'verified', 'rejected'],
             required: true,
             default: 'not_submitted'
         }
@@ -142,12 +142,12 @@ kycSchema.pre('save', async function (next) {
     if (!this.isModified()) return next();
 
     if (
-        this.address.status === 'approved' &&
-        this.identity.status === 'approved' &&
-        this.nextOfKin.status === 'approved' &&
-        this.guarantor.status === 'approved'
+        this.address.status === 'verified' &&
+        this.identity.status === 'verified' &&
+        this.nextOfKin.status === 'verified' &&
+        this.guarantor.status === 'verified'
     ) {
-        this.status = 'approved';
+        this.status = 'verified';
     } else {
         this.status = 'pending';
     }

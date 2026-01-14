@@ -69,23 +69,23 @@ class KycController {
         }
         // Updating kyc data
         if (passportUrl) kycData.passportUrl = passportUrl;
-        if (address && kyc.address.status != 'approved') {
+        if (address && kyc.address.status != 'verified') {
             address.status = 'pending';
             kycData.address = address;
             address.address = `${address.buildingNumber} ${address.street}, ${address.city}, ${address.state}.`;
             kycData.status = 'pending';
         }
-        if (identity && kyc.identity.status != 'approved') {
+        if (identity && kyc.identity.status != 'verified') {
             identity.status = 'pending';
             kycData.identity = identity;
             kycData.status = 'pending';
         }
-        if (nextOfKin && kyc.nextOfKin.status != 'approved') {
+        if (nextOfKin && kyc.nextOfKin.status != 'verified') {
             nextOfKin.status = 'pending';
             kycData.nextOfKin = nextOfKin;
             kycData.status = 'pending';
         }
-        if (guarantor && kyc.guarantor.status != 'approved') {
+        if (guarantor && kyc.guarantor.status != 'verified') {
             guarantor.status = 'pending';
             kycData.guarantor = guarantor;
             kycData.status = 'pending';

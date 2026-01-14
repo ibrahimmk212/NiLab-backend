@@ -553,6 +553,27 @@ class Monnify extends MonnifyApi {
         console.log('enquiry data', data);
         return data;
     }
+    async getTransactionStatus(
+        transactionReference: string,
+        accessToken: string
+    ): Promise<any> {
+        // Encoded reference is safer for URL paths
+        const encodedRef = encodeURIComponent(transactionReference);
+        const path = `/api/v2/transactions/${encodedRef}`;
+
+        const headers = {
+            Authorization: `Bearer ${accessToken}`
+        };
+
+        const data = await this.makeRequest({
+            method: 'GET',
+            path,
+            headers
+        });
+
+        // Monnify v2 returns responseBody with paymentStatus (PAID, OVERPAID, PARTIALLY_PAID, etc.)
+        return data.responseBody;
+    }
 }
 
 export default new Monnify();

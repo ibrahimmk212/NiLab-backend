@@ -30,7 +30,7 @@ export interface User extends Document {
     pin: string;
     phoneNumber: string;
     addresses: Address[];
-    kycStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected';
+    kycStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
     resetPasswordToken: string;
     resetPasswordExpire: string;
     status: 'active' | 'inactive' | 'suspended';
@@ -88,7 +88,7 @@ const userSchema = new Schema<User>(
         ],
         kycStatus: {
             type: String,
-            enum: ['not_submitted', 'pending', 'approved', 'rejected'],
+            enum: ['not_submitted', 'pending', 'verified', 'rejected'],
             required: true,
             default: 'not_submitted'
         },

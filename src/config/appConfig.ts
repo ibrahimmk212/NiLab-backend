@@ -30,7 +30,8 @@ const AppConfig = {
         monnifySecretKey: process.env.MONNIFY_SECRET_KEY as string,
         accessToken: '',
         contractCode: process.env.CONTRACT_CODE as string,
-        walletNumber: process.env.WALLET_NUMBER as string
+        walletNumber: process.env.WALLET_NUMBER as string,
+        redirectUrl: 'https://dashboard.terminusdrive.com/checkout/success'
     },
     mailer: {
         service: process.env.SMTP_SERVICE,

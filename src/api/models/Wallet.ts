@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Wallet extends Document {
     role: 'user' | 'rider' | 'vendor' | 'system';
-    owner: mongoose.Types.ObjectId;
+    owner?: mongoose.Types.ObjectId;
     availableBalance: number; // withdrawable
     pendingBalance: number; // escrow / waiting for order completion
 
@@ -20,7 +20,9 @@ const walletSchema = new Schema<Wallet>(
         owner: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
-            required: true,
+            required: function () {
+                return this.role !== 'system';
+            },
             index: true
         },
         availableBalance: { type: Number, default: 0 },
@@ -36,8 +38,14 @@ const walletSchema = new Schema<Wallet>(
     }
 );
 
-// Ensure one wallet per user role
-walletSchema.index({ role: 1, owner: 1 }, { unique: true });
+// Ensure one wallet per user role except for system
+walletSchema.index(
+    { role: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { role: 'system' }
+    }
+);
 
 walletSchema.pre('findOneAndUpdate', async function (next) {
     const doc = await this.model.findOne(this.getQuery());

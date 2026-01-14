@@ -36,10 +36,11 @@ class VendorOrderController {
             const { vendor } = req;
             const limit = parseInt(req.query.limit) || 5;
 
-            const orders = await OrderService.getVendorRecentOrders(
-                vendor.id,
-                limit
-            );
+            const orders = await OrderService.getAll({
+                vendorId: vendor.id,
+                limit,
+                ...req.query
+            });
 
             res.status(STATUS.OK).send({
                 message: 'Recent Orders fetched successfully',

@@ -8,6 +8,7 @@ import { Application } from 'express';
 import AppConfig from './config/appConfig';
 import { specs } from './utils/swagger';
 import errorHandler from './api/middlewares/handlers/error';
+import { initializePointZero } from './scripts/initializeSystem';
 
 export function createServer(): Application {
     const app = express();
@@ -43,6 +44,13 @@ export function createServer(): Application {
 
     app.use('/monnify', (req: Request, res: Response) => {
         return res.status(404).json({ success: false, message: 'MOnify' });
+    });
+
+    app.use('/system-init', async (req: Request, res: Response) => {
+        const init = await initializePointZero();
+        return res
+            .status(201)
+            .json({ success: true, message: 'success', data: init });
     });
 
     app.use(errorHandler);
