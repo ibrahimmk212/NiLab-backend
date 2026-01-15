@@ -9,6 +9,7 @@ import {
     generateShortCode
 } from '../../utils/keygen/idGenerator';
 import SettlementService from './SettlementService';
+import ProductModel from '../models/Product';
 
 class OrderService {
     /**
@@ -16,7 +17,7 @@ class OrderService {
      * This method now handles NanoID generation and stores the commission
      * snapshot so financial records remain consistent if config changes.
      */
-    async createOrder(orderData: Partial<Order>): Promise<Order> {
+    async createOrder(data: any): Promise<Order> {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -24,17 +25,54 @@ class OrderService {
             const config = await ConfigurationService.getConfiguration();
             if (!config) throw new Error('System configuration not found');
 
-            // 1. Generate Clean NanoIDs
-            const orderCode = generateShortCode(); // e.g., 829102
-            const paymentRef = generateReference('ORD'); // e.g., ORD-K7W2J9P4
+            // 1. Fetch Real Products from DB to get Prices & Names
+            const productIds = data.products.map((p: any) => p.product);
+            const dbProducts = await ProductModel.find({
+                _id: { $in: productIds }
+            }).session(session);
 
-            // 2. Snapshot Commission and calculate totals
-            // Important: We save the commission % at the time of order
-            const orderPayload: Partial<Order> = {
-                ...orderData,
-                code: orderCode,
-                paymentReference: paymentRef,
+            // 2. Map and calculate subtotal safely
+            let subtotal = 0;
+            const enrichedProducts = data.products.map((p: any) => {
+                const dbP = dbProducts.find(
+                    (item) => item._id.toString() === p.product
+                );
+                if (!dbP) throw new Error(`Product not found: ${p.product}`);
+
+                const lineTotal = dbP.price * p.quantity;
+                subtotal += lineTotal;
+
+                return {
+                    product: dbP._id,
+                    name: dbP.name,
+                    category: dbP.category,
+                    price: dbP.price,
+                    quantity: p.quantity
+                };
+            });
+
+            // 3. Calculate Fees based on Configuration
+            const deliveryFee = await this.calculateDeliveryFee(
+                data.distance ?? 0
+            );
+            const serviceFee = (subtotal * config.vendorCommission) / 100;
+            const vat = (subtotal + deliveryFee) * (config.vatRate / 100 || 0);
+            const totalAmount = subtotal + deliveryFee + serviceFee + vat;
+
+            // 4. Build Order Payload
+            const orderPayload: any = {
+                ...data,
+                vendor: data.vendorId, // Map vendorId from payload to vendor in schema
+                products: enrichedProducts, // Now includes name, price, and category
+                code: generateShortCode(),
+                paymentReference: generateReference('ORD'),
+                amount: subtotal,
+                deliveryFee,
+                serviceFee,
+                vat,
+                totalAmount,
                 commission: config.vendorCommission,
+                orderType: 'products',
                 status: 'pending'
             };
 
@@ -43,14 +81,13 @@ class OrderService {
                 session
             );
 
-            // 3. If paying via Wallet, we trigger the escrow immediately
-            if (orderData.paymentType === 'wallet') {
-                await WalletService.initCreditAccount({
-                    amount: order.totalAmount,
-                    owner: order.user,
+            // 5. Wallet Escrow Logic
+            if (data.paymentType === 'wallet') {
+                await WalletService.initDebitAccount({
+                    amount: totalAmount,
+                    owner: data.user,
                     role: 'user'
                 });
-                // Note: Actual movement to System Wallet happens on payment confirmation
             }
 
             await session.commitTransaction();
@@ -63,7 +100,7 @@ class OrderService {
         }
     }
 
-    async createPackageOrder(data: any) {
+    async createPackageOrder(data: any): Promise<Order> {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -71,21 +108,20 @@ class OrderService {
             const config = await ConfigurationService.getConfiguration();
             if (!config) throw new Error('System configuration not found');
 
-            // Calculate delivery fee for the package
             const deliveryFee = await this.calculateDeliveryFee(
                 data.distance ?? 0
             );
-            // Usually, package orders have a flat service fee or percentage
             const serviceFee = config.baseServiceFee || 100;
+            const totalAmount = (data.amount || 0) + deliveryFee + serviceFee;
 
-            const orderData = {
+            const orderData: Partial<Order> = {
                 ...data,
                 code: generateReference('PKG'),
                 paymentReference: generateReference('ORD'),
-                orderType: 'delivery',
+                orderType: 'package', // Aligned with your Schema Enum
                 deliveryFee,
                 serviceFee,
-                totalAmount: (data.amount || 0) + deliveryFee + serviceFee,
+                totalAmount,
                 status: 'pending'
             };
 
@@ -167,12 +203,11 @@ class OrderService {
     async calculateDeliveryFee(distanceInMeters: number): Promise<number> {
         const config = await ConfigurationService.getConfiguration();
         if (!config) return 0;
-
         const distanceInKm = distanceInMeters / 1000;
-        const totalDeliveryFee =
-            config.baseDeliveryFee + distanceInKm * config.feePerKm;
-
-        return Math.max(totalDeliveryFee, config.baseDeliveryFee);
+        return Math.max(
+            config.baseDeliveryFee + distanceInKm * config.feePerKm,
+            config.baseDeliveryFee
+        );
     }
 
     async calculateServiceFee(subTotal: number): Promise<number> {

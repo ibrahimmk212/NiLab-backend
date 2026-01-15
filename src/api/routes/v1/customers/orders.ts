@@ -4,10 +4,10 @@ import orderController from '../../../controllers/customers/OrderController';
 
 const customerOrderRouter: Router = Router();
 
-customerOrderRouter
-    .route('/')
-    .get(orderController.getAllOrder)
-    .post(Validate(Requirements.createOrder), orderController.createOrder);
+customerOrderRouter.route('/').get(orderController.getAllOrder).post(
+    // Validate(Requirements.createOrder),
+    orderController.createOrder
+);
 
 customerOrderRouter
     .route('/package')

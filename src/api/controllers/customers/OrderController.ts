@@ -9,11 +9,11 @@ class OrderController {
     getAllOrder = asyncHandler(async (req: any, res: Response) => {
         const { userdata }: any = req;
         const order = await OrderService.getAll({
-            userId: req.userdata.id,
+            userId: userdata.id,
             ...req.query
         });
 
-        res.status(STATUS.CREATED).json({
+        res.status(STATUS.OK).json({
             success: true,
             ...order
         });

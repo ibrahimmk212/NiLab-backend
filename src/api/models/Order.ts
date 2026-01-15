@@ -28,8 +28,8 @@ export interface Order extends Document {
     vendor: mongoose.Types.ObjectId;
     rider?: mongoose.Types.ObjectId;
     dispatch?: mongoose.Types.ObjectId;
-    code: string; // Changed to string to support clean alphanumeric NanoIDs
-    commission: number; // Fixed typo from 'commision'
+    code: string;
+    commission: number;
     products: OrderItem[];
     package: {
         description: string;
@@ -129,7 +129,7 @@ const orderSchema = new Schema<Order>(
             type: String,
             required: true,
             default: 'products',
-            enum: ['products', 'package']
+            enum: ['products', 'delivery']
         },
         paymentCompleted: { type: Boolean, default: false },
         amount: { type: Number, required: true },
