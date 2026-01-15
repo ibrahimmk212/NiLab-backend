@@ -10,8 +10,15 @@ import {
 } from '../../utils/keygen/idGenerator';
 import SettlementService from './SettlementService';
 import ProductModel from '../models/Product';
+import VendorModel from '../models/Vendor';
+import UserRepository from '../repositories/UserRepository';
+import { Address } from '../models/User';
+import { calculateStraightDistance } from '../../utils/helpers';
 
 class OrderService {
+    private roundToTwo(num: number): number {
+        return Math.round((num + Number.EPSILON) * 100) / 100;
+    }
     /**
      * POINT ZERO: Create Order
      * This method now handles NanoID generation and stores the commission
@@ -24,14 +31,32 @@ class OrderService {
         try {
             const config = await ConfigurationService.getConfiguration();
             if (!config) throw new Error('System configuration not found');
+            console.log('config: ', config);
 
-            // 1. Fetch Real Products from DB to get Prices & Names
+            // 1. Get Vendor (Pickup) and Customer (Destination)
+            const vendor = await VendorModel.findById(data.vendorId).session(
+                session
+            );
+            if (!vendor) throw new Error('Vendor not found');
+            console.log('vendor: ', vendor);
+
+            const customer = await UserRepository.findUserById(data.user);
+            if (!customer) throw new Error('Customer not found');
+
+            const deliveryAddress = customer.addresses.find(
+                (addr: any) => addr._id.toString() === data.addressId
+            );
+
+            if (!deliveryAddress) throw new Error('Delivery address not found');
+            console.log('deliveryAddress: ', deliveryAddress);
+
+            // 2. ENRICH PRODUCTS & CALCULATE SUBTOTAL
+            // We fetch the prices from the DB so the user can't fake them
             const productIds = data.products.map((p: any) => p.product);
             const dbProducts = await ProductModel.find({
                 _id: { $in: productIds }
             }).session(session);
 
-            // 2. Map and calculate subtotal safely
             let subtotal = 0;
             const enrichedProducts = data.products.map((p: any) => {
                 const dbP = dbProducts.find(
@@ -51,25 +76,58 @@ class OrderService {
                 };
             });
 
-            // 3. Calculate Fees based on Configuration
-            const deliveryFee = await this.calculateDeliveryFee(
-                data.distance ?? 0
-            );
-            const serviceFee = (subtotal * config.vendorCommission) / 100;
-            const vat = (subtotal + deliveryFee) * (config.vatRate / 100 || 0);
-            const totalAmount = subtotal + deliveryFee + serviceFee + vat;
+            console.log('enrichedProducts: ', enrichedProducts);
 
-            // 4. Build Order Payload
+            // 3. LOGISTICS (Hybrid Math)
+            const straightKm = calculateStraightDistance(
+                vendor.location.coordinates[1],
+                vendor.location.coordinates[0],
+                deliveryAddress.coordinates[1],
+                deliveryAddress.coordinates[0]
+            );
+
+            const estimatedRoadKm = straightKm * 1.4; // Road Factor
+            const deliveryFee = await this.calculateDeliveryFee(
+                estimatedRoadKm * 1000
+            );
+            console.log('distance in KM: ', straightKm);
+            console.log('estimated distance in KM: ', estimatedRoadKm);
+
+            // 4. CALCULATE PLATFORM FEES (Rounded)
+            const serviceFee = this.roundToTwo(
+                (subtotal * config.vendorCommission) / 100
+            );
+            const vat = this.roundToTwo(
+                (subtotal + deliveryFee) * (config.vatRate / 100 || 0)
+            );
+
+            // Calculate total and round one final time to be safe
+            const totalAmount = this.roundToTwo(
+                subtotal + deliveryFee + serviceFee + vat
+            );
+
+            // 5. ASSEMBLE PAYLOAD
             const orderPayload: any = {
                 ...data,
-                vendor: data.vendorId, // Map vendorId from payload to vendor in schema
-                products: enrichedProducts, // Now includes name, price, and category
                 code: generateShortCode(),
                 paymentReference: generateReference('ORD'),
-                amount: subtotal,
-                deliveryFee,
+                vendor: vendor._id,
+                user: customer._id,
+                products: enrichedProducts,
+                pickup: {
+                    coordinates: vendor.location.coordinates,
+                    street: vendor.address
+                },
+                destination: {
+                    coordinates: deliveryAddress.coordinates,
+                    street: deliveryAddress.street,
+                    city: deliveryAddress.city,
+                    label: deliveryAddress.label
+                },
+                deliveryFee: this.roundToTwo(deliveryFee), // Also round delivery fee
                 serviceFee,
                 vat,
+                amount: subtotal,
                 totalAmount,
                 commission: config.vendorCommission,
                 orderType: 'products',
@@ -81,7 +139,7 @@ class OrderService {
                 session
             );
 
-            // 5. Wallet Escrow Logic
+            // 6. WALLET ESCROW
             if (data.paymentType === 'wallet') {
                 await WalletService.initDebitAccount({
                     amount: totalAmount,

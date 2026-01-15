@@ -50,51 +50,26 @@ interface OtpResponse {
     };
     // Define the structure of the OTP response
 }
-
 class Monnify extends MonnifyApi {
-    // private monnifyApi;
-    private accessToken = null;
-
     constructor() {
         super(
             appConfig.monnify.monnifySecretKey,
             appConfig.monnify.monnifyApiKey,
             appConfig.monnify.baseUrl
         );
-        console.log('creating monify');
-        // if (!appConfig.monnify.accessToken) {
-        //     this.genToken();
-        // }
     }
 
-    // to generate token
-    async genToken(): Promise<any> {
-        const key = Buffer.from(
-            appConfig.monnify.monnifyApiKey +
-                ':' +
-                appConfig.monnify.monnifySecretKey
-        ).toString('base64');
+    async genToken(): Promise<string> {
+        // Now 'this.apiKey' and 'this.makeRequest' will be recognized
+        const key = Buffer.from(`${this.apiKey}:${this.secretKey}`).toString(
+            'base64'
+        );
         const path = '/api/v1/auth/login';
-        const headers = {
-            Authorization: `Basic ${key}`
-        };
-        const data = await this.makeRequest({
-            method: 'POST',
-            path,
-            headers
-        });
+        const headers = { Authorization: `Basic ${key}` };
 
-        console.log(data);
-        // appConfig.monnify.accessToken =
+        const data = await this.makeRequest({ method: 'POST', path, headers });
         return data.responseBody?.accessToken;
-
-        // setTimeout(() => {
-        //     appConfig.monnify.accessToken = '';
-        //     console.log('deleting expired token');
-        // }, (1000 * data.responseBody?.expiresIn ?? 0) as number);
-        // return data;
     }
-
     // to reserve an account
     async reserveAccount(
         requestBody: Record<string, unknown>,
