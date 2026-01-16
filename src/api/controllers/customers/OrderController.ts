@@ -32,8 +32,7 @@ class OrderController {
 
         res.status(STATUS.CREATED).json({
             success: true,
-            data: order,
-            payment: paymentResult.payment
+            data: { order, payment: paymentResult.payment }
         });
     });
 
@@ -68,13 +67,23 @@ class OrderController {
         const order = await OrderService.getOrderById(req.params.orderId);
         if (!order) throw Error('Order not found');
 
+        if (order.paymentCompleted) {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment already confirmed for this order.'
+            });
+        }
+
         const paymentResult: any = await PaymentService.initiateCheckout(
             order,
             userdata
         );
         res.status(STATUS.OK).json({
             success: true,
-            payment: paymentResult.payment
+            data: {
+                order,
+                payment: paymentResult.payment
+            }
         });
     });
 
