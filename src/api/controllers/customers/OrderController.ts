@@ -32,7 +32,7 @@ class OrderController {
 
         res.status(STATUS.CREATED).json({
             success: true,
-            data: { order, payment: paymentResult.payment }
+            data: { ...order, payment: paymentResult.payment }
         });
     });
 
@@ -81,7 +81,7 @@ class OrderController {
         res.status(STATUS.OK).json({
             success: true,
             data: {
-                order,
+                ...order,
                 payment: paymentResult.payment
             }
         });
