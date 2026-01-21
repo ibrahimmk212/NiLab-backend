@@ -34,7 +34,7 @@ class OrderService {
             console.log('config: ', config);
 
             // 1. Get Vendor (Pickup) and Customer (Destination)
-            const vendor = await VendorModel.findById(data.vendorId).session(
+            const vendor = await VendorModel.findById(data.vendor).session(
                 session
             );
             if (!vendor) throw new Error('Vendor not found');
