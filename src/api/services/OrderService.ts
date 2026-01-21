@@ -286,13 +286,13 @@ class OrderService {
         return await OrderRepository.findOrderById(orderId);
     }
 
-    getOrderforPaymentAndCheckout(orderId: string) {
-        const order: any = OrderRepository.findOrderById(orderId);
+    async getOrderforPaymentAndCheckout(orderId: string) {
+        const order: any = await OrderRepository.findOrderById(orderId);
         return {
+            ...order,
             user: order.user.id,
             vendor: order.vendor.id,
-            products: order.products,
-            ...order.toJSON()
+            products: order.products
         };
     }
 

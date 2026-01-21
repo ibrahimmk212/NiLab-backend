@@ -32,7 +32,12 @@ class OrderController {
 
         res.status(STATUS.CREATED).json({
             success: true,
-            data: { ...order.toJSON(), payment: paymentResult.payment }
+            data: {
+                ...order.toJSON(),
+                vendor: req.body.vendor,
+                user: userdata.id,
+                payment: paymentResult.payment
+            }
         });
     });
 
@@ -82,6 +87,8 @@ class OrderController {
             success: true,
             data: {
                 ...order.toJSON(),
+                user: userdata.id,
+                vendor: order.vendor.id,
                 payment: paymentResult.payment
             }
         });
