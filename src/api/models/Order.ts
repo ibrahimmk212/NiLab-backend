@@ -55,6 +55,7 @@ export interface Order extends Document {
     deliveryAddress: string;
     deliveryLocation: number[];
     pickup: OrderAddress;
+    deliveryTime?: string;
     destination: OrderAddress;
     senderDetails: { name: string; contactNumber: string };
     receiverDetails: { name: string; contactNumber: string };
@@ -66,6 +67,11 @@ export interface Order extends Document {
     canceledAt: number;
     canceledReason: string;
     completed: boolean;
+    refunded: boolean;
+    refundedAt: Date;
+    remark: string;
+    isSettled: boolean;
+    settledAt: Date;
     status:
         | 'pending'
         | 'preparing'
@@ -175,6 +181,11 @@ const orderSchema = new Schema<Order>(
             label: String,
             additionalInfo: String
         },
+        deliveryTime: {
+            type: String,
+            required: false,
+            default: null
+        },
         destination: {
             coordinates: [Number],
             street: String,
@@ -196,7 +207,17 @@ const orderSchema = new Schema<Order>(
         dispatchedAt: { type: Number },
         deliveredAt: { type: Number },
         canceledAt: { type: Number },
-        canceledReason: { type: String }
+        isSettled: {
+            type: Boolean,
+            default: false
+        },
+        settledAt: {
+            type: Date
+        },
+        canceledReason: { type: String },
+        refunded: { type: Boolean, default: false },
+        refundedAt: { type: Date },
+        remark: { type: String, required: false }
     },
     {
         timestamps: true,

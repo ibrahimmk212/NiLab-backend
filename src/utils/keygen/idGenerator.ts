@@ -11,7 +11,17 @@ const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
  * @param length - The length of the random part (default 10)
  */
 export const generateReference = (
-    prefix: 'ORD' | 'TXN' | 'PAY' | 'WL' | 'SETTLE' | 'REV' | 'PKG',
+    prefix:
+        | 'ORD'
+        | 'TXN'
+        | 'PAY'
+        | 'WL'
+        | 'SETTLE'
+        | 'RFD'
+        | 'PKG'
+        | 'REV'
+        | 'COL'
+        | 'WTH',
     length = 10
 ): string => {
     const nanoid = customAlphabet(alphabet, length);

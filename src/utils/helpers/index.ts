@@ -14,8 +14,12 @@ export const currentTimestamp = (): number => {
     return Date.now();
 };
 
-export const generateRandomNumbers = (lenght: number): number => {
-    return Math.ceil(Math.random() * 10 ** lenght);
+export const generateRandomNumbers = (length: number = 10): number => {
+    const min = 10 ** (length - 1); // Smallest number with 'length' digits (e.g., 100 for 3)
+    const max = 10 ** length - 1; // Largest number with 'length' digits (e.g., 999 for 3)
+
+    // Generate random integer in the inclusive range [min, max]
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
 export const generatePromotionCode = (keyLength = 8): string => {

@@ -11,6 +11,7 @@ import { ROLE } from '../../../constants';
 import publicRouter from './public';
 import fileRouter from './file';
 import dashboardRouter from './dashboard';
+import webhookRouter from './webhooks';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -43,4 +44,5 @@ router.use('/admin', auth.isAdmin, adminsRouter);
 router.use('/users', usersRouter);
 router.use('/file', fileRouter);
 router.use('/dashboard', dashboardRouter);
+router.use('/webhooks', webhookRouter);
 export default router;

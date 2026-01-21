@@ -52,7 +52,7 @@ const collectionSchema = new Schema<Collection>(
         responseData: { type: Schema.Types.Map, required: false },
         orderId: { type: Schema.Types.ObjectId, ref: 'Order' },
         walletId: { type: Schema.Types.ObjectId, ref: 'Wallet' },
-        internalReference: { type: String, unique: true }
+        internalReference: { type: String, unique: true, sparse: true }
     },
     {
         timestamps: true,

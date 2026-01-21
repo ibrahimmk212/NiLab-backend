@@ -10,6 +10,7 @@ export interface Payout extends Document {
     bankName: string;
     accountNumber: string;
     accountName: string;
+    bankCode?: string;
 }
 
 const payoutSchema = new Schema<Payout>(
@@ -29,9 +30,11 @@ const payoutSchema = new Schema<Payout>(
         rejectionReason: { type: String },
         bankName: { type: String, required: true },
         accountNumber: { type: String, required: true },
-        accountName: { type: String, required: true }
+        accountName: { type: String, required: true },
+        bankCode: { type: String }
     },
     { timestamps: true }
 );
 
-export default mongoose.model<Payout>('Payout', payoutSchema);
+const PayoutModel = mongoose.model<Payout>('Payout', payoutSchema);
+export default PayoutModel;

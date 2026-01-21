@@ -9,7 +9,16 @@ export interface Transaction extends Document {
     fromWallet?: mongoose.Types.ObjectId;
     toWallet?: mongoose.Types.ObjectId;
     type: 'CREDIT' | 'DEBIT';
-    category: 'COMMISSION' | 'ORDER' | 'DELIVERY' | 'ADMIN' | 'SETTLEMENT';
+    category:
+        | 'COMMISSION'
+        | 'ORDER'
+        | 'DELIVERY'
+        | 'ADMIN'
+        | 'SETTLEMENT'
+        | 'TOPUP'
+        | 'REFUND'
+        | 'REVERSAL'
+        | 'WITHDRAWAL';
     status: 'pending' | 'successful' | 'failed' | 'reversed';
     remark?: string;
     balanceBefore?: number;
@@ -77,7 +86,17 @@ const transactionSchema = new Schema<Transaction>(
         },
         category: {
             type: String,
-            enum: ['COMMISSION', 'ORDER', 'DELIVERY', 'ADMIN', 'SETTLEMENT'],
+            enum: [
+                'COMMISSION',
+                'ORDER',
+                'DELIVERY',
+                'ADMIN',
+                'SETTLEMENT',
+                'TOPUP',
+                'REFUND',
+                'REVERSAL',
+                'WITHDRAWAL'
+            ],
             required: true
         },
 

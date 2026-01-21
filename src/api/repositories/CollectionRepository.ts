@@ -1,3 +1,4 @@
+import { ClientSession } from 'mongoose';
 import CollectionModel, { Collection } from '../models/Collection';
 
 interface ICollectionRepository {
@@ -12,8 +13,12 @@ interface ICollectionRepository {
 }
 
 class CollectionRepository implements ICollectionRepository {
-    createCollection(payload: Partial<Collection>): Promise<Collection> {
-        return CollectionModel.create(payload);
+    createCollection(
+        payload: Partial<Collection>,
+        session?: ClientSession
+    ): Promise<Collection> {
+        const collection = new CollectionModel(payload);
+        return collection.save({ session });
     }
 
     getCollections(): Promise<Collection[]> {

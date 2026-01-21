@@ -33,29 +33,6 @@ class AdminPayoutController {
             }
         }
     );
-    // requestPayout = asyncHandler(
-    //     async (req: any, res: Response, next: NextFunction): Promise<void> => {
-    //         try {
-    //             const { id } = req.userdata;
-    //             const { amount, bankName, accountNumber, accountName } =
-    //                 req.body;
-    //             const payout = await PayoutService.requestPayout({
-    //                 userId: id,
-    //                 amount,
-    //                 bankName,
-    //                 accountNumber,
-    //                 accountName
-    //             });
-    //             res.status(200).send({
-    //                 message: 'Payout fetched successfully',
-    //                 data: payout
-    //             });
-    //         } catch (error) {
-    //             next(error);
-    //         }
-    //     }
-    // );
-
     completePayout = asyncHandler(
         async (req: any, res: Response, next: NextFunction): Promise<void> => {
             try {

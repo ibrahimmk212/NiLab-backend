@@ -8,7 +8,7 @@ export interface InitializeTransactionRequest {
     contractCode: string;
     redirectUrl: string;
     paymentMethods: string[];
-    metadata?: Record<string, unknown>;
+    metaData?: Record<string, unknown>;
 }
 
 export interface InitializeTransactionResponse {

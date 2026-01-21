@@ -7,12 +7,14 @@ import { Collection } from '../models/Collection';
 import { generateReference } from '../../utils/keygen/idGenerator';
 import monnify from '../libraries/monnify';
 import appConfig from '../../config/appConfig';
+import CollectionRepository from '../repositories/CollectionRepository';
+import TransactionRepository from '../repositories/TransactionRepository';
+import PayoutRepository from '../repositories/PayoutRepository';
+import WalletModel from '../models/Wallet';
+import TransactionModel from '../models/Transaction';
+import PayoutModel from '../models/Payout';
 
 class PaymentService {
-    /**
-     * Handles Monnify Webhook Notifications
-     * Supports both Order payments (ORD-) and Wallet Top-ups (WAL-)
-     */
     async handleMonnifyWebhook(payload: any) {
         const session = await mongoose.startSession();
         session.startTransaction();
@@ -22,50 +24,63 @@ class PaymentService {
                 transactionReference,
                 paymentReference,
                 amountPaid,
-                paymentStatus
+                paymentStatus,
+                settlementAmount,
+                paymentMethod,
+                customer,
+                metaData
             } = payload;
 
-            // 1. Idempotency Check: Prevent duplicate processing
+            // 1. Idempotency Check
             const exists = await PaymentRepository.findByTransactionReference(
                 transactionReference
             );
+
             if (exists && exists.status === 'success') {
                 await session.abortTransaction();
-                return;
+                return {
+                    message: 'Payment already processed',
+                    collection: exists
+                };
             }
 
-            // 2. Map payload to Collection Model for audit trail
+            // 2. Comprehensive Mapping (Keeping all fields)
             const collectionData: Partial<Collection> = {
-                transactionReference: transactionReference,
-                paymentReference: paymentReference,
-                amountPaid: amountPaid,
-                paymentStatus: paymentStatus,
+                transactionReference,
+                paymentReference,
+                internalReference: generateReference('COL'),
+                amountPaid,
+                settlementAmount, // Added
+                paymentMethod, // Added
+                paymentStatus,
+                customer: customer,
                 status: paymentStatus === 'PAID' ? 'success' : 'failed',
-                responseData: payload
+                responseData: payload // This keeps everything else (product, bank info, etc)
             };
 
-            // 3. Extract original reference (Remove timestamp suffix if it exists)
-            // Example: "ORD-ABC-12345" becomes "ORD-ABC"
+            // 3. Extract original reference
             let originalRef = paymentReference;
             if (paymentReference.includes('-')) {
                 const parts = paymentReference.split('-');
-                // Check if it follows the pattern ORD-XXXX or WAL-XXXX
                 if (parts.length >= 2) {
                     originalRef = `${parts[0]}-${parts[1]}`;
                 }
             }
 
-            // 4. Processing Logic based on Reference Prefix
+            // 4. Processing Logic (Fixed Variable Scoping)
+            let processedEntity = null;
+
             if (paymentStatus === 'PAID') {
                 if (originalRef.startsWith('ORD')) {
-                    await this.processOrderPayment(
+                    // Remove 'const' so it updates the variable in the outer scope
+                    processedEntity = await this.processOrderPayment(
                         originalRef,
                         payload,
                         collectionData,
                         session
                     );
                 } else if (originalRef.startsWith('WAL')) {
-                    await this.processWalletTopUp(
+                    processedEntity = await this.processWalletTopUp(
                         originalRef,
                         payload,
                         collectionData,
@@ -75,10 +90,17 @@ class PaymentService {
             }
 
             // 5. Save the collection record
-            await PaymentRepository.createCollection(collectionData, session);
+            const collection = await CollectionRepository.createCollection(
+                collectionData,
+                session
+            );
 
             await session.commitTransaction();
-            console.log(`[PAYMENT_SUCCESS] Processed ${originalRef}`);
+
+            console.log(`[PAYMENT_SUCCESS] Processed ${originalRef}`, {
+                collectionId: collection._id,
+                entityStatus: processedEntity ? 'Updated' : 'Not Found'
+            });
         } catch (error) {
             await session.abortTransaction();
             console.error('[PAYMENT_WEBHOOK_ERROR]:', error);
@@ -88,8 +110,69 @@ class PaymentService {
         }
     }
 
+    async handleMonnifyDisbursementWebhook(eventData: any) {
+        const { reference, status, amount, responseDescription } = eventData;
+
+        // The reference we sent earlier was: `PAYOUT-${payout._id}-${Date.now()}`
+        const payoutId = reference.split('-')[1];
+        const payout = await PayoutRepository.findById(payoutId);
+
+        if (!payout) return; // Or log for investigation
+
+        // if payout is pending
+        // If it's already completed, don't process again (Idempotency)
+        if (payout.status === 'completed') return;
+
+        if (status === 'SUCCESS') {
+            await PayoutRepository.update(payout._id, { status: 'completed' });
+        } else if (status === 'FAILED' || status === 'REVERSED') {
+            const session = await mongoose.startSession();
+            session.startTransaction();
+
+            try {
+                // 1. Return money to "Available Balance"
+                await WalletModel.findOneAndUpdate(
+                    { _id: payout.walletId },
+                    { $inc: { availableBalance: payout.amount } },
+                    { session }
+                );
+
+                // 2. Mark payout as rejected
+                await PayoutModel.findByIdAndUpdate(
+                    payout._id,
+                    {
+                        status: 'rejected',
+                        rejectionReason:
+                            responseDescription || 'Bank Transfer Failed'
+                    },
+                    { session }
+                );
+
+                // 3. Log the Reversal Transaction
+                await TransactionRepository.createTransaction(
+                    {
+                        userId: payout.userId,
+                        amount: payout.amount,
+                        type: 'CREDIT',
+                        category: 'REVERSAL',
+                        remark: `Refund: ${responseDescription}`,
+                        reference: `REV-${reference}`
+                    },
+                    session
+                );
+
+                await session.commitTransaction();
+            } catch (error) {
+                await session.abortTransaction();
+                throw error;
+            } finally {
+                session.endSession();
+            }
+        }
+    }
+
     /**
-     * Logic for processing Successful Orders
+     * Updated to return the order for the console log
      */
     private async processOrderPayment(
         ref: string,
@@ -102,23 +185,22 @@ class PaymentService {
             session
         );
         if (order && !order.paymentCompleted) {
-            // Mark Order as Paid
-            await OrderRepository.updateOrder(
+            const updatedOrder = await OrderRepository.updateOrder(
                 order._id,
-                { paymentCompleted: true }
-                , // status: 'confirmed' }, // status update depends on your flow
+                { paymentCompleted: true },
                 session
             );
 
             collectionData.orderId = order._id;
             collectionData.user = order.user;
 
-            // Move money to System Escrow (Point Zero)
             const systemWallet = await WalletRepository.getWalletByOwner(
                 'system',
                 null,
                 session
             );
+
+            console.log('system Wallet: ', systemWallet);
             if (systemWallet) {
                 await WalletRepository.creditPendingBalance(
                     systemWallet._id,
@@ -126,39 +208,67 @@ class PaymentService {
                     session
                 );
             }
+            console.log('Updated Order');
+            return updatedOrder;
         }
+        console.log('Returned Order');
+
+        return order;
     }
 
     /**
      * Logic for processing Wallet Top-ups
      */
+    // Inside processWalletTopUp
     private async processWalletTopUp(
         ref: string,
         payload: any,
         collectionData: any,
         session: any
     ) {
-        // Extract User ID or Wallet ID from metadata or reference
-        // Assuming your WAL- refs are linked to a specific pending transaction or user
-        // You would typically credit the user's available balance here
-
-        // Example: If metadata contains userId
         const userId = payload.metaData?.userId;
+        const amount = payload.amountPaid;
+
         if (userId) {
             const userWallet = await WalletRepository.getWalletByOwner(
-                'customer',
+                'user',
                 userId,
                 session
             );
+
             if (userWallet) {
+                const balanceBefore = userWallet.availableBalance;
+
+                // 1. Update the Wallet
                 await WalletRepository.creditAvailableBalance(
                     userWallet._id,
-                    payload.amountPaid,
+                    amount,
                     session
                 );
+
+                // 2. Create the Ledger Entry (Transaction)
+                await TransactionRepository.createTransaction(
+                    {
+                        userId: userId,
+                        role: 'user',
+                        amount: amount,
+                        type: 'CREDIT',
+                        category: 'TOPUP', // Or add 'TOPUP' to your enum
+                        status: 'successful',
+                        reference: ref,
+                        toWallet: userWallet._id,
+                        balanceBefore: balanceBefore,
+                        balanceAfter: balanceBefore + amount,
+                        remark: 'Wallet funding via Monnify'
+                    },
+                    session
+                );
+
                 collectionData.user = userId;
+                return userWallet;
             }
         }
+        return null;
     }
 
     /**
@@ -255,7 +365,7 @@ class PaymentService {
                 redirectUrl: appConfig.monnify.redirectUrl,
                 paymentMethods: ['ACCOUNT_TRANSFER', 'CARD'],
                 // metadata helps in Webhook if string splitting fails
-                metadata: {
+                metaData: {
                     orderId: order._id,
                     userId: userdata.id
                 }
@@ -275,6 +385,57 @@ class PaymentService {
                 transactionReference:
                     paymentRequest.responseBody.transactionReference,
                 paymentReference: order.paymentReference // Return the clean one to frontend
+            }
+        };
+    }
+
+    /**
+     * External: Initiate a Wallet Top-up (Funding)
+     */
+    async initiateWalletTopup(amount: number, userdata: any) {
+        if (!amount || amount <= 0) throw new Error('Invalid top-up amount');
+
+        const monnifyToken = await monnify.genToken();
+
+        // Generate a unique WAL reference
+        // Format: WAL-USERID-TIMESTAMP
+        const walletRef = `WAL-${userdata.id}-${Date.now()}`;
+
+        const paymentRequest = await monnify.initiatePayment(
+            {
+                amount: amount,
+                customerName: `${userdata.firstName} ${userdata.lastName}`,
+                customerEmail: userdata.email,
+                paymentDescription: `Wallet Top-up for ${userdata.firstName}`,
+                paymentReference: walletRef,
+                contractCode: appConfig.monnify.contractCode,
+                currencyCode: 'NGN',
+                redirectUrl: appConfig.monnify.redirectUrl,
+                paymentMethods: ['ACCOUNT_TRANSFER', 'CARD'],
+                metaData: {
+                    userId: userdata.id,
+                    userRole: userdata.role,
+                    type: 'wallet_topup'
+                }
+            },
+            monnifyToken
+        );
+
+        if (!paymentRequest.requestSuccessful) {
+            console.error(
+                'Monnify Top-up Rejection:',
+                paymentRequest.responseMessage
+            );
+            throw new Error('Could not initialize wallet top-up');
+        }
+
+        return {
+            valid: true,
+            payment: {
+                checkoutUrl: paymentRequest.responseBody.checkoutUrl,
+                transactionReference:
+                    paymentRequest.responseBody.transactionReference,
+                paymentReference: walletRef
             }
         };
     }

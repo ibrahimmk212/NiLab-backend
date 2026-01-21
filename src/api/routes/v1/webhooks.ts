@@ -1,8 +1,8 @@
-// import { Router } from 'express';
-// import WebhookController from '../../controllers/WebhookController';
+import { Router } from 'express';
+import MonnifyWebhookController from '../../../api/controllers/webhooks/MonifyWebhookController';
 
-// const webhookRouter: Router = Router();
+const webhookRouter: Router = Router();
 
-// webhookRouter.post('/monnify', WebhookController.monnifyEvent);
+webhookRouter.post('/monnify', MonnifyWebhookController.handleWebhook);
 
-// export default webhookRouter;
+export default webhookRouter;

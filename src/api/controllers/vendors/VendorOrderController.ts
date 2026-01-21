@@ -8,6 +8,7 @@ import TransactionService from '../../services/TransactionService';
 import { currentTimestamp } from '../../../utils/helpers';
 import emails from '../../libraries/emails';
 import NotificationService from '../../services/NotificationService';
+import SettlementService from '../../services/SettlementService';
 
 class VendorOrderController {
     getAll = asyncHandler(
@@ -109,156 +110,121 @@ class VendorOrderController {
         }
     );
 
-    updateStatus = asyncHandler(
-        async (
-            req: Request | any,
-            res: Response,
-            next: NextFunction
-        ): Promise<any> => {
-            const { vendor, user, body, params } = req;
-            const { id } = params;
-            const status:
-                | 'pending'
-                | 'preparing'
-                | 'prepared'
-                | 'dispatched'
-                | 'delivered'
-                | 'canceled' = req.body.status;
+    updateStatus = asyncHandler(async (req: any, res: Response) => {
+        const { vendor, body, params } = req;
+        const { id } = params;
+        const { status, reason } = body;
 
-            const order = await OrderService.getOrderById(id);
-            if (!order) {
-                return res
-                    .status(STATUS.NOT_FOUND)
-                    .json({ success: false, message: 'Order not found' });
-            }
+        // 1. Fetch Order with necessary populations for the refund/settlement logic
+        const order = await OrderService.getOrderById(id);
+        if (!order) {
+            return res
+                .status(STATUS.NOT_FOUND)
+                .json({ success: false, message: 'Order not found' });
+        }
 
-            // console.log(order.vendor.id, '-', vendor.id);
-            if (order.vendor.id !== vendor.id) {
-                return res.status(STATUS.FORBIDDEN).json({
-                    success: false,
-                    message: 'Order not belong to you'
-                });
-            }
+        // 2. Ownership Check
+        if (order.vendor._id.toString() !== vendor.id) {
+            return res.status(STATUS.FORBIDDEN).json({
+                success: false,
+                message: 'Unauthorized access to this order'
+            });
+        }
 
-            if (!['preparing', 'prepared', 'canceled'].includes(status)) {
-                return res
-                    .status(STATUS.BAD_REQUEST)
-                    .json({ success: false, message: 'Invalid status' });
-            }
-            if (order.status == 'canceled') {
-                return res.status(STATUS.BAD_REQUEST).json({
-                    success: false,
-                    message:
-                        'Order already canceled, you cannot update this order'
-                });
-            }
+        // 3. Status Guard: Prevent updates on final states
+        if (['delivered', 'canceled'].includes(order.status)) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                success: false,
+                message: `Cannot update order in ${order.status} state.`
+            });
+        }
 
-            if (!order.paymentCompleted)
-                return res.status(STATUS.CONFLICT).json({
-                    success: false,
-                    message:
-                        'Order not paid, please wait for customer to complete payment'
-                });
+        // 4. Handle CANCELLATION & REFUND
+        if (status === 'canceled') {
+            // Run the Refund Logic (Moves System Pending -> Customer Available)
+            // This method should handle order.save() and session transactions internally
+            await SettlementService.refundOrder(
+                order,
+                order.user._id.toString(),
+                reason
+            );
 
-            // If accepted status==preparing. and mode is not offline add to vendor ledger, do not accept if not paid
-            if (status === 'preparing') {
-                order.status = status;
-                // order.pickupLocation = vendor.location?.coordinates;
-                await order.save();
-                const customer: any = order.user;
-                emails.orderConfirmation(customer?.email, {
-                    name: customer.name,
-                    orderId: order.code.toString(),
-                    orderItems: order.products,
-                    deliveryTime: '',
-                    total: order.amount.toString()
-                });
-                const transaction = await TransactionService.createTransaction({
-                    amount: order.amount,
-                    userId: user.id,
-                    order: order.id,
-                    type: 'CREDIT',
-                    remark: 'Order Payment',
-                    status: 'pending',
-                    reference: order.paymentReference
-                });
-
-                const paid = await WalletService.initCreditAccount({
-                    amount: transaction.amount,
-                    owner: order.vendor.id.toString(),
-                    reference: transaction.reference,
-                    remark: transaction.remark || '',
-                    role: 'vendor',
-                    transactionId: transaction.id,
-                    transactionType: 'credit'
-                });
-                // console.log('paid', paid);
-                if (!paid) {
-                    transaction.status = 'failed';
-                    await transaction.save();
-                }
-
-                // Notify customer that order is accepted and being prepared
-                await NotificationService.create({
-                    userId: customer.id,
-                    title: 'Order Accepted',
-                    message: `Your order with order code ${order.code} has been accepted and is being prepared.`,
-                    status: 'unread'
-                });
-
-                return res.status(STATUS.OK).json({
-                    success: true,
-                    message: 'Order Accepted',
-                    data: transaction
-                });
-            }
-
-            if (status == 'prepared') {
-                order.status = status;
-                order.preparedAt = currentTimestamp();
-                await order.save();
-
-                //TODO notify rider to pick the order
-                // Notify customer that order is prepared
-                const customer: any = order.user;
-                await NotificationService.create({
-                    userId: customer.id,
-                    title: 'Order Prepared',
-                    message: `Your order with order code ${order.code} has been prepared and is ready for dispatch.`,
-                    status: 'unread'
-                });
-
-                res.status(STATUS.OK).json({
-                    success: true,
-                    message: 'Order marked as prepared',
-                    data: order
-                });
-                return;
-            }
-
-            // TODO add cancel details (Reson for cancellation) here, and refund money to wallet
-            if (status == 'canceled') {
-                order.status = status;
-                order.canceledAt = currentTimestamp();
-                order.canceledReason = body.reason;
-                await order.save();
-            }
-
-            // send notifcation to customer on status change
-            const customer: any = order.user;
+            // Notify Customer
             await NotificationService.create({
-                userId: customer.id,
-                title: 'Order Updated',
-                message: `Your order with order code ${order.code} status has been updated to ${status}.`,
+                userId: order.user._id,
+                title: 'Order Cancelled',
+                message: `Your order #${order.code} has been cancelled by the vendor. Funds have been returned to your wallet.`,
                 status: 'unread'
             });
-            res.status(STATUS.OK).json({
+
+            return res.status(STATUS.OK).json({
                 success: true,
-                message: 'Order updated succesfully',
+                message: 'Order cancelled and customer refunded successfully',
                 data: order
             });
         }
-    );
+
+        // 5. Handle PREPARING (Acceptance)
+        if (status === 'preparing') {
+            if (!order.paymentCompleted) {
+                return res.status(STATUS.PAYMENT_REQUIRED).json({
+                    success: false,
+                    message: 'Order payment is not yet confirmed.'
+                });
+            }
+
+            order.status = 'preparing';
+            await order.save();
+
+            //TODO Send Email & Notification
+            const customer: any = order.user;
+            emails.orderConfirmation(customer.email, {
+                name: customer.firstName,
+                orderId: order.code,
+                deliveryTime: order.deliveryTime || 'N/A',
+                orderItems: order.products,
+                total: order.totalAmount.toString()
+            });
+
+            await NotificationService.create({
+                userId: customer._id,
+                title: 'Order Accepted',
+                message: `Vendor is now preparing your order #${order.code}.`,
+                status: 'unread'
+            });
+
+            return res.status(STATUS.OK).json({
+                success: true,
+                message: 'Order accepted',
+                data: order
+            });
+        }
+
+        // 6. Handle PREPARED
+        if (status === 'prepared') {
+            order.status = 'prepared';
+            order.preparedAt = Date.now();
+            await order.save();
+
+            // Notify Customer & Trigger Rider Search Logic
+            await NotificationService.create({
+                userId: order.user._id,
+                title: 'Order Ready',
+                message: `Your order #${order.code} is ready for pickup!`,
+                status: 'unread'
+            });
+
+            return res.status(STATUS.OK).json({
+                success: true,
+                message: 'Order marked as ready',
+                data: order
+            });
+        }
+
+        return res
+            .status(STATUS.BAD_REQUEST)
+            .json({ success: false, message: 'Invalid status transition' });
+    });
 }
 
 export default new VendorOrderController();

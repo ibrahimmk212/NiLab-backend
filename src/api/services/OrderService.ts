@@ -198,7 +198,7 @@ class OrderService {
     /**
      * Finalize Order: The moment money moves from Escrow to Vendor/Rider
      */
-    async completeOrder(orderId: string) {
+    async completeOrder(orderId: string, userIds: any = {}): Promise<any> {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -214,7 +214,11 @@ class OrderService {
 
             // 2. TRIGGER POINT ZERO SETTLEMENT
             // This handles Vendor Net, Rider Net, and System Revenue
-            await SettlementService.settleOrder(order);
+            await SettlementService.settleOrder(order, {
+                vendor: userIds.vendor.toString(),
+                rider: userIds.rider.toString(),
+                system: 'system'
+            });
 
             // 3. Update Order Status after successful settlement
             const updatedOrder = await OrderRepository.updateOrder(

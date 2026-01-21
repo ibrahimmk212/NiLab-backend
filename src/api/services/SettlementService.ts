@@ -4,29 +4,50 @@ import WalletRepository from '../repositories/WalletRepository';
 import TransactionRepository from '../repositories/TransactionRepository';
 import ConfigurationModel from '../models/Configuration';
 import { generateReference } from '../../utils/keygen/idGenerator';
-import { Order } from '../models/Order';
+import OrderModel, { Order } from '../models/Order';
 import PlatformRevenueService from './PlatformRevenueService';
 
 class SettlementService {
     /**
      * Primary entry point for any order type
      */
-    async settleOrder(order: Order) {
-        if (order.orderType === 'delivery') {
-            return await this.settlePackageOrder(order);
+    async settleOrder(
+        order: Order,
+        userIds: {
+            vendor?: string;
+            rider?: string;
+            system: string;
         }
-        return await this.settleProductOrder(order);
+    ) {
+        if (order.orderType === 'delivery') {
+            return await this.settlePackageOrder(order, userIds);
+        }
+        return await this.settleProductOrder(order, userIds);
     }
 
     /**
      * SETTLEMENT: Product Order (Food/Grocery)
      * Involves Vendor, Rider, and System
      */
-    async settleProductOrder(order: Order, externalSession?: ClientSession) {
+    async settleProductOrder(
+        order: Order,
+        userIds: {
+            vendor?: string;
+            rider?: string;
+            system: string;
+        },
+        externalSession?: ClientSession
+    ) {
         const session = externalSession || (await mongoose.startSession());
-        session.startTransaction();
+        if (!externalSession) session.startTransaction();
 
         try {
+            // 1. RE-ENTRANCY GUARD
+            // Check again inside the transaction to prevent race conditions
+            const freshOrder = await OrderModel.findById(order._id).session(
+                session
+            );
+            if (freshOrder?.isSettled) return;
             const config = await ConfigurationModel.findOne().session(session);
             if (!config) throw new Error('System configuration missing');
 
@@ -45,6 +66,7 @@ class SettlementService {
             // 2. Execute Wallet Movements
             await this.executeMovement(
                 order,
+                userIds,
                 {
                     vendorAmount: vendorNet,
                     riderAmount: riderNet,
@@ -53,19 +75,30 @@ class SettlementService {
                 session
             );
 
-            // 3. Log Revenue
+            // 3. Update Order Settlement Status
+            await OrderModel.findByIdAndUpdate(
+                order._id,
+                {
+                    isSettled: true,
+                    settledAt: new Date()
+                },
+                { session }
+            );
+
+            // 4. Log Revenue
             await PlatformRevenueService.recordOrderRevenue(
                 order,
                 config,
                 session
             );
 
-            await session.commitTransaction();
+            if (!externalSession) await session.commitTransaction();
+            return { success: true };
         } catch (e) {
-            await session.abortTransaction();
+            if (!externalSession) await session.abortTransaction();
             throw e;
         } finally {
-            session.endSession();
+            if (!externalSession) session.endSession();
         }
     }
 
@@ -73,7 +106,10 @@ class SettlementService {
      * SETTLEMENT: Package Order (Parcel)
      * Involves Rider and System ONLY
      */
-    async settlePackageOrder(order: Order) {
+    async settlePackageOrder(
+        order: Order,
+        userIds: { vendor?: string; rider?: string; system: string }
+    ) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -92,10 +128,94 @@ class SettlementService {
             // 2. Execute Wallet Movements
             await this.executeMovement(
                 order,
+                userIds,
                 {
                     vendorAmount: 0, // No vendor in parcel delivery
                     riderAmount: riderNet,
                     systemAmount: totalPlatformRevenue
+                },
+                session
+            );
+
+            await session.commitTransaction();
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
+        }
+    }
+
+    async refundOrder(order: Order, customerUserId: string, reason?: string) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            // 1. Guards
+            if (order.isSettled)
+                throw new Error('Cannot refund an already settled order');
+            if (order.refunded) throw new Error('Order already refunded');
+
+            const systemWallet = await WalletRepository.getWalletByOwner(
+                'system',
+                null,
+                session
+            );
+            const customerWallet = await WalletRepository.getWalletByOwner(
+                'customer',
+                customerUserId,
+                session
+            );
+
+            if (!systemWallet) throw new Error('System wallet not found');
+            if (!customerWallet) throw new Error('Customer wallet not found');
+
+            // 2. Safety Check: Does the system actually have this money in pending?
+            if (systemWallet.pendingBalance < order.totalAmount) {
+                throw new Error(
+                    'Insufficient escrow balance for refund. Please check system logs.'
+                );
+            }
+
+            // 3. Reverse the Escrow Hold
+            // Subtract from System Pending (Release the hold)
+            await WalletRepository.debitPendingBalance(
+                systemWallet.id,
+                order.totalAmount,
+                session
+            );
+
+            // Add to Customer Available (Give the money back)
+            await WalletRepository.creditAvailableBalance(
+                customerWallet.id,
+                order.totalAmount,
+                session
+            );
+
+            // 4. Update Order Status and Flags
+            order.status = 'canceled'; // or 'refunded' based on your preference
+            order.refunded = true; // New field to prevent re-runs
+            order.refundedAt = new Date();
+            order.remark =
+                reason ||
+                order.remark ||
+                'Order cancelled and refunded to wallet';
+            await order.save({ session });
+
+            // 5. Log the Transaction with Balance Tracking
+            await TransactionRepository.createTransaction(
+                {
+                    userId: customerUserId,
+                    role: 'user',
+                    amount: order.totalAmount,
+                    type: 'CREDIT',
+                    category: 'REFUND',
+                    status: 'successful',
+                    reference: generateReference('RFD'),
+                    remark: `Refund for cancelled order ${order.code}`,
+                    balanceBefore: customerWallet.availableBalance, // Record state before
+                    balanceAfter:
+                        customerWallet.availableBalance + order.totalAmount // Record state after
                 },
                 session
             );
@@ -114,6 +234,11 @@ class SettlementService {
      */
     private async executeMovement(
         order: Order,
+        userIds: {
+            vendor?: string;
+            rider?: string;
+            system: string;
+        },
         amounts: {
             vendorAmount: number;
             riderAmount: number;
@@ -138,7 +263,7 @@ class SettlementService {
         if (amounts.vendorAmount > 0) {
             const vendorWallet = await WalletRepository.getWalletByOwner(
                 'vendor',
-                order.vendor,
+                userIds.vendor,
                 session
             );
             await WalletRepository.creditAvailableBalance(
@@ -148,9 +273,10 @@ class SettlementService {
             );
             await this.logTx(
                 order,
-                order.vendor,
+                userIds.vendor,
                 'vendor',
                 amounts.vendorAmount,
+                vendorWallet,
                 session
             );
         }
@@ -172,14 +298,25 @@ class SettlementService {
                 order.rider,
                 'rider',
                 amounts.riderAmount,
+                riderWallet,
                 session
             );
         }
 
-        // 4. Credit System
+        // 4. Credit System (Profit/Revenue)
         await WalletRepository.creditAvailableBalance(
             systemWallet!.id,
             amounts.systemAmount,
+            session
+        );
+
+        // NEW: Log System Revenue Transaction
+        await this.logTx(
+            order,
+            systemWallet!.id,
+            'system',
+            amounts.systemAmount,
+            systemWallet,
             session
         );
     }
@@ -187,8 +324,9 @@ class SettlementService {
     private async logTx(
         order: Order,
         userId: any,
-        role: 'system' | 'user' | 'rider' | 'vendor' | undefined,
+        role: any,
         amount: number,
+        wallet: any, // Pass the wallet here
         session: any
     ) {
         await TransactionRepository.createTransaction(
@@ -199,9 +337,11 @@ class SettlementService {
                 role,
                 amount,
                 type: 'CREDIT',
-                category: 'ORDER',
+                category: 'SETTLEMENT',
                 status: 'successful',
-                remark: `Settlement for ${order.code}`
+                balanceBefore: wallet.availableBalance - amount, // availableBalance was already updated by creditAvailableBalance
+                balanceAfter: wallet.availableBalance,
+                remark: `Settlement for order ${order.code}`
             },
             session
         );

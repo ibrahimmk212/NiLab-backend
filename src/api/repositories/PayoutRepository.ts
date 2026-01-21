@@ -3,6 +3,9 @@ import mongoose, { Types } from 'mongoose';
 import PayoutModel, { Payout } from '../models/Payout';
 import WalletModel from '../models/Wallet';
 import TransactionModel from '../models/Transaction';
+import { generateReference } from '../../utils/keygen/idGenerator';
+import appConfig from '../../config/appConfig';
+import monnify from '../libraries/monnify';
 
 class PayoutRepository {
     //  Request a payout
@@ -12,12 +15,25 @@ class PayoutRepository {
         amount: number,
         bankName: string,
         accountNumber: string,
-        accountName: string
+        bankCode: string
     ) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
+            const validation = await monnify.validateBankAccount(
+                accountNumber,
+                bankCode
+            );
+
+            if (!validation.requestSuccessful) {
+                throw new Error(
+                    'Invalid bank account details. Please check and try again.'
+                );
+            }
+
+            const accountName = validation.responseBody.accountName;
+            // 1. Atomic Balance Check and Move to Pending
             const wallet = await WalletModel.findOneAndUpdate(
                 {
                     owner: userId,
@@ -33,15 +49,19 @@ class PayoutRepository {
                 { new: true, session }
             );
 
-            if (!wallet) throw new Error('Insufficient balance');
+            if (!wallet)
+                throw new Error('Insufficient balance or wallet not found');
 
-            const existing = await PayoutModel.exists(
-                { userId, status: 'pending' }
-                // { session }  TODO - add session support
-            );
-            if (existing) throw new Error('Pending payout exists');
+            // 2. Prevent multiple pending payouts if desired
+            const existing = await PayoutModel.findOne({
+                userId,
+                status: 'pending'
+            }).session(session);
+            if (existing)
+                throw new Error('You already have a pending payout request');
 
-            const payout = await PayoutModel.create(
+            // 3. Create the Payout Record
+            const [payout] = await PayoutModel.create(
                 [
                     {
                         userId,
@@ -49,14 +69,35 @@ class PayoutRepository {
                         amount,
                         bankName,
                         accountNumber,
-                        accountName
+                        accountName,
+                        status: 'pending'
+                    }
+                ],
+                { session }
+            );
+
+            // 4. LOG THE "HOLD" TRANSACTION
+            // This allows the user to see WHY their available balance dropped
+            await TransactionModel.create(
+                [
+                    {
+                        userId,
+                        role: wallet.role,
+                        reference: generateReference('WTH'),
+                        amount,
+                        type: 'DEBIT',
+                        category: 'WITHDRAWAL',
+                        status: 'pending',
+                        remark: `Withdrawal request for ${amount} initiated`,
+                        balanceBefore: wallet.availableBalance + amount,
+                        balanceAfter: wallet.availableBalance
                     }
                 ],
                 { session }
             );
 
             await session.commitTransaction();
-            return payout[0];
+            return payout;
         } catch (e) {
             await session.abortTransaction();
             throw e;
@@ -75,22 +116,44 @@ class PayoutRepository {
                 _id: payoutId,
                 status: 'pending'
             }).session(session);
+            if (!payout) throw new Error('Invalid or already processed payout');
 
-            if (!payout) throw new Error('Invalid payout');
+            // --- MONNIFY DISBURSEMENT CALL WOULD GO HERE ---
+            // 1. Prepare the payload for your Monnify library
+            const transferPayload: any = {
+                amount: payout.amount,
+                reference: `PAYOUT-${payout._id}-${Date.now()}`, // Must be unique for Monnify
+                narration: `Withdrawal for ${payout.accountName}`,
+                destinationBankCode: payout.bankCode,
+                destinationAccountNumber: payout.accountNumber,
+                currency: 'NGN',
+                sourceAccountNumber: appConfig.monnify.sourceAccountNumber // Your Monnify Disbursement Account
+            };
+
+            // 2. Call your existing library method
+            const transferResult = await monnify.singleOutboundTransfer(
+                transferPayload
+            );
+
+            if (!transferResult.requestSuccessful) {
+                // If Monnify rejects it (e.g. invalid account or insufficient merchant balance)
+                throw new Error(
+                    `Monnify Transfer Failed: ${transferResult.responseMessage}`
+                );
+            }
 
             const wallet = await WalletModel.findOneAndUpdate(
                 {
                     _id: payout.walletId,
                     pendingBalance: { $gte: payout.amount }
                 },
-                {
-                    $inc: { pendingBalance: -payout.amount }
-                },
+                { $inc: { pendingBalance: -payout.amount } },
                 { new: true, session }
             );
 
-            if (!wallet) throw new Error('Pending balance insufficient');
+            if (!wallet) throw new Error('Pending balance mismatch');
 
+            // Update original transaction or create a completion log
             await TransactionModel.create(
                 [
                     {
@@ -99,9 +162,9 @@ class PayoutRepository {
                         reference: `PAYOUT-${payout._id}`,
                         amount: payout.amount,
                         type: 'DEBIT',
-                        category: 'ADMIN',
+                        category: 'WITHDRAWAL',
                         status: 'successful',
-                        remark: 'Payout completed'
+                        remark: 'Payout successfully disbursed to bank account'
                     }
                 ],
                 { session }
@@ -254,6 +317,55 @@ class PayoutRepository {
         return await PayoutModel.findByIdAndUpdate(vendorId, updateData, {
             new: true
         });
+    }
+
+    async getPayoutsSummary() {
+        return await PayoutModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    totalRequested: { $sum: '$amount' },
+                    totalSuccessful: {
+                        $sum: {
+                            $cond: [
+                                { $eq: ['$status', 'completed'] },
+                                '$amount',
+                                0
+                            ]
+                        }
+                    },
+                    totalPending: {
+                        $sum: {
+                            $cond: [
+                                { $eq: ['$status', 'pending'] },
+                                '$amount',
+                                0
+                            ]
+                        }
+                    },
+                    totalRejected: {
+                        $sum: {
+                            $cond: [
+                                { $eq: ['$status', 'rejected'] },
+                                '$amount',
+                                0
+                            ]
+                        }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalRequested: 1,
+                    totalSuccessful: 1,
+                    totalPending: 1,
+                    totalRejected: 1,
+                    requestCount: '$count'
+                }
+            }
+        ]);
     }
 }
 

@@ -4,6 +4,7 @@ import WalletController from '../../../controllers/customers/WalletController';
 
 const customerWalletRouter: Router = Router();
 
-customerWalletRouter.use('/', WalletController.getMyWallet);
+customerWalletRouter.get('/', WalletController.getMyWallet);
+customerWalletRouter.post('/fund', WalletController.fundWallet);
 
 export default customerWalletRouter;

@@ -1,27 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ClientSession } from 'mongoose';
-import CollectionModel, { Collection } from '../models/Collection';
+import PaymentModel, { Payment } from '../models/Payment';
 
 class PaymentRepository {
     /**
-     * Create a new collection record (Audit log of the payment)
+     * Create a new Payment record (Audit log of the payment)
      */
-    async createCollection(
-        data: Partial<Collection>,
+    async createPayment(
+        data: Partial<Payment>,
         session?: ClientSession
-    ): Promise<Collection> {
-        const collection = new CollectionModel(data);
-        const result = await collection.save({ session });
+    ): Promise<Payment> {
+        const Payment = new PaymentModel(data);
+        const result = await Payment.save({ session });
         return result;
     }
 
     /**
-     * Look up a collection by our internal NanoID reference
+     * Look up a Payment by our internal NanoID reference
      */
     async findByInternalReference(
         internalReference: string
-    ): Promise<Collection | null> {
-        return await CollectionModel.findOne({ internalReference });
+    ): Promise<Payment | null> {
+        return await PaymentModel.findOne({ internalReference });
     }
 
     /**
@@ -29,20 +29,20 @@ class PaymentRepository {
      */
     async findByTransactionReference(
         transactionReference: string
-    ): Promise<Collection | null> {
-        return await CollectionModel.findOne({ transactionReference });
+    ): Promise<Payment | null> {
+        return await PaymentModel.findOne({ transactionReference });
     }
 
     /**
-     * Update collection status (e.g., when a webhook confirms a pending transfer)
+     * Update Payment status (e.g., when a webhook confirms a pending transfer)
      */
-    async updateCollectionStatus(
+    async updatePaymentStatus(
         internalReference: string,
-        status: Collection['status'],
+        status: Payment['status'],
         responseData: any,
         session?: ClientSession
-    ): Promise<Collection | null> {
-        return await CollectionModel.findOneAndUpdate(
+    ): Promise<Payment | null> {
+        return await PaymentModel.findOneAndUpdate(
             { internalReference },
             { status, responseData },
             { new: true, session }

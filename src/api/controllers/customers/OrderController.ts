@@ -9,7 +9,7 @@ class OrderController {
     getAllOrder = asyncHandler(async (req: any, res: Response) => {
         const { userdata }: any = req;
         const order = await OrderService.getAll({
-            userId: userdata.id,
+            customerId: userdata.id,
             ...req.query
         });
 
