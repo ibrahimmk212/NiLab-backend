@@ -286,6 +286,16 @@ class OrderService {
         return await OrderRepository.findOrderById(orderId);
     }
 
+    getOrderforPaymentAndCheckout(orderId: string) {
+        const order: any = OrderRepository.findOrderById(orderId);
+        return {
+            user: order.user.id,
+            vendor: order.vendor.id,
+            products: order.products,
+            ...order.toJSON()
+        };
+    }
+
     async getOrderByCode(code: string) {
         return await OrderRepository.findOrderByCode(code);
     }
