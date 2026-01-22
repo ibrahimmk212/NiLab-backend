@@ -377,10 +377,14 @@ class PaymentService {
             console.error('Monnify Rejection:', paymentRequest.responseMessage);
             throw new Error('Could not initialize payment with gateway');
         }
+        console.log('Payment Request: ', paymentRequest);
 
         return {
             valid: true,
             payment: {
+                merchantName:
+                    paymentRequest.responseBody.merchantName ||
+                    'Terminus Drive Payment',
                 checkoutUrl: paymentRequest.responseBody.checkoutUrl,
                 transactionReference:
                     paymentRequest.responseBody.transactionReference,
