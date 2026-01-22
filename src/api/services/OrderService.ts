@@ -19,11 +19,7 @@ class OrderService {
     private roundToTwo(num: number): number {
         return Math.round((num + Number.EPSILON) * 100) / 100;
     }
-    /**
-     * POINT ZERO: Create Order
-     * This method now handles NanoID generation and stores the commission
-     * snapshot so financial records remain consistent if config changes.
-     */
+
     async createOrder(data: any): Promise<Order> {
         const session = await mongoose.startSession();
         session.startTransaction();
@@ -90,11 +86,16 @@ class OrderService {
             const feePerKm = config.feePerKm;
 
             let deliveryFee = 0;
-            if (estimatedRoadKm < 1) {
-                deliveryFee = deliveryBaseFee;
-            } else {
-                deliveryFee = feePerKm * estimatedRoadKm;
-            }
+            // if (estimatedRoadKm < 1) {
+            //     deliveryFee = deliveryBaseFee;
+            // } else {
+            deliveryFee = feePerKm * estimatedRoadKm;
+            // }
+
+            console.log(
+                'Calculated Charges: ',
+                (feePerKm * estimatedRoadKm).toFixed(2) + subtotal.toFixed(2)
+            );
 
             console.log('distance in KM: ', straightKm);
             console.log('estimated distance in KM: ', estimatedRoadKm);
