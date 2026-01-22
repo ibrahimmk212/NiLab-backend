@@ -43,10 +43,12 @@ export default class MonnifyApi {
             const response = await axios(options);
             return response.data;
         } catch (error: any) {
-            console.error(
-                `[Monnify API Error] ${method} ${path}:`,
-                error.message
-            );
+            if (error.response) {
+                console.error(
+                    '[Monnify API Details]:',
+                    JSON.stringify(error.response.data)
+                );
+            }
             // Throw so that genToken doesn't return undefined
             throw error;
         }
