@@ -38,7 +38,9 @@ class OrderController {
                 vendor: req.body.vendor,
                 user: userdata.id,
                 payment: paymentResult.payment
-            }
+            },
+            //temporary
+            payment: paymentResult.payment
         });
     });
 
@@ -91,7 +93,9 @@ class OrderController {
                 user: userdata.id,
                 vendor: order.vendor.id,
                 payment: paymentResult.payment
-            }
+            },
+            //temporary
+            payment: paymentResult.payment
         });
     });
 

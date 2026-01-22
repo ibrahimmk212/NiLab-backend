@@ -118,12 +118,15 @@ class OrderService {
                     coordinates: vendor.location.coordinates,
                     street: vendor.address
                 },
+                pickupLocation: vendor.location.coordinates,
+                deliveryLocation: vendor.location.coordinates,
                 destination: {
                     coordinates: deliveryAddress.coordinates,
                     street: deliveryAddress.street,
                     city: deliveryAddress.city,
                     label: deliveryAddress.label
                 },
+
                 deliveryFee: this.roundToTwo(deliveryFee), // Also round delivery fee
                 serviceFee,
                 vat,

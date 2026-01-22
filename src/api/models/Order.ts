@@ -164,12 +164,22 @@ const orderSchema = new Schema<Order>(
         },
 
         vat: { type: Number, required: true, default: 0 },
-        pickupLocation: { type: [Number], index: '2dsphere' },
+        pickupLocation: {
+            type: [Number],
+            default: [],
+            index: '2dsphere',
+            required: true
+        },
         rated: { type: Boolean, default: false },
         delivery: { type: Boolean, default: false },
         deliveryAccepted: { type: Boolean, default: false },
         deliveryAddress: { type: String },
-        deliveryLocation: { type: [Number], index: '2dsphere' },
+        deliveryLocation: {
+            type: [Number],
+            default: [],
+            index: '2dsphere',
+            required: true
+        },
 
         pickup: {
             coordinates: [Number],
