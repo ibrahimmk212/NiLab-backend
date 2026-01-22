@@ -31,7 +31,6 @@ class OrderService {
         try {
             const config = await ConfigurationService.getConfiguration();
             if (!config) throw new Error('System configuration not found');
-            console.log('config: ', config);
 
             // 1. Get Vendor (Pickup) and Customer (Destination)
             const vendor = await VendorModel.findById(data.vendor).session(
@@ -86,24 +85,31 @@ class OrderService {
                 deliveryAddress.coordinates[0]
             );
 
-            const estimatedRoadKm = straightKm * 1.4; // Road Factor
-            const deliveryFee = await this.calculateDeliveryFee(
-                estimatedRoadKm * 1000
-            );
+            const estimatedRoadKm = straightKm; // Road Factor
+            const deliveryBaseFee = config.baseDeliveryFee;
+            const feePerKm = config.feePerKm;
+
+            let deliveryFee = 0;
+            if (estimatedRoadKm < 1) {
+                deliveryFee = deliveryBaseFee;
+            } else {
+                deliveryFee = feePerKm * estimatedRoadKm;
+            }
+
             console.log('distance in KM: ', straightKm);
             console.log('estimated distance in KM: ', estimatedRoadKm);
 
             // 4. CALCULATE PLATFORM FEES (Rounded)
-            const serviceFee = this.roundToTwo(
-                (subtotal * config.vendorCommission) / 100
-            );
-            const vat = this.roundToTwo(
-                (subtotal + deliveryFee) * (config.vatRate / 100 || 0)
-            );
+            // const serviceFee = this.roundToTwo(
+            //     (subtotal * config.vendorCommission) / 100
+            // );
+            const vat = 0; //this.roundToTwo((subtotal + deliveryFee) * (config.vatRate / 100 || 0));
 
             // Calculate total and round one final time to be safe
             const totalAmount = this.roundToTwo(
-                subtotal + deliveryFee + serviceFee + vat
+                subtotal + deliveryFee
+                //  + serviceFee
+                //  + vat
             );
 
             // 5. ASSEMBLE PAYLOAD
@@ -128,7 +134,7 @@ class OrderService {
                 },
 
                 deliveryFee: this.roundToTwo(deliveryFee), // Also round delivery fee
-                serviceFee,
+                // serviceFee,
                 vat,
                 amount: subtotal,
                 totalAmount,
