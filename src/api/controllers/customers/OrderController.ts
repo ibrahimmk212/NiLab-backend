@@ -31,6 +31,7 @@ class OrderController {
         );
 
         res.status(STATUS.CREATED).json({
+            message: 'Order created successfully',
             success: true,
             data: {
                 ...order.toJSON(),

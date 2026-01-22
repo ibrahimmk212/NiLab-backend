@@ -12,6 +12,10 @@ class WalletRepository {
         return WalletModel.create(payload);
     }
 
+    async findSystemWallet(): Promise<Wallet | null> {
+        return WalletModel.findOne({ role: 'system' });
+    }
+
     async getWalletByOwner(
         role: string,
         owner?: any,

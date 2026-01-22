@@ -116,6 +116,7 @@ class VendorOrderController {
         const { status, reason } = body;
 
         // 1. Fetch Order with necessary populations for the refund/settlement logic
+
         const order = await OrderService.getOrderById(id);
         if (!order) {
             return res
@@ -224,6 +225,33 @@ class VendorOrderController {
         return res
             .status(STATUS.BAD_REQUEST)
             .json({ success: false, message: 'Invalid status transition' });
+    });
+
+    cancelOrder = asyncHandler(async (req: any, res: Response) => {
+        const { orderId } = req.params;
+        const { reason } = req.body;
+
+        const order = await OrderService.getOrderById(orderId);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // 1. Safety Guard: Only allow cancellation if order isn't already delivered/settled
+        if (order.status === 'delivered' || order.isSettled) {
+            return res
+                .status(400)
+                .json({ message: 'Cannot cancel a completed/settled order' });
+        }
+
+        // 2. Trigger the Refund Service
+        await SettlementService.refundOrder(
+            order,
+            order.user.id.toString(),
+            reason
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Order cancelled and funds returned to wallet'
+        });
     });
 }
 

@@ -146,89 +146,71 @@ class SettlementService {
         }
     }
 
-    async refundOrder(order: Order, customerUserId: string, reason?: string) {
+    async refundOrder(order: any, customerId: string, reason: string) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
-            // 1. Guards
-            if (order.isSettled)
-                throw new Error('Cannot refund an already settled order');
-            if (order.refunded) throw new Error('Order already refunded');
-
-            const systemWallet = await WalletRepository.getWalletByOwner(
-                'system',
-                null,
-                session
-            );
+            // Find the System Wallet (Where the escrow money is)
+            const systemWallet = await WalletRepository.findSystemWallet();
+            // Find the Customer Wallet
             const customerWallet = await WalletRepository.getWalletByOwner(
-                'customer',
-                customerUserId,
+                'user',
+                customerId,
                 session
             );
 
-            if (!systemWallet) throw new Error('System wallet not found');
-            if (!customerWallet) throw new Error('Customer wallet not found');
+            if (!systemWallet || !customerWallet)
+                throw new Error('Wallets not found');
 
-            // 2. Safety Check: Does the system actually have this money in pending?
+            // 1. Check if the money is actually in System Pending
             if (systemWallet.pendingBalance < order.totalAmount) {
                 throw new Error(
-                    'Insufficient escrow balance for refund. Please check system logs.'
+                    'Escrow balance mismatch. Please contact support.'
                 );
             }
 
-            // 3. Reverse the Escrow Hold
-            // Subtract from System Pending (Release the hold)
-            await WalletRepository.debitPendingBalance(
-                systemWallet.id,
-                order.totalAmount,
-                session
-            );
+            // 2. THE REVERSAL MOVEMENT
+            // Remove from System Pending
+            systemWallet.pendingBalance -= order.totalAmount;
+            // Add to Customer Available
+            customerWallet.availableBalance += order.totalAmount;
 
-            // Add to Customer Available (Give the money back)
-            await WalletRepository.creditAvailableBalance(
-                customerWallet.id,
-                order.totalAmount,
-                session
-            );
+            await systemWallet.save({ session });
+            await customerWallet.save({ session });
 
-            // 4. Update Order Status and Flags
-            order.status = 'canceled'; // or 'refunded' based on your preference
-            order.refunded = true; // New field to prevent re-runs
-            order.refundedAt = new Date();
-            order.remark =
-                reason ||
-                order.remark ||
-                'Order cancelled and refunded to wallet';
+            // 3. Update Order Status to prevent further actions
+            order.status = 'cancelled';
+            order.remark = reason || 'Order rejected by vendor';
+            order.cancelledAt = new Date();
             await order.save({ session });
 
-            // 5. Log the Transaction with Balance Tracking
+            // 4. Create Audit Log (Transaction)
             await TransactionRepository.createTransaction(
                 {
-                    userId: customerUserId,
+                    userId: customerId,
                     role: 'user',
                     amount: order.totalAmount,
                     type: 'CREDIT',
                     category: 'REFUND',
                     status: 'successful',
-                    reference: generateReference('RFD'),
-                    remark: `Refund for cancelled order ${order.code}`,
-                    balanceBefore: customerWallet.availableBalance, // Record state before
-                    balanceAfter:
-                        customerWallet.availableBalance + order.totalAmount // Record state after
+                    reference: `REF-${order.code}-${Date.now()}`,
+                    remark: `Refund for order ${order.code}: ${order.remark}`,
+                    balanceBefore:
+                        customerWallet.availableBalance - order.totalAmount,
+                    balanceAfter: customerWallet.availableBalance
                 },
                 session
             );
 
             await session.commitTransaction();
-        } catch (e) {
+        } catch (error) {
             await session.abortTransaction();
-            throw e;
+            throw error;
         } finally {
             session.endSession();
         }
     }
-
     /**
      * Private Helper: Handles the actual atomic DB updates
      */
