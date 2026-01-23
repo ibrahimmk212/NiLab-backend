@@ -304,6 +304,7 @@ class PaymentService {
                 !userWallet ||
                 userWallet.availableBalance < order.totalAmount
             ) {
+                console.log('Insufficient wallet balance.');
                 throw new Error('Insufficient wallet balance.');
             }
 
