@@ -19,6 +19,8 @@ class PaymentService {
         const session = await mongoose.startSession();
         session.startTransaction();
 
+        console.log('Webhook Payload:', payload);
+
         try {
             const {
                 transactionReference,
