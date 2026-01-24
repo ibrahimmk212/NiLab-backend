@@ -39,44 +39,21 @@ export const generatePromotionCode = (keyLength = 8): string => {
     return key;
 };
 
-// export const calculateStraightDistance = (
-//     lat1: number,
-//     lon1: number,
-//     lat2: number,
-//     lon2: number
-// ) => {
-//     const R = 6371; // Earth's radius in km
-//     const dLat = (lat2 - lat1) * (Math.PI / 180);
-//     const dLon = (lon2 - lon1) * (Math.PI / 180);
-//     const a =
-//         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-//         Math.cos(lat1 * (Math.PI / 180)) *
-//             Math.cos(lat2 * (Math.PI / 180)) *
-//             Math.sin(dLon / 2) *
-//             Math.sin(dLon / 2);
-//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-//     return R * c;
-// };
-
-type LatLng = {
-    latitude: number;
-    longitude: number;
-};
-
-export function calculateStraightDistance(
+export const calculateStraightDistance = (
     lat1: number,
     lon1: number,
     lat2: number,
     lon2: number
-) {
-    const p = 0.017453292519943295; // Math.PI / 180
+) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
-        0.5 -
-        Math.cos((lat2 - lat1) * p) / 2 +
-        (Math.cos(lat1 * p) *
-            Math.cos(lat2 * p) *
-            (1 - Math.cos((lon2 - lon1) * p))) /
-            2;
-
-    return 12742 * Math.asin(Math.sqrt(a)); // Distance in kilometers
-}
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+            Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
