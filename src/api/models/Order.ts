@@ -255,7 +255,7 @@ orderSchema.pre<Order>('save', async function (next) {
             if (!delivery) throw new Error('Delivery creation failed');
 
             const customer = await UserService.getUserDetail(
-                this.user.toString()
+                this.user.id.toString()
             );
             if (customer?.deviceToken) {
                 await sendPushNotification(
