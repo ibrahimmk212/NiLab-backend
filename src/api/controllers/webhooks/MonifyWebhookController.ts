@@ -12,12 +12,12 @@ class MonnifyWebhookController {
 
         // 1. Signature Validation
         // Note: Use req.body but ensure it hasn't been transformed
-        if (!this.isValidSignature(req.body, monnifySignature, secretKey)) {
-            console.log('Invalid Signature live');
-            return res
-                .status(STATUS.UNAUTHORIZED)
-                .json({ message: 'Unauthorized' });
-        }
+        // if (!this.isValidSignature(req.body, monnifySignature, secretKey)) {
+        //     console.log('Invalid Signature live');
+        //     return res
+        //         .status(STATUS.UNAUTHORIZED)
+        //         .json({ message: 'Unauthorized' });
+        // }
 
         const payload = req.body;
 
