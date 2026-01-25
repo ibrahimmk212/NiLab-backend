@@ -6,6 +6,64 @@ class DeliveryRepository {
         const delivery = new DeliveryModel(deliveryData);
         return await delivery.save();
     }
+    async getAll(options: any) {
+        const page = Number(options.page) || 1;
+        const limit = Number(options.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const filter: Record<string, any> = {};
+
+        // Add support for new reference searches
+        if (options.status) filter.status = options.status;
+        if (options.riderId) filter.rider = options.riderId;
+        if (options.search) {
+            const searchRegex = new RegExp(options.search, 'i');
+
+            filter.$or = [
+                { 'order.code': searchRegex },
+                { 'order.paymentReference': searchRegex },
+                { 'rider.firstName': searchRegex },
+                { 'rider.lastName': searchRegex },
+                { 'dispatch.deliveryCode': searchRegex }
+            ];
+        }
+        if (options.pickupState) filter['pickup.state'] = options.pickupState;
+        if (options.receiverPhone)
+            filter['receiverDetails.contactNumber'] = options.receiverPhone;
+        if (options.deliveryCode) filter.deliveryCode = options.deliveryCode;
+        if (options.sortBy) {
+            filter.sort = {};
+            filter.sort[options.sortBy] = options.sortOrder === 'desc' ? -1 : 1;
+        }
+
+        if (options.orderType) filter.orderType = options.orderType;
+
+        const [deliveries, total] = await Promise.all([
+            DeliveryModel.find(filter)
+                .populate({
+                    path: 'order rider dispatch',
+                    populate: {
+                        path: 'vendor'
+                    }
+                })
+                .skip(skip)
+                .limit(limit),
+            DeliveryModel.countDocuments(filter)
+        ]);
+
+        return {
+            total,
+            count: deliveries.length,
+            pagination: {
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                hasNextPage: page * limit < total,
+                hasPrevPage: page > 1
+            },
+            data: deliveries
+        };
+    }
 
     async updateDelivery(
         deliveryId: string,

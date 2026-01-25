@@ -19,16 +19,31 @@ class DeliveryService {
             deliveryCode: generateReference('DEL'),
             deliveryFee: order.deliveryFee,
             order: order._id,
-            pickup: order.pickup,
-            destination: order.destination,
+            pickup: {
+                coordinates: order.pickupLocation,
+                street: order.pickup?.street,
+                city: order.pickup?.city,
+                state: order.pickup?.state,
+                postcode: order.pickup?.postcode,
+                buildingNumber: order.pickup?.buildingNumber,
+                label: order.pickup?.label,
+                additionalInfo: order.pickup?.additionalInfo
+            },
+            destination: {
+                coordinates: order.deliveryLocation,
+                street: order.destination?.street,
+                city: order.destination?.city,
+                state: order.destination?.state,
+                postcode: order.destination?.postcode,
+                buildingNumber: order.destination?.buildingNumber,
+                label: order.destination?.label,
+                additionalInfo: order.destination?.additionalInfo
+            },
 
             // Map Vendor to Sender (Using businessName as fallback)
             senderDetails: {
-                name:
-                    order.vendor?.businessName ||
-                    order.vendor?.name ||
-                    'Vendor',
-                contactNumber: order.vendor?.phone || '0000000000'
+                name: order.vendor?.name || 'Vendor',
+                contactNumber: order.vendor?.phoneNumber || '0000000000'
             },
 
             // Map Customer to Receiver
@@ -36,7 +51,7 @@ class DeliveryService {
                 name: `${order.user?.firstName || 'Customer'} ${
                     order.user?.lastName || ''
                 }`.trim(),
-                contactNumber: order.user?.phone || '0000000000'
+                contactNumber: order.user?.phoneNumber || '0000000000'
             },
 
             status: 'pending',
