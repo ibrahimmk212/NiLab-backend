@@ -1,3 +1,4 @@
+import { generateReference } from '../../utils/keygen/idGenerator';
 import { generateRandomNumbers } from '../../utils/helpers';
 import emails from '../libraries/emails';
 import DeliveryModel, { Delivery } from '../models/Delivery';
@@ -8,66 +9,62 @@ import RiderService from './RiderService';
 
 class DeliveryService {
     async createDelivery(orderId: string) {
-        console.log(orderId);
-        const deliveryExists =
-            (await DeliveryModel.find({
-                order: orderId
-            }).countDocuments()) !== 0;
-        console.log('deliveryExists', deliveryExists);
+        const deliveryExists = await DeliveryModel.exists({ order: orderId });
         if (deliveryExists) return;
-        const order = await OrderService.getOrderById(orderId);
-        if (!order) {
-            console.log('order not found');
-            return;
-        }
 
-        console.log('order', order);
+        const order: any = await OrderService.getOrderById(orderId);
+        if (!order) return;
 
         const deliveryData: Partial<Delivery> = {
-            deliveryCode: generateRandomNumbers(6).toString(),
+            deliveryCode: generateReference('DEL'),
             deliveryFee: order.deliveryFee,
-            order: order.id,
+            order: order._id,
             pickup: order.pickup,
             destination: order.destination,
-            senderDetails: order.senderDetails,
-            receiverDetails: order.receiverDetails,
-            // pickup: {
-            //     name: vendor?.name,
-            //     address: vendor?.address,
-            //     lat: order.pickupLocation[0],
-            //     long: order.pickupLocation[1]
-            // },
-            // destination: {
-            //     name: `${customer.firstName} ${customer.lastName}`,
-            //     address: order.deliveryAddress,
-            //     lat: order.deliveryLocation[0],
-            //     long: order.deliveryLocation[1]
-            // },
-            // senderDetails: {
-            //     name: vendor.name,
-            //     contactNumber: vendor.phone
-            // },
-            // receiverDetails: {
-            //     name: `${customer.firstName} ${customer.lastName}`,
-            //     contactNumber: customer.phoneNumber
-            // },
-            specialInstructions: '' // Any special delivery instructions
-            // estimatedDeliveryTime: ''; // Estimated delivery time
+
+            // Map Vendor to Sender (Using businessName as fallback)
+            senderDetails: {
+                name:
+                    order.vendor?.businessName ||
+                    order.vendor?.name ||
+                    'Vendor',
+                contactNumber: order.vendor?.phone || '0000000000'
+            },
+
+            // Map Customer to Receiver
+            receiverDetails: {
+                name: `${order.user?.firstName || 'Customer'} ${
+                    order.user?.lastName || ''
+                }`.trim(),
+                contactNumber: order.user?.phone || '0000000000'
+            },
+
+            status: 'pending',
+            specialInstructions: order.remark || ''
         };
+
         const delivery = await DeliveryRepository.createDelivery(deliveryData);
-        // TODO send notification to nearby riders
+
+        // Filter riders by state and send notification
         const riders = await RiderService.findAllRiders({
             status: 'verified',
-            state: order.destination.state,
-            limit: 10000,
+            state: order.destination?.state,
+            limit: 1000, // Reasonable limit
             page: 1
         });
-        const riderMails = riders?.map((rider: any) => rider.email);
-        emails.availableDelivery(riderMails?.toString() as string, {
-            orderType: order.orderType,
-            deliveryLocation: order.destination?.street,
-            pickupLocation: order.pickup?.street
-        });
+
+        if (riders && riders.length > 0) {
+            const riderMails = riders
+                .map((rider: any) => rider.email)
+                .filter(Boolean);
+            if (riderMails.length > 0) {
+                emails.availableDelivery(riderMails.join(','), {
+                    orderType: order.orderType,
+                    deliveryLocation: order.destination?.street,
+                    pickupLocation: order.pickup?.street
+                });
+            }
+        }
 
         return delivery;
     }

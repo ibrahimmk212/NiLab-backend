@@ -16,6 +16,7 @@ export const generateReference = (
         | 'TXN'
         | 'PAY'
         | 'WL'
+        | 'DEL'
         | 'SETTLE'
         | 'RFD'
         | 'PKG'
