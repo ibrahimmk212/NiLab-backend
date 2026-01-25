@@ -38,31 +38,30 @@ class DeliveryController {
     availableDeliveries = asyncHandler(async (req: Request, res: Response) => {
         const { rider, userdata }: any = req;
         const deliveries = await DeliveryService.getAvailableDeliveries(
-            rider.state
+            rider.state,
+            req.query
         );
 
         res.status(STATUS.OK).json({
             success: true,
-            data: deliveries
+            ...deliveries
         });
     });
     getMyDeliveries = asyncHandler(async (req: Request, res: Response) => {
         const { userdata, rider }: any = req;
         const { limit = 10, page = 1 } = req.query;
 
-        const { deliveries, count, pagination, total } =
-            await DeliveryService.getDeliveriesForRider(
-                rider.id,
-                Number(limit),
-                Number(page)
-            );
-
+        const deliveries = await DeliveryService.getDeliveriesForRider(
+            rider.id,
+            {
+                limit,
+                page,
+                ...req.query
+            }
+        );
         res.status(STATUS.OK).json({
             success: true,
-            total,
-            count,
-            pagination,
-            data: deliveries
+            ...deliveries
         });
     });
 

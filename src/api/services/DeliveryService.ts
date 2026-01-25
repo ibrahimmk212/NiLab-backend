@@ -88,8 +88,13 @@ class DeliveryService {
         return await DeliveryRepository.updateDelivery(deliveryId, { status });
     }
 
-    async getAvailableDeliveries(state: string) {
-        return await DeliveryRepository.getAvailableDeliveries(state);
+    async getAvailableDeliveries(state: string, options) {
+        return await DeliveryRepository.getAll({
+            status: 'pending',
+            pickupState: state,
+            ...options
+        });
+        // return await DeliveryRepository.getAvailableDeliveries(state);
     }
     async riderAnalytics(
         riderId: string,
@@ -110,12 +115,16 @@ class DeliveryService {
         return await DeliveryRepository.getDeliveryByOrder(orderId);
     }
 
-    async getDeliveriesForRider(riderId: string, limit: number, page: number) {
-        return await DeliveryRepository.getDeliveriesForRider(
+    async getDeliveriesForRider(riderId: string, options: any) {
+        return await DeliveryRepository.getAll({
             riderId,
-            limit,
-            page
-        );
+            ...options
+        });
+        // return await DeliveryRepository.getDeliveriesForRider(
+        //     riderId,
+        //     limit,
+        //     page
+        // );
     }
 
     async getActiveDeliveries(riderId: string) {
