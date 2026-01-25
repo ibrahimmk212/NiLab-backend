@@ -130,6 +130,26 @@ class OrderRepository {
         if (options.vendorId) filter.vendor = options.vendorId;
         if (options.customerId) filter.user = options.customerId;
         if (options.status) filter.status = options.status;
+        if (options.riderId) filter.rider = options.riderId;
+        if (options.search) {
+            const searchRegex = new RegExp(options.search, 'i');
+            filter.$or = [
+                { 'user.firstName': searchRegex },
+                { 'user.lastName': searchRegex },
+                { 'vendor.businessName': searchRegex },
+                { 'rider.firstName': searchRegex },
+                { 'rider.lastName': searchRegex },
+                { code: searchRegex },
+                { paymentReference: searchRegex }
+            ];
+        }
+        if (options.sortBy) {
+            filter.sort = {};
+            filter.sort[options.sortBy] = options.sortOrder === 'desc' ? -1 : 1;
+        }
+        if (options.paymentCompleted !== undefined) {
+            filter.paymentCompleted = options.paymentCompleted;
+        }
 
         // Date Range Filtering
         if (options.startDate && options.endDate) {
@@ -138,6 +158,8 @@ class OrderRepository {
                 $lte: new Date(options.endDate)
             };
         }
+
+        if (options.orderType) filter.orderType = options.orderType;
 
         const [orders, total] = await Promise.all([
             OrderModel.find(filter)
