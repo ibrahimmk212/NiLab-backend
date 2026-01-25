@@ -88,7 +88,7 @@ class DeliveryService {
         return await DeliveryRepository.updateDelivery(deliveryId, { status });
     }
 
-    async getAvailableDeliveries(state: string, options) {
+    async getAvailableDeliveries(state: string, options: any) {
         return await DeliveryRepository.getAll({
             status: 'pending',
             pickupState: state,
