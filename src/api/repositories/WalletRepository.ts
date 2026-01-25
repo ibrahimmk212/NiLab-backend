@@ -23,19 +23,34 @@ class WalletRepository {
     ): Promise<Wallet | null> {
         const query: any = { role };
 
-        if (role !== 'system') {
+        // 1. Handle System vs User roles
+        if (role === 'system') {
+            // System wallet usually doesn't have an 'owner' field,
+            // or the owner is a specific static ID.
+            query.role = 'system';
+        } else {
+            if (!owner)
+                throw new Error(`Owner ID is required for role: ${role}`);
             query.owner = new mongoose.Types.ObjectId(owner);
         }
 
+        // 2. The Atomic Fetch/Create
         return WalletModel.findOneAndUpdate(
             query,
-            { $setOnInsert: query },
             {
-                new: true,
-                upsert: true,
-                session
+                $setOnInsert: {
+                    ...query,
+                    availableBalance: 0,
+                    pendingBalance: 0,
+                    lockedBalance: 0
+                }
+            },
+            {
+                new: true, // Return the updated/created document
+                upsert: true, // Create it if it doesn't exist
+                session // Pass the transaction session
             }
-        );
+        ).lean(false); // Ensure it's a full Mongoose document so you can call .save() later
     }
 
     /* =========================

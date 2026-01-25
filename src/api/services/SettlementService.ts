@@ -242,23 +242,23 @@ class SettlementService {
         );
 
         // 2. Credit Vendor
+        // 2. Credit Vendor
         if (amounts.vendorAmount > 0) {
-            const vendorWallet = await WalletRepository.getWalletByOwner(
-                'vendor',
-                userIds.vendor,
-                session
-            );
-            await WalletRepository.creditAvailableBalance(
-                vendorWallet!.id,
-                amounts.vendorAmount,
-                session
-            );
+            // Capture the updated wallet returned by the repository
+            const updatedVendorWallet =
+                await WalletRepository.creditAvailableBalance(
+                    userIds.vendor!,
+                    amounts.vendorAmount,
+                    session
+                );
+
+            // Pass the UPDATED wallet to the log function
             await this.logTx(
                 order,
                 userIds.vendor,
                 'vendor',
                 amounts.vendorAmount,
-                vendorWallet,
+                updatedVendorWallet, // Now has the newest balance
                 session
             );
         }

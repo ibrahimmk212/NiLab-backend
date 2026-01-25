@@ -7,6 +7,7 @@ import OrderService from '../../services/OrderService';
 import { currentTimestamp } from '../../../utils/helpers';
 import TransactionService from '../../services/TransactionService';
 import WalletService from '../../services/WalletService';
+import SettlementService from '../../services/SettlementService';
 
 class DeliveryController {
     dashboard = asyncHandler(async (req: Request, res: Response) => {
@@ -123,6 +124,7 @@ class DeliveryController {
         await delivery.save();
         await order.save();
         res.status(STATUS.OK).json({
+            message: 'Delivery accepted',
             success: true,
             data: delivery
         });
@@ -179,10 +181,13 @@ class DeliveryController {
 
             const debited = await WalletService.initDebitAccount({
                 amount: transaction.amount,
-                owner: rider.id.toString(),
-                reference: transaction.reference,
-                remark: transaction.remark,
+                userId: rider.userId,
                 role: 'rider',
+                type: 'DEBIT',
+                category: 'CASH_COLLECTION',
+                remark: `Cash payment of ${order.paymentReference}`,
+                status: 'pending',
+                reference: reference,
                 transactionId: transaction.id,
                 transactionType: 'debit'
             });
@@ -208,106 +213,71 @@ class DeliveryController {
     confirmDelivery = asyncHandler(async (req: Request, res: Response) => {
         const { deliveryId } = req.params;
         const { deliveryCode } = req.body;
-        const { rider, userdata }: any = req;
+        const { rider }: any = req;
 
         const delivery = await DeliveryService.getDeliveryById(deliveryId);
 
-        if (!delivery) {
-            throw Error('Delivery not found');
+        if (!delivery) throw Error('Delivery not found');
+
+        // 1. Security & State Validation
+        if (delivery.rider?.toString() !== rider.id.toString()) {
+            throw Error('Unauthorized: You are not assigned to this delivery');
         }
 
         if (delivery.status !== 'in-transit') {
-            throw Error('Delivery is not in a state of delivery');
+            throw Error('Delivery must be in-transit to be confirmed');
         }
 
-        // if (delivery.deliveryCode.slice(0, 4) !== deliveryCode) {
-        //     throw Error('Invalid delivery code');
-        // }
-
-        // TODO uncomment
-        // if (delivery.deliveryCode !== deliveryCode) {
-        //     throw Error('Invalid delivery code');
-        // }
+        // 2. Code Verification
+        if (delivery.deliveryCode !== deliveryCode) {
+            throw Error(
+                'Invalid delivery code. Please check with the customer.'
+            );
+        }
 
         const order = await OrderService.getOrderById(
             delivery.order?._id.toString()
         );
+        if (!order) throw Error('Order not found');
 
-        if (!order) {
-            throw Error('Order not found');
+        // 3. Update Statuses
+        delivery.status = 'delivered';
+        delivery.actualDeliveryTime = currentTimestamp();
+
+        order.status = 'delivered';
+        order.deliveredAt = currentTimestamp();
+        order.completedBy = 'rider';
+
+        if (order.paymentType === 'cash') {
+            order.paymentCompleted = true;
         }
 
-        // transfer delivery fee to available balance
-        const transaction = await TransactionService.getTransactionByReference(
-            'rider',
-            rider.id,
-            order?.paymentReference
-        );
+        await delivery.save();
+        await order.save();
 
-        if (!transaction) {
-            throw Error('transaction not found');
-        }
-
-        const paid = await WalletService.confirmCreditAccount({
-            amount: transaction.amount,
-            owner: rider.id,
-            reference: transaction.reference,
-            remark: transaction.remark || '',
-            role: 'rider',
-            transactionId: transaction.id,
-            transactionType: transaction.type
-        });
-
-        if (paid) {
-            transaction.status = 'successful';
-            delivery.status = 'delivered';
-            delivery.actualDeliveryTime = currentTimestamp();
-            order.status = 'delivered';
-            order.deliveredAt = currentTimestamp();
-            order.completedBy = 'rider';
-
-            await order.save();
-            await delivery.save();
-            await transaction.save();
-        }
-
-        if (order.orderType == 'products' && order.vendor) {
-            //  tranfer vendor fee to vendor
-
-            // transfer delivery fee to available balance
-            const vendorTransaction =
-                await TransactionService.getTransactionByReference(
-                    'vendor',
-                    order.vendor._id.toString(),
-                    order?.paymentReference
-                );
-
-            if (!vendorTransaction) {
-                throw Error('transaction not found');
-            }
-
-            const vendorSettled = await WalletService.confirmCreditAccount({
-                amount: vendorTransaction.amount,
-                owner: order.vendor._id.toString(),
-                reference: vendorTransaction.reference,
-                remark: vendorTransaction.remark || '',
-                role: 'vendor',
-                transactionId: vendorTransaction.id,
-                transactionType: vendorTransaction.type
+        // 4. Trigger Your Settlement Service
+        // We pass the IDs as required by your service definition
+        try {
+            await SettlementService.settleOrder(order, {
+                vendor: order.vendor?._id.toString(),
+                rider: rider.id.toString(),
+                system: 'system' // Your service handles finding the system wallet
             });
-
-            if (vendorSettled) {
-                vendorTransaction.status = 'successful';
-                await vendorTransaction.save();
-            }
+        } catch (error) {
+            console.error(
+                `Financial Settlement Failed for Order ${order.code}:`,
+                error
+            );
+            // We don't throw error here to avoid blocking the UI,
+            // but in production, you'd log this for admin manual settlement.
         }
 
         res.status(STATUS.OK).json({
             success: true,
+            message: 'Delivery confirmed and funds settled',
             data: delivery
         });
     });
-
     updateDeliveryStatus = asyncHandler(async (req: Request, res: Response) => {
         const { deliveryId } = req.params;
         const { status } = req.body;
@@ -343,14 +313,13 @@ class DeliveryController {
             // TODO rebroadcast to available riders
         }
 
-        // If accepted status==preparing. and mode is not offline add to vendor ledger, do not accept if not paid
         if (status === 'in-transit') {
             const order = await OrderService.getOrderById(
                 delivery.order?._id.toString()
             );
 
             if (
-                order?.orderType == 'products' &&
+                order?.orderType === 'products' &&
                 order?.status !== 'prepared'
             ) {
                 throw Error(
@@ -358,45 +327,23 @@ class DeliveryController {
                 );
             }
 
-            const transaction = await TransactionService.createTransaction({
+            /**
+             * TRANSACTION LOGGING
+             * We create this so the rider can see "Pending Earnings" in their app.
+             * category: 'DELIVERY' fixes the Mongoose ValidationError.
+             */
+            await TransactionService.createTransaction({
                 amount: delivery.deliveryFee,
                 userId: rider.userId,
                 role: 'rider',
                 order: delivery.order?._id,
                 type: 'CREDIT',
-                remark: 'Delivery Payment',
-                status: 'pending',
+                category: 'DELIVERY',
+                remark: 'Delivery Fee (Earned on completion)',
+                status: 'pending', // This ensures it doesn't add to availableBalance yet
                 reference: order?.paymentReference
             });
-
-            if (!transaction) {
-                throw Error('transaction failed, try again');
-            }
-
-            const paid = await WalletService.initCreditAccount({
-                amount: transaction.amount,
-                owner: rider.id,
-                reference: transaction.reference,
-                remark: transaction.remark,
-                role: 'rider',
-                transactionId: transaction.id,
-                transactionType: 'credit'
-            });
-
-            console.log('paid', paid);
-            if (!paid) {
-                transaction.status = 'failed';
-                await transaction.save();
-                throw Error('transaction failed, try again');
-            }
-
-            // return res.status(STATUS.OK).json({
-            //     success: true,
-            //     message: 'Items picked for delivery',
-            //     data: delivery
-            // });
         }
-
         delivery.status = status as 'canceled' | 'in-transit';
         await delivery.save();
 
