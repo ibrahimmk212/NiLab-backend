@@ -243,6 +243,9 @@ orderSchema.index({ status: 1, vendor: 1 });
 // Pre-save hook for status timestamps and side-effects
 orderSchema.pre<Order>('save', async function (next) {
     // Logic for when vendor accepts order
+    const userId = (this.user as any)._id
+        ? (this.user as any)._id.toString()
+        : this.user.toString();
     if (
         this.isModified('status') &&
         this.status === 'preparing' &&
@@ -254,9 +257,7 @@ orderSchema.pre<Order>('save', async function (next) {
             const delivery = await DeliveryService.createDelivery(this._id);
             if (!delivery) throw new Error('Delivery creation failed');
 
-            const customer = await UserService.getUserDetail(
-                this.user.id.toString()
-            );
+            const customer = await UserService.getUserDetail(userId);
             if (customer?.deviceToken) {
                 await sendPushNotification(
                     customer.deviceToken,
@@ -272,7 +273,7 @@ orderSchema.pre<Order>('save', async function (next) {
     // Logic for when food is ready
     else if (this.isModified('status') && this.status === 'prepared') {
         this.preparedAt = currentTimestamp();
-        const customer = await UserService.getUserDetail(this.user.toString());
+        const customer = await UserService.getUserDetail(userId);
         if (customer?.deviceToken) {
             await sendPushNotification(
                 customer.deviceToken,
