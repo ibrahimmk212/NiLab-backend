@@ -309,7 +309,7 @@ class OrderService {
             return await this.completeOrder(orderId, riderUserId);
         }
 
-        return await OrderRepository.updateOrder(orderId, updateData);
+        return this.updateOrder(orderId, { status: updateData.status });
     }
 
     /**
@@ -367,6 +367,9 @@ class OrderService {
                 const existingDelivery =
                     await DeliveryRepository.getDeliveryByOrder(orderId);
 
+                const vendor = await VendorModel.findById(order.vendor);
+                if (!vendor) throw new Error('Vendor not found');
+
                 if (!existingDelivery) {
                     await DeliveryModel.create(
                         [
@@ -375,10 +378,12 @@ class OrderService {
                                 status: 'pending',
                                 deliveryFee: order.deliveryFee,
                                 pickup: order.pickup,
+                                state: vendor.state,
                                 destination: order.destination,
                                 senderDetails: {
-                                    name: 'Vendor',
-                                    contactNumber: '...'
+                                    name: vendor.name,
+                                    address: vendor.address,
+                                    contactNumber: vendor.phoneNumber
                                 }, // Replace with real vendor info
                                 receiverDetails: order.receiverDetails
                             }

@@ -132,6 +132,13 @@ class VendorOrderController {
             });
         }
 
+        // orders has to be paid before status can be update
+        if (order.paymentCompleted === false) {
+            return res.status(STATUS.BAD_REQUEST).json({
+                message: 'Payment for this order is not completed yet'
+            });
+        }
+
         // 3. Status Guard: Prevent updates on final states
         if (['delivered', 'canceled'].includes(order.status)) {
             return res.status(STATUS.BAD_REQUEST).json({
@@ -141,7 +148,7 @@ class VendorOrderController {
         }
 
         // 4. Handle CANCELLATION & REFUND
-        if (status === 'canceled') {
+        if (status === 'canceled' || status === 'cancelled') {
             // Run the Refund Logic (Moves System Pending -> Customer Available)
             // This method should handle order.save() and session transactions internally
             await SettlementService.refundOrder(
@@ -165,15 +172,15 @@ class VendorOrderController {
             });
         }
 
+        if (!order.paymentCompleted) {
+            return res.status(STATUS.PAYMENT_REQUIRED).json({
+                success: false,
+                message: 'Order payment is not yet confirmed.'
+            });
+        }
+
         // 5. Handle PREPARING (Acceptance)
         if (status === 'preparing') {
-            if (!order.paymentCompleted) {
-                return res.status(STATUS.PAYMENT_REQUIRED).json({
-                    success: false,
-                    message: 'Order payment is not yet confirmed.'
-                });
-            }
-
             order.status = 'preparing';
             await order.save();
 
