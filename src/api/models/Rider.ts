@@ -14,6 +14,7 @@ export interface Rider extends Document {
     phoneNumber: string;
     email: string;
     city: string;
+    state: string;
     vehicle: string;
     status: 'unverified' | 'verified' | 'suspended';
     available: boolean;
@@ -28,6 +29,7 @@ const riderSchema = new Schema<Rider>(
         phoneNumber: { type: String, required: false },
         email: { type: String, required: false },
         city: { type: String, required: false },
+        state: { type: String, required: true, default: 'Kano' },
         gender: { type: String, required: false, default: 'male' },
         vehicle: { type: String, required: true, default: 'bicycle' },
         ratings: { type: Number, default: 0 },
