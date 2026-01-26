@@ -82,6 +82,20 @@ class AdminWalletController {
             }
         }
     );
+
+    mergeDuplicateWallets = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const wallet = await WalletService.mergeDuplicateWallets();
+            res.status(200).send({
+                message: 'Wallets merged successfully',
+                data: wallet
+            });
+        }
+    );
 }
 
 export default new AdminWalletController();

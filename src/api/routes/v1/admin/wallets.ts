@@ -5,6 +5,11 @@ import AdminWalletController from '../../../controllers/admin/AdminWalletControl
 const adminWalletRouter: Router = Router();
 
 adminWalletRouter.get('/:walletId', AdminWalletController.getWallet);
+adminWalletRouter.post(
+    `/merge-duplicates`,
+    AdminWalletController.mergeDuplicateWallets
+);
+
 adminWalletRouter.get('/', AdminWalletController.getAllWallets);
 adminWalletRouter.post('/fund', AdminWalletController.fundUserAvailableWallet);
 adminWalletRouter.post(

@@ -8,9 +8,9 @@ import OrderModel, { Order } from '../models/Order';
 import PlatformRevenueService from './PlatformRevenueService';
 
 class SettlementService {
-    /**
-     * Primary entry point for any order type
-     */
+    private roundToTwo(num: number): number {
+        return Math.round((num + Number.EPSILON) * 100) / 100;
+    }
     async settleOrder(
         order: Order,
         userIds: {
@@ -52,9 +52,12 @@ class SettlementService {
             if (!config) throw new Error('System configuration missing');
 
             // 1. Calculations
-            const platformCommission =
-                (order.amount * config.vendorCommission) / 100;
-            const vendorNet = order.amount - platformCommission;
+            const platformCommission = this.roundToTwo(
+                (order.amount * config.vendorCommission) / 100
+            );
+            const vendorNet = this.roundToTwo(
+                order.amount - platformCommission
+            );
 
             const riderCommission =
                 (order.deliveryFee * config.riderCommission) / 100;
@@ -246,9 +249,10 @@ class SettlementService {
 
         // 3. Credit Vendor
         if (amounts.vendorAmount > 0 && userIds.vendor) {
+            const vendorId = userIds.vendor.toString(); // Force string
             const vendorWallet = await WalletRepository.getWalletByOwner(
                 'vendor',
-                userIds.vendor,
+                vendorId,
                 session
             );
             // CAPTURE the returned updated wallet
@@ -269,9 +273,12 @@ class SettlementService {
 
         // 4. Credit Rider
         if (amounts.riderAmount > 0 && order.rider) {
+            const riderId = order.rider._id
+                ? order.rider._id.toString()
+                : order.rider.toString();
             const riderWallet = await WalletRepository.getWalletByOwner(
                 'rider',
-                order.rider,
+                riderId,
                 session
             );
             // CAPTURE the returned updated wallet

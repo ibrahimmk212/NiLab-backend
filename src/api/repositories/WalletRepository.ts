@@ -23,18 +23,18 @@ class WalletRepository {
     ): Promise<Wallet | null> {
         const query: any = { role };
 
-        // 1. Handle System vs User roles
-        if (role === 'system') {
-            // System wallet usually doesn't have an 'owner' field,
-            // or the owner is a specific static ID.
-            query.role = 'system';
-        } else {
+        if (role !== 'system') {
             if (!owner)
                 throw new Error(`Owner ID is required for role: ${role}`);
-            query.owner = new mongoose.Types.ObjectId(owner);
+
+            // Ensure we always use the hex string version to create a clean ObjectId
+            const ownerIdString =
+                typeof owner === 'string'
+                    ? owner
+                    : (owner._id || owner).toString();
+            query.owner = new mongoose.Types.ObjectId(ownerIdString);
         }
 
-        // 2. The Atomic Fetch/Create
         return WalletModel.findOneAndUpdate(
             query,
             {
@@ -46,13 +46,12 @@ class WalletRepository {
                 }
             },
             {
-                new: true, // Return the updated/created document
-                upsert: true, // Create it if it doesn't exist
-                session // Pass the transaction session
+                new: true,
+                upsert: true,
+                session
             }
-        ).lean(false); // Ensure it's a full Mongoose document so you can call .save() later
+        ).lean(false);
     }
-
     /* =========================
        AVAILABLE BALANCE
     ========================== */
@@ -187,6 +186,51 @@ class WalletRepository {
             },
             { new: true, session }
         );
+    }
+
+    // wallets merge
+    async mergeDuplicateWallets() {
+        const owners = await WalletModel.aggregate([
+            { $match: { owner: { $exists: true } } },
+            {
+                $group: {
+                    _id: '$owner',
+                    count: { $sum: 1 },
+                    wallets: { $push: '$$ROOT' }
+                }
+            },
+            { $match: { count: { $gt: 1 } } } // Only find duplicates
+        ]);
+
+        for (const group of owners) {
+            // Sort by creation date (oldest first)
+            const sorted = group.wallets.sort(
+                (a: any, b: any) =>
+                    new Date(a.createdAt).getTime() -
+                    new Date(b.createdAt).getTime()
+            );
+
+            const primaryWallet = sorted[0];
+            const duplicates = sorted.slice(1);
+
+            let totalAvailable = primaryWallet.availableBalance;
+            let totalPending = primaryWallet.pendingBalance;
+
+            for (const dup of duplicates) {
+                totalAvailable += dup.availableBalance;
+                totalPending += dup.pendingBalance;
+                await WalletModel.findByIdAndDelete(dup._id);
+            }
+
+            await WalletModel.findByIdAndUpdate(primaryWallet._id, {
+                availableBalance: totalAvailable,
+                pendingBalance: totalPending
+            });
+
+            console.log(
+                `Merged ${duplicates.length} ghost wallets for owner ${group._id}`
+            );
+        }
     }
 }
 
