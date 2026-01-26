@@ -6,23 +6,17 @@ import ConfigurationModel from '../models/Configuration';
 import { generateReference } from '../../utils/keygen/idGenerator';
 import OrderModel, { Order } from '../models/Order';
 import PlatformRevenueService from './PlatformRevenueService';
+import VendorRepository from '../repositories/VendorRepository';
 
 class SettlementService {
     private roundToTwo(num: number): number {
         return Math.round((num + Number.EPSILON) * 100) / 100;
     }
-    async settleOrder(
-        order: Order,
-        userIds: {
-            vendor?: string;
-            rider?: string;
-            system: string;
-        }
-    ) {
+    async settleOrder(order: Order, riderUserId: string) {
         if (order.orderType === 'delivery') {
-            return await this.settlePackageOrder(order, userIds);
+            return await this.settlePackageOrder(order, riderUserId);
         }
-        return await this.settleProductOrder(order, userIds);
+        return await this.settleProductOrder(order, riderUserId);
     }
 
     /**
@@ -31,11 +25,7 @@ class SettlementService {
      */
     async settleProductOrder(
         order: Order,
-        userIds: {
-            vendor?: string;
-            rider?: string;
-            system: string;
-        },
+        riderUserId: string,
         externalSession?: ClientSession
     ) {
         const session = externalSession || (await mongoose.startSession());
@@ -50,6 +40,13 @@ class SettlementService {
             if (freshOrder?.isSettled) return;
             const config = await ConfigurationModel.findOne().session(session);
             if (!config) throw new Error('System configuration missing');
+
+            // const get vendor User
+            const vendorUser = await VendorRepository.findById(
+                order.vendor._id.toString()
+            );
+
+            if (!vendorUser) throw new Error('Vendor not found');
 
             // 1. Calculations
             const platformCommission = this.roundToTwo(
@@ -69,7 +66,11 @@ class SettlementService {
             // 2. Execute Wallet Movements
             await this.executeMovement(
                 order,
-                userIds,
+                {
+                    vendor: vendorUser.userId.toString(),
+                    rider: riderUserId,
+                    system: 'system'
+                },
                 {
                     vendorAmount: vendorNet,
                     riderAmount: riderNet,
@@ -111,7 +112,8 @@ class SettlementService {
      */
     async settlePackageOrder(
         order: Order,
-        userIds: { vendor?: string; rider?: string; system: string }
+        riderUserId: string,
+        externalSession?: ClientSession
     ) {
         const session = await mongoose.startSession();
         session.startTransaction();
@@ -131,7 +133,10 @@ class SettlementService {
             // 2. Execute Wallet Movements
             await this.executeMovement(
                 order,
-                userIds,
+                {
+                    rider: riderUserId,
+                    system: 'system'
+                },
                 {
                     vendorAmount: 0, // No vendor in parcel delivery
                     riderAmount: riderNet,
@@ -222,7 +227,7 @@ class SettlementService {
         userIds: {
             vendor?: string;
             rider?: string;
-            system: string;
+            system?: string;
         },
         amounts: {
             vendorAmount: number;
@@ -247,23 +252,27 @@ class SettlementService {
             session
         );
 
+        // Inside executeMovement
         // 3. Credit Vendor
         if (amounts.vendorAmount > 0 && userIds.vendor) {
-            const userId = userIds.vendor.toString(); // Force string
+            // Ensure this is the USER ID, not the VENDOR entity ID
+            const vendorUserId = userIds.vendor.toString();
+
             const vendorWallet = await WalletRepository.getWalletByOwner(
                 'vendor',
-                userId,
+                vendorUserId,
                 session
             );
-            // CAPTURE the returned updated wallet
+
             const updatedVendor = await WalletRepository.creditAvailableBalance(
                 vendorWallet!.id,
                 amounts.vendorAmount,
                 session
             );
+
             await this.logTx(
                 order,
-                userIds.vendor,
+                vendorUserId, // Log the User ID
                 'vendor',
                 amounts.vendorAmount,
                 updatedVendor,
@@ -272,24 +281,24 @@ class SettlementService {
         }
 
         // 4. Credit Rider
-        if (amounts.riderAmount > 0 && order.rider) {
-            const userId = order.rider.id
-                ? order.rider._id.toString()
-                : order.rider.toString();
+        if (amounts.riderAmount > 0 && userIds.rider) {
+            const riderUserId = userIds.rider.toString(); // Ensure this is the User ID
+
             const riderWallet = await WalletRepository.getWalletByOwner(
                 'rider',
-                userId,
+                riderUserId,
                 session
             );
-            // CAPTURE the returned updated wallet
+
             const updatedRider = await WalletRepository.creditAvailableBalance(
                 riderWallet!.id,
                 amounts.riderAmount,
                 session
             );
+
             await this.logTx(
                 order,
-                order.rider.id,
+                riderUserId, // Log the User ID
                 'rider',
                 amounts.riderAmount,
                 updatedRider,

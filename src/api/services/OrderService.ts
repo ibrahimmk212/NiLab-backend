@@ -208,7 +208,7 @@ class OrderService {
         }
     }
 
-    async completeOrder(orderId: string, userIds: any = {}): Promise<any> {
+    async completeOrder(orderId: string, riderUserId: string): Promise<any> {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -220,11 +220,7 @@ class OrderService {
             }
 
             // 1. SETTLEMENT (Financials)
-            await SettlementService.settleOrder(order, {
-                vendor: order.vendor?.id.toString(),
-                rider: userIds.rider?.toString() || order.rider?.id.toString(),
-                system: 'system'
-            });
+            await SettlementService.settleOrder(order, riderUserId);
 
             // 2. ORDER UPDATE
             const updatedOrder = await OrderRepository.updateOrder(
@@ -286,11 +282,15 @@ class OrderService {
     /**
      * Standard status update wrapper
      */
-    async updateOrderStatus(orderId: string, updateData: any) {
+    async updateOrderStatus(
+        orderId: string,
+        riderUserId: string,
+        updateData: any
+    ) {
         // If the update is specifically setting status to delivered,
         // redirect to the completeOrder method to ensure settlement happens.
         if (updateData.status === 'delivered') {
-            return await this.completeOrder(orderId);
+            return await this.completeOrder(orderId, riderUserId);
         }
 
         return await OrderRepository.updateOrder(orderId, updateData);

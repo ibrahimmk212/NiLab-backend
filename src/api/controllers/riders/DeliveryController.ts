@@ -39,7 +39,8 @@ class DeliveryController {
     CompleteOrderDelivery = asyncHandler(
         async (req: Request, res: Response) => {
             const { deliveryId } = req.params;
-            const { rider }: any = req;
+            const { rider, userdata }: any = req;
+
             const { deliveryCode } = req.body;
 
             // get delivery
@@ -61,9 +62,7 @@ class DeliveryController {
 
             const completeOrderDelivery = await OrderService.completeOrder(
                 delivery.order?._id.toString(),
-                {
-                    rider: rider.id
-                }
+                userdata.id
             );
 
             res.status(STATUS.OK).json({
@@ -251,7 +250,7 @@ class DeliveryController {
     confirmDelivery = asyncHandler(async (req: Request, res: Response) => {
         const { deliveryId } = req.params;
         const { deliveryCode } = req.body;
-        const { rider }: any = req;
+        const { rider, userdata }: any = req;
 
         const delivery = await DeliveryService.getDeliveryById(deliveryId);
 
@@ -296,11 +295,7 @@ class DeliveryController {
         // 4. Trigger Your Settlement Service
         // We pass the IDs as required by your service definition
         try {
-            await SettlementService.settleOrder(order, {
-                vendor: order.vendor?._id.toString(),
-                rider: rider.id.toString(),
-                system: 'system' // Your service handles finding the system wallet
-            });
+            await SettlementService.settleOrder(order, userdata.id);
         } catch (error) {
             console.error(
                 `Financial Settlement Failed for Order ${order.code}:`,
