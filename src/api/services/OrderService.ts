@@ -14,6 +14,9 @@ import VendorModel from '../models/Vendor';
 import UserRepository from '../repositories/UserRepository';
 import { Address } from '../models/User';
 import { calculateStraightDistance } from '../../utils/helpers';
+import DeliveryRepository from '../repositories/DeliveryRepository';
+import DeliveryModel from '../models/Delivery';
+import DispatchRepository from '../repositories/DispatchRepository';
 
 class OrderService {
     private roundToTwo(num: number): number {
@@ -205,51 +208,75 @@ class OrderService {
         }
     }
 
-    /**
-     * Finalize Order: The moment money moves from Escrow to Vendor/Rider
-     */
     async completeOrder(orderId: string, userIds: any = {}): Promise<any> {
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
-            // 1. Fetch Order and check status
             const order = await OrderRepository.findOrderById(orderId);
-            if (!order) throw new Error('Order not found');
-
-            // Prevent double settlement
-            if (order.status === 'delivered' || order.completed) {
+            if (!order || order.isSettled) {
+                await session.abortTransaction();
                 return order;
             }
 
-            // 2. TRIGGER POINT ZERO SETTLEMENT
-            // This handles Vendor Net, Rider Net, and System Revenue
+            // 1. SETTLEMENT (Financials)
             await SettlementService.settleOrder(order, {
-                vendor: userIds.vendor.toString(),
-                rider: userIds.rider.toString(),
+                vendor: order.vendor?.id.toString(),
+                rider: userIds.rider?.toString() || order.rider?.id.toString(),
                 system: 'system'
             });
 
-            // 3. Update Order Status after successful settlement
+            // 2. ORDER UPDATE
             const updatedOrder = await OrderRepository.updateOrder(
                 orderId,
                 {
                     status: 'delivered',
                     completed: true,
-                    deliveredAt: Date.now()
+                    deliveredAt: Date.now(),
+                    isSettled: true
                 },
                 session
             );
 
+            // 3. DELIVERY UPDATE
+            const delivery = await DeliveryRepository.getDeliveryByOrder(
+                orderId
+            );
+            if (delivery) {
+                await DeliveryRepository.updateDelivery(
+                    delivery.id,
+                    {
+                        status: 'delivered',
+                        actualDeliveryTime: new Date()
+                    },
+                    session
+                );
+
+                // 4. DISPATCH AUTO-COMPLETE
+                if (delivery.dispatch) {
+                    const dispatchId = delivery.dispatch.toString();
+
+                    // Check for unfinished deliveries IN THE SESSION
+                    const pendingDeliveries =
+                        await DeliveryModel.countDocuments({
+                            dispatch: dispatchId,
+                            status: { $ne: 'delivered' },
+                            _id: { $ne: delivery.id } // Explicitly exclude current one
+                        }).session(session);
+
+                    if (pendingDeliveries === 0) {
+                        await DispatchRepository.updateDispatch(dispatchId, {
+                            status: 'completed',
+                            endTime: new Date()
+                        }); // Note: UpdateDispatch repository should also accept session if possible
+                    }
+                }
+            }
+
             await session.commitTransaction();
             return updatedOrder;
         } catch (error) {
-            // If settlement fails, the order status update is rolled back
             await session.abortTransaction();
-            console.error(
-                `[ORDER_SERVICE_ERROR] Completion failed for ${orderId}:`,
-                error
-            );
             throw error;
         } finally {
             session.endSession();
@@ -318,9 +345,9 @@ class OrderService {
             const order = await OrderRepository.findOrderById(orderId);
             if (!order) throw new Error('Order not found');
 
-            // Logic: If status is being changed to 'delivered'
-            if (update.status === 'delivered' && order.status !== 'delivered') {
-                await WalletService.settleCompletedOrder(order);
+            // only complete order can change status to "delivered"
+            if (update.status === 'delivered') {
+                throw new Error('Try complete order instead');
             }
 
             const updatedOrder = await OrderRepository.updateOrder(

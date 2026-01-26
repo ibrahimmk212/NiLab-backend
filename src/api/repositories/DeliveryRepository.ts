@@ -1,3 +1,4 @@
+import mongoose, { SessionOption } from 'mongoose';
 import DeliveryModel, { Delivery } from '../models/Delivery';
 import RiderModel from '../models/Rider';
 
@@ -65,18 +66,30 @@ class DeliveryRepository {
         };
     }
 
+    // repositories/DeliveryRepository.ts
+
     async updateDelivery(
         deliveryId: string,
-        updateData: any
+        updateData: any,
+        session?: mongoose.ClientSession // Standardize the session type
     ): Promise<Delivery | null> {
         return await DeliveryModel.findByIdAndUpdate(deliveryId, updateData, {
-            new: true
-        }).populate({
-            path: 'order rider dispatch',
-            populate: {
-                path: 'vendor'
+            new: true,
+            session
+        }).populate([
+            {
+                path: 'order',
+                populate: { path: 'vendor' }
+            },
+            {
+                path: 'rider',
+                // If Rider profile links to a User, populate that too
+                populate: { path: 'userId', select: 'firstName lastName phone' }
+            },
+            {
+                path: 'dispatch'
             }
-        });
+        ]);
     }
 
     async getAvailableDeliveries(state: string): Promise<Delivery[]> {

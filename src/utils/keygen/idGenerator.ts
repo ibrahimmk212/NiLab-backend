@@ -32,7 +32,7 @@ export const generateReference = (
 /**
  * For short numeric pickup codes (e.g., 123456)
  */
-export const generateShortCode = (): string => {
-    const nanoid = customAlphabet('0123456789', 6);
+export const generateShortCode = (size: number = 6): string => {
+    const nanoid = customAlphabet('0123456789', size);
     return nanoid();
 };

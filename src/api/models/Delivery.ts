@@ -95,20 +95,7 @@ const deliverySchema = new Schema(
 );
 
 deliverySchema.post('save', async function () {
-    // Check if the current update is marking the delivery as delivered
-    if (this.status === 'delivered') {
-        const allDelivered =
-            (await DeliveryModel.find({
-                dispatch: this.dispatch,
-                status: { $ne: 'delivered' }
-            }).countDocuments()) === 0;
-        if (allDelivered) {
-            await DispatchModel.findByIdAndUpdate(this.dispatch, {
-                status: 'completed',
-                endTime: currentTimestamp()
-            });
-        }
-    } else if (this.status === 'in-transit') {
+    if (this.status === 'in-transit') {
         const order = await OrderRepository.updateOrder(
             this.order._id.toString(),
             {
@@ -124,7 +111,7 @@ deliverySchema.post('save', async function () {
                 await sendPushNotification(
                     customer.deviceToken,
                     'Your food is on the way',
-                    `Dear ${customer.firstName}/nYour order has been dispatched to your destination.`
+                    `Dear ${customer.firstName}\nYour order has been dispatched...`
                 );
             }
         }

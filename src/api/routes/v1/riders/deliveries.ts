@@ -24,6 +24,11 @@ riderDeliveryRouter.post(
 );
 
 riderDeliveryRouter.post(
+    '/:deliveryId/complete-order',
+    deliveryController.CompleteOrderDelivery
+);
+
+riderDeliveryRouter.post(
     '/:deliveryId/accept-cash',
     deliveryController.acceptCash
 );

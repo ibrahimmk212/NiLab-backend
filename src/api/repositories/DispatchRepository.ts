@@ -1,3 +1,4 @@
+import DeliveryModel from '../models/Delivery';
 import DispatchModel, { Dispatch } from '../models/Dispatch';
 
 class DispatchRepository {
@@ -32,7 +33,8 @@ class DispatchRepository {
     ): Promise<Dispatch | null> {
         return await DispatchModel.findByIdAndUpdate(
             dispatchId,
-            { $pop: { deliveries: { deliveryId } } },
+            // CHANGE THIS: $pop only takes 1 or -1. Use $pull for specific IDs.
+            { $pull: { deliveries: deliveryId } },
             { new: true }
         );
     }
@@ -46,13 +48,17 @@ class DispatchRepository {
 
     async getActiveDispatch(riderId: string): Promise<Dispatch | null> {
         const dispatch = await DispatchModel.findOne({
-            riderId,
-            status: { $ne: 'completed' }
+            rider: riderId, // Fixed: should match the field 'rider' in the schema
+            status: { $in: ['created', 'in-progress'] } // Better than just $ne completed
         }).populate('deliveries');
         return dispatch;
     }
-
-    // Additional methods to handle dispatch-specific logic...
+    async countUnfinishedInDispatch(dispatchId: string): Promise<number> {
+        return await DeliveryModel.countDocuments({
+            dispatch: dispatchId,
+            status: { $ne: 'delivered' }
+        });
+    }
 }
 
 export default new DispatchRepository();

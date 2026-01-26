@@ -1,4 +1,7 @@
-import { generateReference } from '../../utils/keygen/idGenerator';
+import {
+    generateReference,
+    generateShortCode
+} from '../../utils/keygen/idGenerator';
 import { generateRandomNumbers } from '../../utils/helpers';
 import emails from '../libraries/emails';
 import DeliveryModel, { Delivery } from '../models/Delivery';
@@ -16,7 +19,7 @@ class DeliveryService {
         if (!order) return;
 
         const deliveryData: Partial<Delivery> = {
-            deliveryCode: generateReference('DEL'),
+            deliveryCode: generateShortCode(6),
             deliveryFee: order.deliveryFee,
             order: order._id,
             pickup: {
@@ -83,6 +86,19 @@ class DeliveryService {
 
         return delivery;
     }
+
+    // async riderMarkedAsDelivered(deliveryId: string, deliveryCode: string) {
+    //     const delivery = await DeliveryRepository.getDeliveryById(deliveryId);
+    //     if(!delivery) throw new Error("Delivery not found")
+    //     if(delivery.deliveryCode !== deliveryCode) throw new Error("Invalid Delivery Code")
+
+    //         const order = await OrderService.getOrderById(delivery.order._id.toString())
+    //         if(!order) throw new Error("Order not found")
+    //             // Update Order and settle wallets
+    //         const updateStatus = await OrderService.updateOrderStatus(order.id, {status: "delivered"})
+    //         if(!updateStatus) throw new Error("Order status update failed")
+
+    //         }
 
     async updateDeliveryStatus(deliveryId: string, status: string) {
         return await DeliveryRepository.updateDelivery(deliveryId, { status });

@@ -36,6 +36,44 @@ class DeliveryController {
         });
     });
 
+    CompleteOrderDelivery = asyncHandler(
+        async (req: Request, res: Response) => {
+            const { deliveryId } = req.params;
+            const { rider }: any = req;
+            const { deliveryCode } = req.body;
+
+            // get delivery
+            // confirm the rider is actually assign to the current package
+            // confirm the deliverycode provided by the customer
+            const delivery: any = await DeliveryService.getDeliveryById(
+                deliveryId
+            );
+            if (!delivery) {
+                throw Error('delivery not found');
+            }
+            if (delivery.rider.id !== rider.id) throw new Error('Unauthorized');
+            if (delivery.deliveryCode !== deliveryCode)
+                throw new Error('invalid delivery code');
+
+            if (!delivery) {
+                throw Error('Delivery not found');
+            }
+
+            const completeOrderDelivery = await OrderService.completeOrder(
+                delivery.order?._id.toString(),
+                {
+                    rider: rider.id
+                }
+            );
+
+            res.status(STATUS.OK).json({
+                message: 'Delivery confirmed and funds settled',
+                success: true,
+                data: completeOrderDelivery
+            });
+        }
+    );
+
     availableDeliveries = asyncHandler(async (req: Request, res: Response) => {
         const { rider, userdata }: any = req;
         const deliveries = await DeliveryService.getAvailableDeliveries(
