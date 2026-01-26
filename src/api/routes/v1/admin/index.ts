@@ -19,6 +19,7 @@ import adminCustomersRouter from './customers';
 import adminWalletRouter from './wallets';
 import adminPayoutRouter from './payout';
 import adminDashboardRouter from './dashboard';
+import adminDeliveryRouter from './delivery';
 
 const adminsRouter: Router = Router();
 
@@ -43,5 +44,6 @@ adminsRouter.use('/payouts', adminPayoutRouter);
 
 adminsRouter.post('/login', AdminUserController.login);
 adminsRouter.use('/dashboard', adminDashboardRouter);
+adminsRouter.use('/delivery', adminDeliveryRouter);
 
 export default adminsRouter;
