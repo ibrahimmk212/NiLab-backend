@@ -377,14 +377,19 @@ class OrderService {
                                 order: order._id,
                                 status: 'pending',
                                 deliveryFee: order.deliveryFee,
-                                pickup: order.pickup,
+                                pickup: {
+                                    ...order.pickup,
+                                    state: vendor.state,
+                                    coordinates: vendor.location.coordinates,
+                                    street: vendor.address
+                                },
                                 state: vendor.state,
                                 destination: order.destination,
                                 senderDetails: {
                                     name: vendor.name,
                                     address: vendor.address,
                                     contactNumber: vendor.phoneNumber
-                                }, // Replace with real vendor info
+                                },
                                 receiverDetails: order.receiverDetails
                             }
                         ],

@@ -28,7 +28,8 @@ class DeliveryRepository {
                 { 'dispatch.deliveryCode': searchRegex }
             ];
         }
-        // if (options.pickupState) filter['pickup.state'] = options.pickupState;
+        if (options.pickupState) filter['pickup.state'] = options.pickupState;
+        // if (options.pickupCity) filter['pickup.city'] = options.pickupCity;
         if (options.receiverPhone)
             filter['receiverDetails.contactNumber'] = options.receiverPhone;
         if (options.deliveryCode) filter.deliveryCode = options.deliveryCode;
