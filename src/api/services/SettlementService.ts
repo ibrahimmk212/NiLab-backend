@@ -228,49 +228,54 @@ class SettlementService {
         },
         session: mongoose.ClientSession
     ) {
+        // 1. Get the System Wallet (The Escrow source)
         const systemWallet = await WalletRepository.getWalletByOwner(
             'system',
             null,
             session
         );
+        if (!systemWallet) throw new Error('System wallet not found');
 
-        // 1. Debit the Escrow (Pending)
+        // 2. Debit the System Pending Balance (Escrow release)
+        // We don't necessarily need to log this specific debit as a settlement CREDIT
         await WalletRepository.debitPendingBalance(
-            systemWallet!.id,
+            systemWallet.id,
             order.totalAmount,
             session
         );
 
-        // 2. Credit Vendor
-        // 2. Credit Vendor
-        if (amounts.vendorAmount > 0) {
-            // Capture the updated wallet returned by the repository
-            const updatedVendorWallet =
-                await WalletRepository.creditAvailableBalance(
-                    userIds.vendor!,
-                    amounts.vendorAmount,
-                    session
-                );
-
-            // Pass the UPDATED wallet to the log function
+        // 3. Credit Vendor
+        if (amounts.vendorAmount > 0 && userIds.vendor) {
+            const vendorWallet = await WalletRepository.getWalletByOwner(
+                'vendor',
+                userIds.vendor,
+                session
+            );
+            // CAPTURE the returned updated wallet
+            const updatedVendor = await WalletRepository.creditAvailableBalance(
+                vendorWallet!.id,
+                amounts.vendorAmount,
+                session
+            );
             await this.logTx(
                 order,
                 userIds.vendor,
                 'vendor',
                 amounts.vendorAmount,
-                updatedVendorWallet, // Now has the newest balance
+                updatedVendor,
                 session
             );
         }
 
-        // 3. Credit Rider
+        // 4. Credit Rider
         if (amounts.riderAmount > 0 && order.rider) {
             const riderWallet = await WalletRepository.getWalletByOwner(
                 'rider',
                 order.rider,
                 session
             );
-            await WalletRepository.creditAvailableBalance(
+            // CAPTURE the returned updated wallet
+            const updatedRider = await WalletRepository.creditAvailableBalance(
                 riderWallet!.id,
                 amounts.riderAmount,
                 session
@@ -280,25 +285,24 @@ class SettlementService {
                 order.rider,
                 'rider',
                 amounts.riderAmount,
-                riderWallet,
+                updatedRider,
                 session
             );
         }
 
-        // 4. Credit System (Profit/Revenue)
-        await WalletRepository.creditAvailableBalance(
-            systemWallet!.id,
+        // 5. Credit System (Final Profit)
+        // CAPTURE the returned updated wallet
+        const finalSystemWallet = await WalletRepository.creditAvailableBalance(
+            systemWallet.id,
             amounts.systemAmount,
             session
         );
-
-        // NEW: Log System Revenue Transaction
         await this.logTx(
             order,
-            systemWallet!.id,
+            systemWallet.id,
             'system',
             amounts.systemAmount,
-            systemWallet,
+            finalSystemWallet,
             session
         );
     }
@@ -308,9 +312,16 @@ class SettlementService {
         userId: any,
         role: any,
         amount: number,
-        wallet: any, // Pass the wallet here
+        wallet: any,
         session: any
     ) {
+        // Safety Check: If wallet is null, throw a descriptive error instead of a TypeError
+        if (!wallet) {
+            throw new Error(
+                `LogTx failed: Wallet for role ${role} (ID: ${userId}) is null.`
+            );
+        }
+
         await TransactionRepository.createTransaction(
             {
                 reference: generateReference('SETTLE'),
@@ -321,8 +332,8 @@ class SettlementService {
                 type: 'CREDIT',
                 category: 'SETTLEMENT',
                 status: 'successful',
-                balanceBefore: wallet.availableBalance - amount, // availableBalance was already updated by creditAvailableBalance
-                balanceAfter: wallet.availableBalance,
+                balanceBefore: (wallet.availableBalance || 0) - amount,
+                balanceAfter: wallet.availableBalance || 0,
                 remark: `Settlement for order ${order.code}`
             },
             session
