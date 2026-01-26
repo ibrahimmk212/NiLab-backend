@@ -195,6 +195,10 @@ class WalletRepository {
         );
     }
 
+    async deleteWallet(walletId: string) {
+        return WalletModel.findByIdAndDelete(walletId);
+    }
+
     // wallets merge
     async mergeDuplicateWallets() {
         const owners = await WalletModel.aggregate([

@@ -23,6 +23,7 @@ const walletSchema = new Schema<Wallet>(
             required: function () {
                 return this.role !== 'system';
             },
+            unique: true,
             index: true
         },
         availableBalance: { type: Number, default: 0 },

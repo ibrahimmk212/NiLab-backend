@@ -374,68 +374,12 @@ class WalletService {
         }
     }
 
-    // async settleCompletedOrder(order: Order) {
-    //     const session = await mongoose.startSession();
-    //     session.startTransaction();
-
-    //     try {
-    //         const config = await ConfigurationModel.findOne();
-    //         if (!config) throw new Error('Config missing');
-
-    //         const vendorWallet = await WalletRepository.getWalletByOwner(
-    //             'vendor',
-    //             order.vendor,
-    //             session
-    //         );
-
-    //         if (!vendorWallet) throw new Error('Vendor wallet not found');
-
-    //         const systemWallet = await WalletRepository.getWalletByOwner(
-    //             'system'
-    //         );
-
-    //         if (!systemWallet) throw new Error('System wallet not found');
-
-    //         const vendorCommission =
-    //             (order.amount * config.vendorCommission) / 100;
-
-    //         const vendorNet = order.amount - vendorCommission;
-
-    //         await WalletRepository.releasePendingToAvailable(
-    //             vendorWallet.id,
-    //             vendorNet,
-    //             session
-    //         );
-
-    //         await WalletRepository.releasePendingToAvailable(
-    //             systemWallet.id,
-    //             vendorCommission + order.serviceFee,
-    //             session
-    //         );
-
-    //         await TransactionRepository.createTransaction(
-    //             {
-    //                 reference: `ORDER_SETTLEMENT_${order._id}`,
-    //                 amount: vendorNet,
-    //                 type: 'CREDIT',
-    //                 category: 'ORDER',
-    //                 role: 'vendor',
-    //                 status: 'successful'
-    //             },
-    //             session
-    //         );
-
-    //         await session.commitTransaction();
-    //     } catch (e) {
-    //         await session.abortTransaction();
-    //         throw e;
-    //     } finally {
-    //         session.endSession();
-    //     }
-    // }
-
     async mergeDuplicateWallets() {
         return await WalletRepository.mergeDuplicateWallets();
+    }
+
+    async deleteWallet(walletId: string) {
+        return await WalletRepository.deleteWallet(walletId);
     }
 }
 

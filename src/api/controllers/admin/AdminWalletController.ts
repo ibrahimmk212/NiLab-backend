@@ -96,6 +96,22 @@ class AdminWalletController {
             });
         }
     );
+
+    deleteWallet = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const wallet = await WalletService.deleteWallet(
+                req.params.walletId
+            );
+            res.status(200).send({
+                message: 'Wallet deleted successfully',
+                data: wallet
+            });
+        }
+    );
 }
 
 export default new AdminWalletController();

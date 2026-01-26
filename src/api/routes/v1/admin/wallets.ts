@@ -10,6 +10,8 @@ adminWalletRouter.post(
     AdminWalletController.mergeDuplicateWallets
 );
 
+adminWalletRouter.delete('/:walletId', AdminWalletController.deleteWallet);
+
 adminWalletRouter.get('/', AdminWalletController.getAllWallets);
 adminWalletRouter.post('/fund', AdminWalletController.fundUserAvailableWallet);
 adminWalletRouter.post(
