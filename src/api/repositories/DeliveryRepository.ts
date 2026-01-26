@@ -66,8 +66,6 @@ class DeliveryRepository {
         };
     }
 
-    // repositories/DeliveryRepository.ts
-
     async updateDelivery(
         deliveryId: string,
         updateData: any,
