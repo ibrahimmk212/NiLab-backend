@@ -345,9 +345,31 @@ class OrderService {
             const order = await OrderRepository.findOrderById(orderId);
             if (!order) throw new Error('Order not found');
 
-            // only complete order can change status to "delivered"
-            if (update.status === 'delivered') {
-                throw new Error('Try complete order instead');
+            // 1. Check if we are moving to "prepared"
+            if (update.status === 'prepared' && order.status !== 'prepared') {
+                // Generate the Delivery record if it doesn't exist yet
+                const existingDelivery =
+                    await DeliveryRepository.getDeliveryByOrder(orderId);
+
+                if (!existingDelivery) {
+                    await DeliveryModel.create(
+                        [
+                            {
+                                order: order._id,
+                                status: 'pending',
+                                deliveryFee: order.deliveryFee,
+                                pickup: order.pickup,
+                                destination: order.destination,
+                                senderDetails: {
+                                    name: 'Vendor',
+                                    contactNumber: '...'
+                                }, // Replace with real vendor info
+                                receiverDetails: order.receiverDetails
+                            }
+                        ],
+                        { session }
+                    );
+                }
             }
 
             const updatedOrder = await OrderRepository.updateOrder(
@@ -355,6 +377,7 @@ class OrderService {
                 update,
                 session
             );
+
             await session.commitTransaction();
             return updatedOrder;
         } catch (error) {
