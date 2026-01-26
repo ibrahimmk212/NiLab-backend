@@ -358,43 +358,40 @@ class OrderService {
         session.startTransaction();
 
         try {
-            const order = await OrderRepository.findOrderById(orderId);
+            const order: any = await OrderRepository.findOrderById(orderId);
             if (!order) throw new Error('Order not found');
 
             // 1. Check if we are moving to "prepared"
             if (update.status === 'prepared' && order.status !== 'prepared') {
+                console.log('prepared');
                 // Generate the Delivery record if it doesn't exist yet
                 const existingDelivery =
                     await DeliveryRepository.getDeliveryByOrder(orderId);
 
-                const vendor = await VendorModel.findById(order.vendor);
-                if (!vendor) throw new Error('Vendor not found');
-
                 if (!existingDelivery) {
-                    await DeliveryModel.create(
-                        [
-                            {
-                                order: order._id,
-                                status: 'pending',
-                                deliveryFee: order.deliveryFee,
-                                pickup: {
-                                    ...order.pickup,
-                                    state: vendor.state,
-                                    coordinates: vendor.location.coordinates,
-                                    street: vendor.address
-                                },
-                                state: vendor.state,
-                                destination: order.destination,
-                                senderDetails: {
-                                    name: vendor.name,
-                                    address: vendor.address,
-                                    contactNumber: vendor.phoneNumber
-                                },
-                                receiverDetails: order.receiverDetails
-                            }
-                        ],
+                    const del = await DeliveryModel.create(
+                        {
+                            order: order._id,
+                            status: 'pending',
+                            deliveryFee: order.deliveryFee,
+                            pickup: {
+                                ...order.pickup,
+                                state: order.vendor.state,
+                                coordinates: order.vendor.location.coordinates,
+                                street: order.vendor.address
+                            },
+                            state: order.vendor.state,
+                            destination: order.destination,
+                            senderDetails: {
+                                name: order.vendor.name,
+                                address: order.vendor.address,
+                                contactNumber: order.vendor.phoneNumber
+                            },
+                            receiverDetails: order.receiverDetails
+                        },
                         { session }
                     );
+                    console.log('Delivery Record Created', del);
                 }
             }
 
