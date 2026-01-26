@@ -117,12 +117,19 @@ class WalletRepository {
     }
 
     async findAllWallets(options: any) {
-        const page = options.page || 1;
-        const limit = options.limit || 10;
+        const page = Number(options.page) || 1;
+        const limit = Number(options.limit) || 10;
         const skip = (page - 1) * limit;
+        console.log(options);
 
         const filter: Record<string, any> = {};
         if (options.role) filter.role = options.role;
+        if (options.owner) filter.owner = options.owner;
+        if (options.availableBalance)
+            filter.availableBalance = options.availableBalance;
+        if (options.pendingBalance)
+            filter.pendingBalance = options.pendingBalance;
+        if (options.lockedBalance) filter.lockedBalance = options.lockedBalance;
 
         const [wallets, total] = await Promise.all([
             WalletModel.find(filter)

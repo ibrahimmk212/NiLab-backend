@@ -249,10 +249,10 @@ class SettlementService {
 
         // 3. Credit Vendor
         if (amounts.vendorAmount > 0 && userIds.vendor) {
-            const vendorId = userIds.vendor.toString(); // Force string
+            const userId = userIds.vendor.toString(); // Force string
             const vendorWallet = await WalletRepository.getWalletByOwner(
                 'vendor',
-                vendorId,
+                userId,
                 session
             );
             // CAPTURE the returned updated wallet
@@ -273,12 +273,12 @@ class SettlementService {
 
         // 4. Credit Rider
         if (amounts.riderAmount > 0 && order.rider) {
-            const riderId = order.rider._id
+            const userId = order.rider.id
                 ? order.rider._id.toString()
                 : order.rider.toString();
             const riderWallet = await WalletRepository.getWalletByOwner(
                 'rider',
-                riderId,
+                userId,
                 session
             );
             // CAPTURE the returned updated wallet
@@ -289,7 +289,7 @@ class SettlementService {
             );
             await this.logTx(
                 order,
-                order.rider,
+                order.rider.id,
                 'rider',
                 amounts.riderAmount,
                 updatedRider,
@@ -306,7 +306,7 @@ class SettlementService {
         );
         await this.logTx(
             order,
-            systemWallet.id,
+            null,
             'system',
             amounts.systemAmount,
             finalSystemWallet,
