@@ -4,13 +4,6 @@ import OrderModel, { Order } from '../models/Order';
 
 class OrderRepository {
     // Optimized population to exclude sensitive data across the board
-    public populatedData = [
-        {
-            path: 'vendor user rider',
-            select: 'firstName lastName businessName email phone profileImage'
-        },
-        { path: 'products.product', select: 'name price image' }
-    ];
 
     /**
      * Create Order with Session support for Atomicity
@@ -24,14 +17,18 @@ class OrderRepository {
     }
 
     async findOrderById(orderId: string): Promise<Order | null> {
-        return await OrderModel.findById(orderId).populate(this.populatedData);
+        return await OrderModel.findById(orderId).populate(
+            'user vendor rider products'
+        );
     }
 
     /**
      * Find by NanoID Code (Customer Facing)
      */
     async findOrderByCode(code: string): Promise<Order | null> {
-        return await OrderModel.findOne({ code }).populate(this.populatedData);
+        return await OrderModel.findOne({ code }).populate(
+            'user vendor rider products'
+        );
     }
 
     /**
@@ -42,7 +39,7 @@ class OrderRepository {
         session?: ClientSession
     ): Promise<Order | null> {
         return await OrderModel.findOne({ paymentReference })
-            .populate(this.populatedData)
+            .populate('user vendor rider products')
             .session(session || null); // Ensure session is explicitly handled
     }
 
@@ -54,7 +51,7 @@ class OrderRepository {
         return await OrderModel.findByIdAndUpdate(orderId, updateData, {
             new: true,
             session
-        }).populate(this.populatedData);
+        }).populate('user vendor rider products');
     }
 
     /**
@@ -163,7 +160,7 @@ class OrderRepository {
 
         const [orders, total] = await Promise.all([
             OrderModel.find(filter)
-                .populate(this.populatedData)
+                .populate('user vendor rider products')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
