@@ -21,36 +21,55 @@ class WalletRepository {
         owner?: any,
         session?: mongoose.ClientSession
     ): Promise<Wallet | null> {
-        const query: any = { role };
-
-        if (role !== 'system') {
-            if (!owner)
-                throw new Error(`Owner ID is required for role: ${role}`);
-
-            // Ensure we always use the hex string version to create a clean ObjectId
-            const ownerIdString =
-                typeof owner === 'string'
-                    ? owner
-                    : (owner._id || owner).toString();
-            query.owner = new mongoose.Types.ObjectId(ownerIdString);
+        // 1. Handle System Wallet separately
+        if (role === 'system') {
+            return WalletModel.findOneAndUpdate(
+                { role: 'system' },
+                {
+                    $setOnInsert: {
+                        role: 'system',
+                        availableBalance: 0,
+                        pendingBalance: 0
+                    }
+                },
+                { new: true, upsert: true, session }
+            );
         }
 
-        return WalletModel.findOneAndUpdate(
-            query,
-            {
-                $setOnInsert: {
-                    ...query,
+        if (!owner) throw new Error(`Owner ID is required for role: ${role}`);
+
+        const ownerId = new mongoose.Types.ObjectId(
+            typeof owner === 'string' ? owner : (owner._id || owner).toString()
+        );
+
+        // 2. CHECK FOR EXISTING WALLET FOR THIS OWNER (Any Role)
+        const existingWallet = await WalletModel.findOne({
+            owner: ownerId
+        }).session(session || null);
+
+        if (existingWallet) {
+            // 3. VULNERABILITY FIX: Check if the role matches
+            if (existingWallet.role !== role) {
+                throw new Error(
+                    `Security Violation: Owner ${ownerId} is already registered as a '${existingWallet.role}'. Cannot create/access wallet as '${role}'.`
+                );
+            }
+            return existingWallet;
+        }
+
+        // 4. CREATE NEW WALLET ONLY IF NONE EXISTS
+        return WalletModel.create(
+            [
+                {
+                    owner: ownerId,
+                    role: role,
                     availableBalance: 0,
                     pendingBalance: 0,
                     lockedBalance: 0
                 }
-            },
-            {
-                new: true,
-                upsert: true,
-                session
-            }
-        ).lean(false);
+            ],
+            { session }
+        ).then((res) => res[0]); // Mongoose returns an array for .create() with sessions
     }
     /* =========================
        AVAILABLE BALANCE
