@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import OrderService from '../../services/OrderService';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
-import DeliveryService from 'src/api/services/DeliveryService';
+import DeliveryService from '../../services/DeliveryService';
 
 class AdminOrderController {
     getAll = asyncHandler(
