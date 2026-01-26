@@ -74,8 +74,6 @@ class OrderService {
                 };
             });
 
-            console.log('enrichedProducts: ', enrichedProducts);
-
             // 3. LOGISTICS (Hybrid Math)
             const straightKm = calculateStraightDistance(
                 vendor.location.coordinates[1],
@@ -152,12 +150,30 @@ class OrderService {
                 session
             );
 
-            // 6. WALLET ESCROW
+            // 6. IMMEDIATE WALLET PAYMENT
             if (data.paymentType === 'wallet') {
-                await WalletService.initDebitAccount({
+                // 1. Check & Debit the user's available balance
+                const debitResult = await WalletService.initDebitAccount({
                     amount: totalAmount,
                     owner: data.user,
                     role: 'user'
+                });
+
+                if (!debitResult.success) {
+                    throw new Error(
+                        'Insufficient wallet balance to complete order'
+                    );
+                }
+
+                // 2. Mark the order as paid immediately
+                order.paymentCompleted = true;
+                await order.save({ session });
+
+                // 3. Move funds to System Escrow (Pending)
+                await WalletService.initCreditAccount({
+                    amount: totalAmount,
+                    owner: 'system', // This moves money into the system's "pendingBalance"
+                    role: 'system'
                 });
             }
 
