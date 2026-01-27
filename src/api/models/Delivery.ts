@@ -56,7 +56,7 @@ const deliverySchema = new Schema(
             required: false
         },
         status: { type: String, required: true, default: 'pending' },
-        deliveryCode: { type: String, required: true },
+        deliveryCode: { type: String, required: false },
         deliveryFee: { type: Number, required: true },
         pickup: {
             coordinates: [Number],
