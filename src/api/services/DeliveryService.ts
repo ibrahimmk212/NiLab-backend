@@ -96,12 +96,13 @@ class DeliveryService {
     }
 
     async getAvailableDeliveries(state: string, options: any) {
-        // return await DeliveryRepository.getAll({
-        //     status: 'pending',
-        //     pickupState: state,
-        //     ...options
-        // });
-        return await DeliveryRepository.getAvailableDeliveries(state);
+        return await DeliveryRepository.getAll({
+            status: 'pending',
+            pickupState: state,
+            riderId: null,
+            ...options
+        });
+        // return await DeliveryRepository.getAvailableDeliveries(state);
     }
     async riderAnalytics(
         riderId: string,
