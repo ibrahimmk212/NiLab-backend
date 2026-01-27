@@ -401,7 +401,7 @@ class OrderService {
                                     contactNumber: order.vendor.phoneNumber
                                 },
                                 receiverDetails: {
-                                    name: order.user.name,
+                                    name: `${order.user.firstName} ${order.user.lastName}`,
                                     address: order.destination.street,
                                     contactNumber: order.user.phoneNumber
                                 }
