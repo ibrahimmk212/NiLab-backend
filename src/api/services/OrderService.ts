@@ -385,6 +385,7 @@ class OrderService {
                             {
                                 order: order._id,
                                 status: 'pending',
+                                deliveryCode: generateShortCode(6),
                                 deliveryFee: order.deliveryFee,
                                 pickup: {
                                     ...order.pickup,

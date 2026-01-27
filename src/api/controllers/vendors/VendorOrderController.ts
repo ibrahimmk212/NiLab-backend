@@ -116,13 +116,28 @@ class VendorOrderController {
         const { id } = params;
         const { status, reason } = body;
 
+        const unmutableStatusByVendor = ['prepared', 'dispatched'];
+
         // 1. Initial Checks
         const order = await OrderService.getOrderById(id);
+
         if (!order) return res.status(404).json({ message: 'Order not found' });
+        if (unmutableStatusByVendor.includes(order.status)) {
+            return res
+                .status(400)
+                .json({
+                    success: false,
+                    message: `You cannot change status from ${order.status}`
+                });
+        }
         if (order.vendor._id.toString() !== vendor.id)
-            return res.status(403).json({ message: 'Unauthorized' });
+            return res
+                .status(403)
+                .json({ success: false, message: 'Unauthorized' });
         if (!order.paymentCompleted)
-            return res.status(400).json({ message: 'Payment not completed' });
+            return res
+                .status(400)
+                .json({ success: false, message: 'Payment not completed' });
 
         // 2. Call the Consolidated Service
         const updatedOrder = await OrderService.updateOrder(
