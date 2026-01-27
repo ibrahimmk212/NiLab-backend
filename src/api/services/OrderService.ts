@@ -400,7 +400,11 @@ class OrderService {
                                     address: order.vendor.address,
                                     contactNumber: order.vendor.phoneNumber
                                 },
-                                receiverDetails: order.receiverDetails
+                                receiverDetails: {
+                                    name: order.user.name,
+                                    address: order.destination.street,
+                                    contactNumber: order.user.phoneNumber
+                                }
                             }
                         ],
                         { session }
