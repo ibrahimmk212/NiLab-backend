@@ -352,8 +352,7 @@ class OrderService {
     async getOrderByCode(code: string) {
         return await OrderRepository.findOrderByCode(code);
     }
-
-    async updateOrder(orderId: string, update: any) {
+    async updateOrder(orderId: string, update: any, reason?: string) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -361,40 +360,56 @@ class OrderService {
             const order: any = await OrderRepository.findOrderById(orderId);
             if (!order) throw new Error('Order not found');
 
-            // 1. Check if we are moving to "prepared"
-            if (update.status === 'prepared' && order.status !== 'prepared') {
-                console.log('prepared');
-                // Generate the Delivery record if it doesn't exist yet
-                const existingDelivery =
-                    await DeliveryRepository.getDeliveryByOrder(orderId);
-
-                if (!existingDelivery) {
-                    const del = await DeliveryModel.create(
-                        {
-                            order: order._id,
-                            status: 'pending',
-                            deliveryFee: order.deliveryFee,
-                            pickup: {
-                                ...order.pickup,
-                                state: order.vendor.state,
-                                coordinates: order.vendor.location.coordinates,
-                                street: order.vendor.address
-                            },
-                            state: order.vendor.state,
-                            destination: order.destination,
-                            senderDetails: {
-                                name: order.vendor.name,
-                                address: order.vendor.address,
-                                contactNumber: order.vendor.phoneNumber
-                            },
-                            receiverDetails: order.receiverDetails
-                        },
-                        { session }
-                    );
-                    console.log('Delivery Record Created', del);
+            // 1. Logic for CANCELLATION
+            if (['canceled', 'cancelled'].includes(update.status)) {
+                if (!reason)
+                    throw new Error('Reason is required for cancellation');
+                if (order.status === 'delivered' || order.isSettled) {
+                    throw new Error('Cannot cancel a completed/settled order');
                 }
+                // Trigger Refund
+                await SettlementService.refundOrder(
+                    order,
+                    order.user._id.toString(),
+                    reason || 'Cancelled by vendor'
+                );
             }
 
+            // 2. Logic for PREPARED (Delivery Creation)
+            if (update.status === 'prepared' && order.status !== 'prepared') {
+                const existingDelivery =
+                    await DeliveryRepository.getDeliveryByOrder(orderId);
+                if (!existingDelivery) {
+                    await DeliveryModel.create(
+                        [
+                            {
+                                order: order._id,
+                                status: 'pending',
+                                deliveryFee: order.deliveryFee,
+                                pickup: {
+                                    ...order.pickup,
+                                    state: order.vendor.state,
+                                    coordinates:
+                                        order.vendor.location.coordinates,
+                                    street: order.vendor.address
+                                },
+                                state: order.vendor.state,
+                                destination: order.destination,
+                                senderDetails: {
+                                    name: order.vendor.name,
+                                    address: order.vendor.address,
+                                    contactNumber: order.vendor.phoneNumber
+                                },
+                                receiverDetails: order.receiverDetails
+                            }
+                        ],
+                        { session }
+                    );
+                }
+                update.preparedAt = Date.now();
+            }
+
+            // 3. Perform the actual update
             const updatedOrder = await OrderRepository.updateOrder(
                 orderId,
                 update,

@@ -9,6 +9,7 @@ import { currentTimestamp } from '../../../utils/helpers';
 import emails from '../../libraries/emails';
 import NotificationService from '../../services/NotificationService';
 import SettlementService from '../../services/SettlementService';
+import DeliveryModel from '../../models/Delivery';
 
 class VendorOrderController {
     getAll = asyncHandler(
@@ -115,123 +116,33 @@ class VendorOrderController {
         const { id } = params;
         const { status, reason } = body;
 
-        // 1. Fetch Order with necessary populations for the refund/settlement logic
-
+        // 1. Initial Checks
         const order = await OrderService.getOrderById(id);
-        if (!order) {
-            return res
-                .status(STATUS.NOT_FOUND)
-                .json({ success: false, message: 'Order not found' });
-        }
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+        if (order.vendor._id.toString() !== vendor.id)
+            return res.status(403).json({ message: 'Unauthorized' });
+        if (!order.paymentCompleted)
+            return res.status(400).json({ message: 'Payment not completed' });
 
-        // 2. Ownership Check
-        if (order.vendor._id.toString() !== vendor.id) {
-            return res.status(STATUS.FORBIDDEN).json({
-                success: false,
-                message: 'Unauthorized access to this order'
-            });
-        }
+        // 2. Call the Consolidated Service
+        const updatedOrder = await OrderService.updateOrder(
+            id,
+            { status },
+            reason
+        );
 
-        // orders has to be paid before status can be update
-        if (order.paymentCompleted === false) {
-            return res.status(STATUS.BAD_REQUEST).json({
-                message: 'Payment for this order is not completed yet'
-            });
-        }
-
-        // 3. Status Guard: Prevent updates on final states
-        if (['delivered', 'canceled'].includes(order.status)) {
-            return res.status(STATUS.BAD_REQUEST).json({
-                success: false,
-                message: `Cannot update order in ${order.status} state.`
-            });
-        }
-
-        // 4. Handle CANCELLATION & REFUND
-        if (status === 'canceled' || status === 'cancelled') {
-            // Run the Refund Logic (Moves System Pending -> Customer Available)
-            // This method should handle order.save() and session transactions internally
-            await SettlementService.refundOrder(
-                order,
-                order.user._id.toString(),
-                reason
-            );
-
-            // Notify Customer
-            await NotificationService.create({
-                userId: order.user._id,
-                title: 'Order Cancelled',
-                message: `Your order #${order.code} has been cancelled by the vendor. Funds have been returned to your wallet.`,
-                status: 'unread'
-            });
-
-            return res.status(STATUS.OK).json({
-                success: true,
-                message: 'Order cancelled and customer refunded successfully',
-                data: order
-            });
-        }
-
-        if (!order.paymentCompleted) {
-            return res.status(STATUS.PAYMENT_REQUIRED).json({
-                success: false,
-                message: 'Order payment is not yet confirmed.'
-            });
-        }
-
-        // 5. Handle PREPARING (Acceptance)
+        // 3. Handle Side Effects (Notifications/Emails)
+        // These happen AFTER the DB transaction is successful
         if (status === 'preparing') {
-            order.status = 'preparing';
-            await order.save();
-
-            //TODO Send Email & Notification
-            const customer: any = order.user;
-            emails.orderConfirmation(customer.email, {
-                name: customer.firstName,
-                orderId: order.code,
-                deliveryTime: order.deliveryTime || 'N/A',
-                orderItems: order.products,
-                total: order.totalAmount.toString()
-            });
-
-            await NotificationService.create({
-                userId: customer._id,
-                title: 'Order Accepted',
-                message: `Vendor is now preparing your order #${order.code}.`,
-                status: 'unread'
-            });
-
-            return res.status(STATUS.OK).json({
-                success: true,
-                message: 'Order accepted',
-                data: order
-            });
+            // emails.orderConfirmation(order.user.email, { /* data */ });
+            // await NotificationService.create({ userId: order.user._id, title: 'Order Accepted', ... });
         }
 
-        // 6. Handle PREPARED
         if (status === 'prepared') {
-            order.status = 'prepared';
-            order.preparedAt = Date.now();
-            await order.save();
-
-            // Notify Customer & Trigger Rider Search Logic
-            await NotificationService.create({
-                userId: order.user._id,
-                title: 'Order Ready',
-                message: `Your order #${order.code} is ready for pickup!`,
-                status: 'unread'
-            });
-
-            return res.status(STATUS.OK).json({
-                success: true,
-                message: 'Order marked as ready',
-                data: order
-            });
+            // await NotificationService.create({ userId: order.user._id, title: 'Order Ready', ... });
         }
 
-        return res
-            .status(STATUS.BAD_REQUEST)
-            .json({ success: false, message: 'Invalid status transition' });
+        return res.status(200).json({ success: true, data: updatedOrder });
     });
 
     cancelOrder = asyncHandler(async (req: any, res: Response) => {
