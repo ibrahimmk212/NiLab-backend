@@ -40,28 +40,54 @@ class DeliveryController {
         async (req: Request, res: Response) => {
             const { deliveryId } = req.params;
             const { rider, userdata }: any = req;
-
             const { deliveryCode } = req.body;
 
-            // get delivery
-            // confirm the rider is actually assign to the current package
-            // confirm the deliverycode provided by the customer
+            // 1. Safety Check: Ensure middleware provided the rider/user data
+            if (!rider || !userdata) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Rider authentication data missing'
+                });
+            }
+
             const delivery: any = await DeliveryService.getDeliveryById(
                 deliveryId
             );
-            if (!delivery) {
-                throw Error('delivery not found');
-            }
-            if (delivery.rider.id !== rider.id) throw new Error('Unauthorized');
-            if (delivery.deliveryCode !== deliveryCode)
-                throw new Error('invalid delivery code');
 
             if (!delivery) {
-                throw Error('Delivery not found');
+                return res
+                    .status(404)
+                    .json({ success: false, message: 'Delivery not found' });
             }
 
+            // 2. Safety Check: Handle both populated and unpopulated rider field
+            const assignedRiderId = delivery.rider._id
+                ? delivery.rider._id.toString()
+                : delivery.rider.toString();
+
+            if (assignedRiderId !== rider.id.toString()) {
+                return res
+                    .status(403)
+                    .json({
+                        success: false,
+                        message:
+                            'Unauthorized: You are not assigned to this delivery'
+                    });
+            }
+
+            // 3. Verify Delivery Code
+            if (delivery.deliveryCode !== deliveryCode) {
+                return res
+                    .status(400)
+                    .json({ success: false, message: 'Invalid delivery code' });
+            }
+
+            // 4. Complete the Order & Settle Funds
+            // We use userdata.id which is the User account ID for the wallet
             const completeOrderDelivery = await OrderService.completeOrder(
-                delivery.order?._id.toString(),
+                delivery.order?._id
+                    ? delivery.order._id.toString()
+                    : delivery.order.toString(),
                 userdata.id
             );
 
