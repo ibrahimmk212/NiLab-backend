@@ -60,19 +60,16 @@ class DeliveryController {
                     .json({ success: false, message: 'Delivery not found' });
             }
 
-            // 2. Safety Check: Handle both populated and unpopulated rider field
-            const assignedRiderId = delivery.rider._id
-                ? delivery.rider._id.toString()
-                : delivery.rider.toString();
+            const assignedRiderId = delivery.rider || delivery.rider.id;
+
+            // 2. Verify Rider Authorization
 
             if (assignedRiderId !== rider.id.toString()) {
-                return res
-                    .status(403)
-                    .json({
-                        success: false,
-                        message:
-                            'Unauthorized: You are not assigned to this delivery'
-                    });
+                return res.status(403).json({
+                    success: false,
+                    message:
+                        'Unauthorized: You are not assigned to this delivery'
+                });
             }
 
             // 3. Verify Delivery Code
