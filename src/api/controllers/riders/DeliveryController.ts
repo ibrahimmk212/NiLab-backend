@@ -60,7 +60,9 @@ class DeliveryController {
                     .json({ success: false, message: 'Delivery not found' });
             }
 
-            const assignedRiderId = delivery.rider || delivery.rider.id;
+            const assignedRiderId = delivery.rider?._id
+                ? delivery.rider._id.toString()
+                : delivery.rider?.toString();
 
             // 2. Verify Rider Authorization
 
@@ -112,14 +114,13 @@ class DeliveryController {
         const { userdata, rider }: any = req;
         const { limit = 10, page = 1 } = req.query;
 
-        const deliveries = await DeliveryService.getDeliveriesForRider(
-            rider.id,
-            {
-                limit,
-                page,
-                ...req.query
-            }
-        );
+        const deliveries = await DeliveryService.getDeliveriesForRider({
+            riderId: rider.id,
+
+            limit,
+            page,
+            ...req.query
+        });
         res.status(STATUS.OK).json({
             success: true,
             ...deliveries
@@ -137,52 +138,15 @@ class DeliveryController {
     });
 
     acceptDelivery = asyncHandler(async (req: Request, res: Response) => {
-        const { userdata, rider }: any = req;
+        const { rider }: any = req;
         const { deliveryId } = req.params;
 
-        let dispatch = await DispatchService.getActiveDispatch(rider.id);
-        const delivery = await DeliveryService.getDeliveryById(deliveryId);
-
-        if (!delivery) {
-            throw Error('Delivery not found!');
-        }
-
-        if (delivery.rider) {
-            throw Error('This delivery has already been accepted');
-        }
-
-        // console.log('order id', delivery.orderId);
-        const order = await OrderService.getOrderById(
-            delivery.order?._id?.toString()
+        // The service now handles the status update, the session, and the business logic
+        const delivery = await DeliveryService.acceptDelivery(
+            deliveryId,
+            rider
         );
 
-        // console.log(order);
-        if (!order) {
-            throw Error('Order not found!');
-        }
-
-        if (dispatch) {
-            // if (dispatch.deliveries?.length >= 3) {
-            //     throw Error(
-            //         "You can't take more than 3 deliveries at the same time"
-            //     );
-            // }
-        } else {
-            dispatch = await DispatchService.createDispatch({
-                rider: rider.id
-            });
-        }
-
-        delivery.dispatch = dispatch.id;
-        await DispatchService.addDeliveriesToDispatch(dispatch.id, [
-            delivery.id
-        ]);
-
-        delivery.rider = rider.id;
-        order.rider = rider.id;
-        order.deliveryAccepted = true;
-        await delivery.save();
-        await order.save();
         res.status(STATUS.OK).json({
             message: 'Delivery accepted',
             success: true,
@@ -305,7 +269,7 @@ class DeliveryController {
         delivery.actualDeliveryTime = currentTimestamp();
 
         order.status = 'delivered';
-        order.deliveredAt = currentTimestamp();
+        order.deliveredAt = new Date();
         order.completedBy = 'rider';
 
         if (order.paymentType === 'cash') {

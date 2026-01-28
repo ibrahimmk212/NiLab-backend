@@ -101,12 +101,11 @@ class DeliveryService {
 
     async getAvailableDeliveries(state: string, options: any) {
         return await DeliveryRepository.getAll({
-            status: 'pending',
+            status: 'pending', // Only show unassigned
+            riderId: null, // Double check that no rider is assigned
             pickupState: state,
-            riderId: null,
             ...options
         });
-        // return await DeliveryRepository.getAvailableDeliveries(state);
     }
     async riderAnalytics(
         riderId: string,
@@ -127,28 +126,41 @@ class DeliveryService {
         return await DeliveryRepository.getDeliveryByOrder(orderId);
     }
 
-    async getDeliveriesForRider(riderId: string, options: any) {
-        return await DeliveryRepository.getAll({
-            riderId,
-            ...options
-        });
-        // return await DeliveryRepository.getDeliveriesForRider(
-        //     riderId,
-        //     limit,
-        //     page
-        // );
+    async getDeliveriesForRider(options: any) {
+        return await DeliveryRepository.getAll(options);
     }
 
     async getActiveDeliveries(riderId: string) {
-        return await DeliveryRepository.getActiveDeliveries(riderId);
+        return await DeliveryRepository.getAll({
+            riderId,
+            status: ['accepted', 'picked-up', 'in-transit'],
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            limit: 50,
+            page: 1
+        });
     }
-
     async acceptDelivery(deliveryId: string, rider: any) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
-            // 1. Check if rider already has an active dispatch
+            // 1. Get Delivery and check if already taken (using session for a 'lock')
+            const delivery = await DeliveryRepository.getDeliveryById(
+                deliveryId
+            );
+            if (!delivery) throw new Error('Delivery not found!');
+            if (delivery.rider && delivery.status !== 'pending') {
+                throw new Error('This delivery has already been accepted');
+            }
+
+            // 2. Get Order
+            const orderId =
+                delivery.order?._id?.toString() || delivery.order?.toString();
+            const order = await OrderRepository.findOrderById(orderId);
+            if (!order) throw new Error('Order not found!');
+
+            // 3. Manage Dispatch (Ensure DispatchService supports sessions)
             let dispatch = await DispatchService.getActiveDispatch(rider.id);
             if (!dispatch) {
                 dispatch = await DispatchService.createDispatch(
@@ -157,36 +169,34 @@ class DeliveryService {
                 );
             }
 
-            // 2. Atomically Assign Rider (Prevents double-acceptance)
-            const delivery = await DeliveryRepository.assignRiderToDelivery(
+            // 4. Update the Delivery Status & Rider
+            // We use the repository with the session
+            const updatedDelivery = await DeliveryRepository.updateDelivery(
                 deliveryId,
-                rider.id,
-                dispatch._id,
+                {
+                    rider: rider.id,
+                    dispatch: dispatch._id,
+                    status: 'accepted' // Updated status here
+                },
                 session
             );
 
-            if (!delivery) {
-                throw new Error(
-                    'Delivery already accepted by another rider or not found'
-                );
-            }
-
-            // 3. Update the Order
+            // 5. Update the Order
             await OrderRepository.updateOrder(
-                delivery.order.toString(),
+                orderId,
                 { rider: rider.id, deliveryAccepted: true },
                 session
             );
 
-            // 4. Update Dispatch list
+            // 6. Add Delivery to Dispatch
             await DispatchService.addDeliveriesToDispatch(
                 dispatch._id,
-                [delivery._id],
+                [deliveryId],
                 session
             );
 
             await session.commitTransaction();
-            return delivery;
+            return updatedDelivery;
         } catch (error) {
             await session.abortTransaction();
             throw error;

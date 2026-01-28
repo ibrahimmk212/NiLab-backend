@@ -12,11 +12,15 @@ class SettlementService {
     private roundToTwo(num: number): number {
         return Math.round((num + Number.EPSILON) * 100) / 100;
     }
-    async settleOrder(order: Order, riderUserId: string) {
+    async settleOrder(
+        order: Order,
+        riderUserId: string,
+        session?: ClientSession
+    ) {
         if (order.orderType === 'delivery') {
-            return await this.settlePackageOrder(order, riderUserId);
+            return await this.settlePackageOrder(order, riderUserId, session);
         }
-        return await this.settleProductOrder(order, riderUserId);
+        return await this.settleProductOrder(order, riderUserId, session);
     }
 
     /**

@@ -235,8 +235,8 @@ class OrderService {
                 return order;
             }
 
-            // 1. SETTLEMENT (Financials)
-            await SettlementService.settleOrder(order, riderUserId);
+            // 1. FINANCIALS (Ensure session is passed here!)
+            await SettlementService.settleOrder(order, riderUserId, session);
 
             // 2. ORDER UPDATE
             const updatedOrder = await OrderRepository.updateOrder(
@@ -244,7 +244,8 @@ class OrderService {
                 {
                     status: 'delivered',
                     completed: true,
-                    deliveredAt: Date.now(),
+                    completedBy: order.completedBy,
+                    deliveredAt: new Date(),
                     isSettled: true
                 },
                 session
@@ -268,19 +269,22 @@ class OrderService {
                 if (delivery.dispatch) {
                     const dispatchId = delivery.dispatch.toString();
 
-                    // Check for unfinished deliveries IN THE SESSION
-                    const pendingDeliveries =
-                        await DeliveryModel.countDocuments({
-                            dispatch: dispatchId,
-                            status: { $ne: 'delivered' },
-                            _id: { $ne: delivery.id } // Explicitly exclude current one
-                        }).session(session);
+                    const pendingCount = await DeliveryModel.countDocuments({
+                        dispatch: dispatchId,
+                        status: { $ne: 'delivered' },
+                        _id: { $ne: delivery._id } // Exclude current
+                    }).session(session);
 
-                    if (pendingDeliveries === 0) {
-                        await DispatchRepository.updateDispatch(dispatchId, {
-                            status: 'completed',
-                            endTime: new Date()
-                        }); // Note: UpdateDispatch repository should also accept session if possible
+                    if (pendingCount === 0) {
+                        // Pass session to repository!
+                        await DispatchRepository.updateDispatch(
+                            dispatchId,
+                            {
+                                status: 'completed',
+                                endTime: new Date()
+                            },
+                            session
+                        );
                     }
                 }
             }

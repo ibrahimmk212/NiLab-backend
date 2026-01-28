@@ -1,6 +1,8 @@
 import mongoose, { SessionOption } from 'mongoose';
 import DeliveryModel, { Delivery } from '../models/Delivery';
 import RiderModel from '../models/Rider';
+import OrderModel from '../models/Order';
+import DispatchModel from '../models/Dispatch';
 
 class DeliveryRepository {
     async createDelivery(
@@ -17,8 +19,21 @@ class DeliveryRepository {
 
         const filter: Record<string, any> = {};
 
+        if (options.riderId) filter.rider = options.riderId;
+
+        // If we want "Active", we pass an array of statuses to options.status
+        if (options.status) {
+            if (Array.isArray(options.status)) {
+                filter.status = { $in: options.status };
+            } else {
+                filter.status = options.status;
+            }
+        } else if (options.isActiveSearch) {
+            // If we just want everything NOT delivered or canceled
+            filter.status = { $in: ['accepted', 'picked-up', 'in-transit'] };
+        }
         // Add support for new reference searches
-        if (options.status) filter.status = options.status;
+        // if (options.status) filter.status = options.status;
         if (options.riderId) filter.rider = options.riderId;
         if (options.search) {
             const searchRegex = new RegExp(options.search, 'i');
@@ -258,7 +273,51 @@ class DeliveryRepository {
             successRate: successRate ?? 0
         };
     }
-    // Add more methods as needed...
+
+    // Release unattended accepted Deliveries (usually by CRON JOB)
+    async getAndReleaseStaleDeliveries(minutes: number): Promise<string[]> {
+        const cutoff = new Date(Date.now() - minutes * 60000);
+
+        // 1. Find the affected deliveries
+        const staleDeliveries = await DeliveryModel.find({
+            status: 'accepted',
+            updatedAt: { $lt: cutoff },
+            rider: { $ne: null }
+        }).select('_id order dispatch');
+
+        if (staleDeliveries.length === 0) return [];
+
+        const deliveryIds = staleDeliveries.map((d) => d._id);
+        const orderIds = staleDeliveries.map((d) => d.order);
+        const dispatchIds = staleDeliveries
+            .map((d) => d.dispatch)
+            .filter(Boolean);
+
+        // 2. Reset Deliveries
+        await DeliveryModel.updateMany(
+            { _id: { $in: deliveryIds } },
+            {
+                $set: { status: 'pending', rider: null, dispatch: null },
+                $unset: { acceptedAt: '' }
+            }
+        );
+
+        // 3. Reset Orders (Crucial for the Vendor/Customer view)
+        await OrderModel.updateMany(
+            { _id: { $in: orderIds } },
+            { $set: { rider: null, deliveryAccepted: false } }
+        );
+
+        // 4. Remove from Dispatch arrays
+        if (dispatchIds.length > 0) {
+            await DispatchModel.updateMany(
+                { _id: { $in: dispatchIds } },
+                { $pull: { deliveries: { $in: deliveryIds } } }
+            );
+        }
+
+        return deliveryIds.map((id) => id.toString());
+    }
 }
 
 export default new DeliveryRepository();

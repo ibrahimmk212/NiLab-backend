@@ -63,7 +63,7 @@ export interface Order extends Document {
     acceptedAt: number;
     preparedAt: number;
     dispatchedAt: number;
-    deliveredAt: number; // TODO handle date format later
+    deliveredAt: Date;
     canceledAt: number;
     canceledReason: string;
     completed: boolean;
@@ -215,7 +215,7 @@ const orderSchema = new Schema<Order>(
         acceptedAt: { type: Number },
         preparedAt: { type: Number },
         dispatchedAt: { type: Number },
-        deliveredAt: { type: Number },
+        deliveredAt: { type: Date },
         canceledAt: { type: Number },
         isSettled: {
             type: Boolean,
