@@ -9,80 +9,84 @@ import DeliveryModel, { Delivery } from '../models/Delivery';
 import DeliveryRepository from '../repositories/DeliveryRepository';
 import OrderService from './OrderService';
 import RiderService from './RiderService';
+import mongoose from 'mongoose';
+import DispatchService from './DispatchService';
+import OrderRepository from '../repositories/OrderRepository';
 
 class DeliveryService {
-    async createDelivery(orderId: string) {
-        const deliveryExists = await DeliveryModel.exists({ order: orderId });
-        if (deliveryExists) return;
+    private async notifyAvailableRiders(order: any) {
+        try {
+            const riders = await RiderService.findAllRiders({
+                status: 'verified',
+                state: order.destination?.state,
+                limit: 100,
+                page: 1
+            });
 
-        const order: any = await OrderService.getOrderById(orderId);
-        if (!order) return;
+            if (riders?.data?.length > 0) {
+                const riderMails = riders.data
+                    .map((r: any) => r.email)
+                    .filter(Boolean)
+                    .join(',');
+                if (riderMails) {
+                    emails.availableDelivery(riderMails, {
+                        orderType: order.orderType,
+                        deliveryLocation: order.destination?.street,
+                        pickupLocation: order.pickup?.street
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Notification Error:', err);
+        }
+    }
+    async createDelivery(orderId: string, session?: mongoose.ClientSession) {
+        // 1. Re-entrancy Guard within the session
+        const deliveryExists = await DeliveryModel.findOne({
+            order: orderId
+        }).session(session || null);
+        if (deliveryExists) return deliveryExists;
+
+        const order: any = await OrderRepository.findOrderById(orderId);
+        if (!order) throw new Error('Order not found for delivery creation');
 
         const deliveryData: Partial<Delivery> = {
             deliveryCode: generateShortCode(6),
             deliveryFee: order.deliveryFee,
             order: order._id,
+            // Use coordinates from the order's pickup/destination objects
             pickup: {
-                coordinates: order.pickupLocation,
-                street: order.pickup?.street,
-                city: order.pickup?.city,
-                state: order.pickup?.state,
-                postcode: order.pickup?.postcode,
-                buildingNumber: order.pickup?.buildingNumber,
-                label: order.pickup?.label,
-                additionalInfo: order.pickup?.additionalInfo
+                ...order.pickup,
+                coordinates: order.pickup?.coordinates || order.pickupLocation
             },
             destination: {
-                coordinates: order.deliveryLocation,
-                street: order.destination?.street,
-                city: order.destination?.city,
-                state: order.destination?.state,
-                postcode: order.destination?.postcode,
-                buildingNumber: order.destination?.buildingNumber,
-                label: order.destination?.label,
-                additionalInfo: order.destination?.additionalInfo
+                ...order.destination,
+                coordinates:
+                    order.destination?.coordinates || order.deliveryLocation
             },
-
-            // Map Vendor to Sender (Using businessName as fallback)
             senderDetails: {
                 name: order.vendor?.name || 'Vendor',
                 contactNumber: order.vendor?.phoneNumber || '0000000000'
             },
-
-            // Map Customer to Receiver
             receiverDetails: {
                 name: `${order.user?.firstName || 'Customer'} ${
                     order.user?.lastName || ''
                 }`.trim(),
                 contactNumber: order.user?.phoneNumber || '0000000000'
             },
-
             status: 'pending',
             specialInstructions: order.remark || ''
         };
 
-        const delivery = await DeliveryRepository.createDelivery(deliveryData);
+        // Ensure your repository supports the session
+        const delivery = await DeliveryRepository.createDelivery(
+            deliveryData,
+            session
+        );
 
-        // Filter riders by state and send notification
-        const riders = await RiderService.findAllRiders({
-            status: 'verified',
-            state: order.destination?.state,
-            limit: 1000, // Reasonable limit
-            page: 1
-        });
-
-        if (riders && riders.length > 0) {
-            const riderMails = riders
-                .map((rider: any) => rider.email)
-                .filter(Boolean);
-            if (riderMails.length > 0) {
-                emails.availableDelivery(riderMails.join(','), {
-                    orderType: order.orderType,
-                    deliveryLocation: order.destination?.street,
-                    pickupLocation: order.pickup?.street
-                });
-            }
-        }
+        // 2. Notifications (Triggered outside the transaction block or via an event)
+        // We don't await this inside the DB transaction to keep it fast
+        this.notifyAvailableRiders(order);
 
         return delivery;
     }
@@ -137,6 +141,58 @@ class DeliveryService {
 
     async getActiveDeliveries(riderId: string) {
         return await DeliveryRepository.getActiveDeliveries(riderId);
+    }
+
+    async acceptDelivery(deliveryId: string, rider: any) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            // 1. Check if rider already has an active dispatch
+            let dispatch = await DispatchService.getActiveDispatch(rider.id);
+            if (!dispatch) {
+                dispatch = await DispatchService.createDispatch(
+                    { rider: rider.id },
+                    session
+                );
+            }
+
+            // 2. Atomically Assign Rider (Prevents double-acceptance)
+            const delivery = await DeliveryRepository.assignRiderToDelivery(
+                deliveryId,
+                rider.id,
+                dispatch._id,
+                session
+            );
+
+            if (!delivery) {
+                throw new Error(
+                    'Delivery already accepted by another rider or not found'
+                );
+            }
+
+            // 3. Update the Order
+            await OrderRepository.updateOrder(
+                delivery.order.toString(),
+                { rider: rider.id, deliveryAccepted: true },
+                session
+            );
+
+            // 4. Update Dispatch list
+            await DispatchService.addDeliveriesToDispatch(
+                dispatch._id,
+                [delivery._id],
+                session
+            );
+
+            await session.commitTransaction();
+            return delivery;
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            session.endSession();
+        }
     }
 }
 //

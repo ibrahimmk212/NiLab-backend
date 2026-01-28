@@ -1,19 +1,32 @@
+import mongoose from 'mongoose';
 import { Dispatch } from '../models/Dispatch';
 import DispatchRepository from '../repositories/DispatchRepository';
 
 class DispatchService {
-    async createDispatch(dispatchData: Partial<Dispatch>) {
-        return await DispatchRepository.createDispatch(dispatchData);
+    async createDispatch(
+        dispatchData: Partial<Dispatch>,
+        session?: mongoose.ClientSession
+    ) {
+        return await DispatchRepository.createDispatch(dispatchData, session);
+    }
+
+    async getAllDispatches(options: any) {
+        return await DispatchRepository.getAll(options);
     }
 
     async updateDispatch(dispatchId: string, updateData: any) {
         return await DispatchRepository.updateDispatch(dispatchId, updateData);
     }
 
-    async addDeliveriesToDispatch(dispatchId: string, deliveryIds: string[]) {
+    async addDeliveriesToDispatch(
+        dispatchId: string,
+        deliveryIds: string[],
+        session?: mongoose.ClientSession
+    ) {
         return await DispatchRepository.addDeliveriesToDispatch(
             dispatchId,
-            deliveryIds
+            deliveryIds,
+            session
         );
     }
 

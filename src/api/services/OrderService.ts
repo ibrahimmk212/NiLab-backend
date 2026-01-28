@@ -380,13 +380,16 @@ class OrderService {
                 const existingDelivery =
                     await DeliveryRepository.getDeliveryByOrder(orderId);
                 if (!existingDelivery) {
+                    const generatedDeliveryCode = generateShortCode(6);
+
                     await DeliveryModel.create(
                         [
                             {
                                 order: order._id,
                                 status: 'pending',
-                                deliveryCode: generateShortCode(6),
+                                deliveryCode: generatedDeliveryCode,
                                 deliveryFee: order.deliveryFee,
+                                rider: null,
                                 pickup: {
                                     ...order.pickup,
                                     state: order.vendor.state,

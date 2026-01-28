@@ -3,8 +3,11 @@ import DeliveryModel, { Delivery } from '../models/Delivery';
 import RiderModel from '../models/Rider';
 
 class DeliveryRepository {
-    async createDelivery(deliveryData: Partial<Delivery>): Promise<Delivery> {
-        const delivery = new DeliveryModel(deliveryData);
+    async createDelivery(
+        deliveryData: Partial<Delivery>,
+        session?: mongoose.ClientSession
+    ): Promise<Delivery> {
+        const delivery = new DeliveryModel(deliveryData, session);
         return await delivery.save();
     }
     async getAll(options: any) {
@@ -173,6 +176,25 @@ class DeliveryRepository {
                 }
             })
             .sort({ createdAt: -1 }); // Most recent first
+    }
+
+    async assignRiderToDelivery(
+        deliveryId: string,
+        riderId: string,
+        dispatchId: string,
+        session: mongoose.ClientSession
+    ) {
+        return await DeliveryModel.findOneAndUpdate(
+            { _id: deliveryId, rider: { $exists: false } }, // Atomic check: only if not assigned
+            {
+                $set: {
+                    rider: riderId,
+                    dispatch: dispatchId,
+                    status: 'assigned'
+                }
+            },
+            { session, new: true }
+        );
     }
 
     // Additional order-specific methods...
