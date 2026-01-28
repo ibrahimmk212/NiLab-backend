@@ -114,7 +114,7 @@ class VendorOrderController {
     updateStatus = asyncHandler(async (req: any, res: Response) => {
         const { vendor, body, params } = req;
         const { id } = params;
-        const { status, cancelReason } = body;
+        const { status, reason } = body;
 
         const unmutableStatusByVendor = ['prepared', 'dispatched'];
 
@@ -141,7 +141,7 @@ class VendorOrderController {
         const updatedOrder = await OrderService.updateOrder(
             id,
             { status },
-            cancelReason
+            reason
         );
 
         // 3. Handle Side Effects (Notifications/Emails)
