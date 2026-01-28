@@ -123,12 +123,10 @@ class VendorOrderController {
 
         if (!order) return res.status(404).json({ message: 'Order not found' });
         if (unmutableStatusByVendor.includes(order.status)) {
-            return res
-                .status(400)
-                .json({
-                    success: false,
-                    message: `You cannot change status from ${order.status}`
-                });
+            return res.status(400).json({
+                success: false,
+                message: `You cannot change status from ${order.status}`
+            });
         }
         if (order.vendor._id.toString() !== vendor.id)
             return res
@@ -157,7 +155,11 @@ class VendorOrderController {
             // await NotificationService.create({ userId: order.user._id, title: 'Order Ready', ... });
         }
 
-        return res.status(200).json({ success: true, data: updatedOrder });
+        return res.status(200).json({
+            message: 'Order successfully updated',
+            success: true,
+            data: updatedOrder
+        });
     });
 
     cancelOrder = asyncHandler(async (req: any, res: Response) => {

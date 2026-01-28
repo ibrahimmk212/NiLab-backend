@@ -95,6 +95,21 @@ class AdminOrderController {
             });
         }
     );
+
+    deleteTestOrder = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const deleted = await OrderService.deleteAll();
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Orders deleted successfully',
+                data: deleted
+            });
+        }
+    );
 }
 
 export default new AdminOrderController();

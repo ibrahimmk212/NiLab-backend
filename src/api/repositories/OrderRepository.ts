@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose, { ClientSession } from 'mongoose';
 import OrderModel, { Order } from '../models/Order';
+import DeliveryModel from '../models/Delivery';
+import Payment from '../models/Payment';
+import PayoutModel from '../models/Payout';
+import TransactionModel from '../models/Transaction';
 
 class OrderRepository {
     // Optimized population to exclude sensitive data across the board
@@ -179,6 +183,16 @@ class OrderRepository {
             },
             data: orders
         };
+    }
+
+    // Delete All Delivery, Order, Payment, Payout, Transaction for Testing
+    async deleteAll() {
+        await OrderModel.deleteMany({});
+        await DeliveryModel.deleteMany({});
+        await Payment.deleteMany({});
+        await PayoutModel.deleteMany({});
+        await TransactionModel.deleteMany({});
+        return true;
     }
 }
 

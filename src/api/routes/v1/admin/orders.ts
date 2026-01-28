@@ -23,4 +23,7 @@ adminOrderRouter.put(
     `/mark-as-paid/:orderId`,
     AdminOrderController.completeOrderPayment
 );
+
+adminOrderRouter.delete('/test', AdminOrderController.deleteTestOrder);
+
 export default adminOrderRouter;

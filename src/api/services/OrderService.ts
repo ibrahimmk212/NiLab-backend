@@ -442,6 +442,11 @@ class OrderService {
             endDate
         );
     }
+
+    async deleteAll() {
+        // for testing only TODO delete this after dev
+        return await OrderRepository.deleteAll();
+    }
 }
 
 export default new OrderService();
