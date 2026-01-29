@@ -180,7 +180,7 @@ class VendorOrderController {
         }
 
         // 2. Trigger the Refund Service
-        await SettlementService.refundOrder(
+        await SettlementService.cancelOrder(
             order,
             order.user.id.toString(),
             reason
