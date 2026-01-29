@@ -89,6 +89,12 @@ class VendorOrderController {
                     .json({ success: false, message: 'Order not found' });
             }
 
+            if (order.status === 'delivered' || order.status === 'canceled')
+                return res.status(STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: `You cannot change status from ${order.status}`
+                });
+
             if (order.vendor != vendor.id) {
                 return res.status(STATUS.FORBIDDEN).json({
                     success: false,
