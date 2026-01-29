@@ -89,11 +89,26 @@ class VendorOrderController {
                     .json({ success: false, message: 'Order not found' });
             }
 
-            if (order.status === 'delivered' || order.status === 'canceled')
+            if (order.isSettled) {
                 return res.status(STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: `You cannot change status from ${order.status}`
+                    message: 'Cannot update a settled order'
                 });
+            }
+
+            if (order.status === 'delivered') {
+                return res.status(STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Cannot update a delivered'
+                });
+            }
+
+            if (order.status === 'canceled') {
+                return res.status(STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Cannot update a canceled order'
+                });
+            }
 
             if (order.vendor != vendor.id) {
                 return res.status(STATUS.FORBIDDEN).json({
