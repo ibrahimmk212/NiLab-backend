@@ -137,7 +137,12 @@ class VendorOrderController {
         const { id } = params;
         const { status, reason } = body;
 
-        const unmutableStatusByVendor = ['prepared', 'dispatched'];
+        const unmutableStatusByVendor = [
+            'prepared',
+            'dispatched',
+            'delivered',
+            'canceled'
+        ];
 
         // 1. Initial Checks
         const order = await OrderService.getOrderById(id);
@@ -149,7 +154,7 @@ class VendorOrderController {
         if (unmutableStatusByVendor.includes(order.status)) {
             return res.status(400).json({
                 success: false,
-                message: `You cannot change status from ${order.status}`
+                message: `You cannot update ${order.status} order`
             });
         }
         if (order.vendor._id.toString() !== vendor.id)
