@@ -372,7 +372,7 @@ class OrderService {
                     throw new Error('Cannot cancel a completed/settled order');
                 }
                 // Trigger Refund
-                await SettlementService.refundOrder(
+                await SettlementService.cancelOrder(
                     order,
                     order.user._id.toString(),
                     reason || 'Cancelled by vendor'

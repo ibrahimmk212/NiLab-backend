@@ -158,7 +158,7 @@ class SettlementService {
         }
     }
 
-    async refundOrder(order: any, customerId: string, reason: string) {
+    async cancelOrder(order: any, customerId: string, reason: string) {
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -192,7 +192,7 @@ class SettlementService {
             await customerWallet.save({ session });
 
             // 3. Update Order Status to prevent further actions
-            order.status = 'cancelled';
+            order.status = 'canceled';
             order.remark = reason || 'Order rejected by vendor';
             order.cancelledAt = new Date();
             await order.save({ session });
@@ -295,7 +295,7 @@ class SettlementService {
             );
 
             const updatedRider = await WalletRepository.creditAvailableBalance(
-                riderWallet!.id,
+                riderWallet?.id,
                 amounts.riderAmount,
                 session
             );

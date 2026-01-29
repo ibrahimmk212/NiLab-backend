@@ -121,7 +121,10 @@ class VendorOrderController {
         // 1. Initial Checks
         const order = await OrderService.getOrderById(id);
 
-        if (!order) return res.status(404).json({ message: 'Order not found' });
+        if (!order)
+            return res
+                .status(404)
+                .json({ success: false, message: 'Order not found' });
         if (unmutableStatusByVendor.includes(order.status)) {
             return res.status(400).json({
                 success: false,
