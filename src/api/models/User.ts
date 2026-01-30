@@ -25,7 +25,7 @@ export interface User extends Document {
     password: string;
     firstName: string;
     lastName: string;
-    gender: string;
+    gender?: string;
     role: string;
     pin: string;
     phoneNumber: string;
@@ -47,7 +47,7 @@ const userSchema = new Schema<User>(
     {
         firstName: { type: String, required: true },
         lastName: { type: String, required: false },
-        gender: { type: String, required: false, default: 'male' },
+        gender: { type: String, required: false },
         email: {
             type: String,
             required: [true, 'email is required'],

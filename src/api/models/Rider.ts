@@ -30,7 +30,7 @@ const riderSchema = new Schema<Rider>(
         email: { type: String, required: false },
         city: { type: String, required: false },
         state: { type: String, required: true, default: 'Kano' },
-        gender: { type: String, required: false, default: 'male' },
+        gender: { type: String, required: false},
         vehicle: { type: String, required: true, default: 'bicycle' },
         ratings: { type: Number, default: 0 },
         status: { type: String, required: true, default: 'verified' },
