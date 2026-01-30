@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose, { Document, Schema } from 'mongoose';
 import WalletService from '../services/WalletService';
 export interface BankAccount {
@@ -30,7 +31,7 @@ const riderSchema = new Schema<Rider>(
         email: { type: String, required: false },
         city: { type: String, required: false },
         state: { type: String, required: true, default: 'Kano' },
-        gender: { type: String, required: false},
+        gender: { type: String, required: false },
         vehicle: { type: String, required: true, default: 'bicycle' },
         ratings: { type: Number, default: 0 },
         status: { type: String, required: true, default: 'verified' },
