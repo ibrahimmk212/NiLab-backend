@@ -388,6 +388,25 @@ class WalletService {
     async deleteWallet(walletId: string) {
         return await WalletRepository.deleteWallet(walletId);
     }
+
+    async getSystemWalletBalance(walletAccountNumber: string) {
+        const token = await monnify.genToken();
+        const balance = await monnify.getWalletBalance(walletAccountNumber, token);
+
+        if (!balance.requestSuccessful) {
+            return {
+                success: false,
+                message: balance.responseMessage || 'Failed to fetch balance',
+                data: null
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Balance fetched successfully',
+            data: balance.responseBody
+        };
+    }
 }
 
 export default new WalletService();

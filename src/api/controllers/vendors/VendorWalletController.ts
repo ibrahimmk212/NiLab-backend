@@ -162,7 +162,7 @@ class VendorWalletController {
                 destinationBankCode: bankCode,
                 narration: transaction.remark || '',
                 reference: transaction.reference,
-                sourceAccountNumber: appConfig.monnify.walletNumber
+                sourceAccountNumber: appConfig.monnify.walletAccountNumber
             });
 
             console.log(transfer);

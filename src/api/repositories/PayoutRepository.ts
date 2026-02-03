@@ -107,40 +107,13 @@ class PayoutRepository {
     }
 
     //  complete (approve) payout
-    async completePayout(payoutId: string) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
+    async finalizePayout(payoutId: string, session: mongoose.ClientSession) {
         try {
             const payout = await PayoutModel.findOne({
                 _id: payoutId,
                 status: 'pending'
             }).session(session);
             if (!payout) throw new Error('Invalid or already processed payout');
-
-            // --- MONNIFY DISBURSEMENT CALL WOULD GO HERE ---
-            // 1. Prepare the payload for your Monnify library
-            const transferPayload: any = {
-                amount: payout.amount,
-                reference: `PAYOUT-${payout._id}-${Date.now()}`, // Must be unique for Monnify
-                narration: `Withdrawal for ${payout.accountName}`,
-                destinationBankCode: payout.bankCode,
-                destinationAccountNumber: payout.accountNumber,
-                currency: 'NGN',
-                sourceAccountNumber: appConfig.monnify.sourceAccountNumber // Your Monnify Disbursement Account
-            };
-
-            // 2. Call your existing library method
-            const transferResult = await monnify.singleOutboundTransfer(
-                transferPayload
-            );
-
-            if (!transferResult.requestSuccessful) {
-                // If Monnify rejects it (e.g. invalid account or insufficient merchant balance)
-                throw new Error(
-                    `Monnify Transfer Failed: ${transferResult.responseMessage}`
-                );
-            }
 
             const wallet = await WalletModel.findOneAndUpdate(
                 {
@@ -170,16 +143,12 @@ class PayoutRepository {
                 { session }
             );
 
-            payout.status = 'completed';
+            payout.status = 'completed'; // Mark as completed locally
             await payout.save({ session });
 
-            await session.commitTransaction();
             return payout;
         } catch (e) {
-            await session.abortTransaction();
             throw e;
-        } finally {
-            session.endSession();
         }
     }
 

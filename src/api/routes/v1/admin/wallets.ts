@@ -4,11 +4,11 @@ import AdminWalletController from '../../../controllers/admin/AdminWalletControl
 
 const adminWalletRouter: Router = Router();
 
-adminWalletRouter.get('/:walletId', AdminWalletController.getWallet);
-adminWalletRouter.post(
-    `/merge-duplicates`,
-    AdminWalletController.mergeDuplicateWallets
+adminWalletRouter.get(
+    '/monnify/balance',
+    AdminWalletController.getMonnifyBalance
 );
+adminWalletRouter.get('/:walletId', AdminWalletController.getWallet);
 
 adminWalletRouter.delete('/:walletId', AdminWalletController.deleteWallet);
 

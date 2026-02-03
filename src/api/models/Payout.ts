@@ -11,6 +11,7 @@ export interface Payout extends Document {
     accountNumber: string;
     accountName: string;
     bankCode?: string;
+    currency?: string;
 }
 
 const payoutSchema = new Schema<Payout>(
@@ -31,7 +32,8 @@ const payoutSchema = new Schema<Payout>(
         bankName: { type: String, required: true },
         accountNumber: { type: String, required: true },
         accountName: { type: String, required: true },
-        bankCode: { type: String }
+        bankCode: { type: String },
+        currency: { type: String, default: 'NGN' }
     },
     { timestamps: true }
 );

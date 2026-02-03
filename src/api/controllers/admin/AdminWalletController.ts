@@ -1,8 +1,35 @@
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import WalletService from '../../services/WalletService';
+import appConfig from '../../../config/appConfig';
 
 class AdminWalletController {
+    getMonnifyBalance = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            try {
+                // Get the wallet account number from appConfig (or env)
+                // Assuming it's in appConfig.monnify.walletAccountNumber
+                const walletNumber = appConfig.monnify.walletAccountNumber;
+
+                if (!walletNumber) {
+                    throw new Error('Monnify Wallet Account Number not configured');
+                }
+
+                const balance = await WalletService.getSystemWalletBalance(
+                    walletNumber
+                );
+                
+                res.status(200).send(balance);
+            } catch (error) {
+                next(error);
+            }
+        }
+    );
+
     getWallet = asyncHandler(
         async (
             req: Request,

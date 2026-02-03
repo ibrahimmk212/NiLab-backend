@@ -12,7 +12,7 @@ import TransactionRepository from '../repositories/TransactionRepository';
 import PayoutRepository from '../repositories/PayoutRepository';
 import WalletModel from '../models/Wallet';
 import TransactionModel from '../models/Transaction';
-import PayoutModel from '../models/Payout';
+import PayoutModel, { Payout } from '../models/Payout';
 
 class PaymentService {
     async handleMonnifyWebhook(payload: any) {
@@ -456,6 +456,52 @@ class PaymentService {
                 paymentReference: walletRef
             }
         };
+    }
+    /**
+     * Internal: Process Payout (Disbursement)
+     */
+    async processPayout(payout: Payout) {
+        // 1. Construct Request Body
+        // Reference must be unique. We use PAYOUT-{id}-{timestamp}
+        // This is what we will parse in the webhook: handleMonnifyDisbursementWebhook
+        const reference = `PAYOUT-${payout._id}-${Date.now()}`;
+
+        const requestBody = {
+            amount: payout.amount,
+            reference: reference,
+            narration: `Payout for ${payout._id}`,
+            destinationBankCode: payout.bankCode!, // Assumed present after validation
+            destinationAccountNumber: payout.accountNumber,
+            currency: (payout.currency || 'NGN') as 'NGN',
+            sourceAccountNumber: appConfig.monnify.walletAccountNumber // Merchant Wallet
+        };
+
+        try {
+            // 2. Call Monnify
+            const response = await monnify.singleOutboundTransfer(requestBody);
+
+            if (!response.requestSuccessful) {
+                console.error('Monnify Payout Failed:', response.responseMessage);
+                return {
+                    success: false,
+                    message: response.responseMessage || 'Transfer initiation failed'
+                };
+            }
+
+            console.log('Payout Initiated:', response);
+
+            return {
+                success: true,
+                message: 'Transfer initiated successfully',
+                data: response.responseBody
+            };
+        } catch (error: any) {
+            console.error('Payout Error:', error);
+            return {
+                success: false,
+                message: error.message || 'An error occurred during payout'
+            };
+        }
     }
 }
 
