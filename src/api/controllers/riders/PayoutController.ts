@@ -47,14 +47,15 @@ class RiderPayoutController {
         async (req: any, res: Response, next: NextFunction): Promise<void> => {
             try {
                 const { id } = req.userdata;
-                const { amount, bankName, accountNumber, accountName } =
+                const { amount, bankName, accountNumber, accountName, bankCode } =
                     req.body;
                 const payout = await PayoutService.requestPayout({
                     userId: id,
                     amount,
                     bankName,
                     accountNumber,
-                    accountName
+                    accountName,
+                    bankCode
                 });
                 res.status(200).send({
                     message: 'Payout fetched successfully',

@@ -70,6 +70,7 @@ class PayoutRepository {
                         bankName,
                         accountNumber,
                         accountName,
+                        bankCode,
                         status: 'pending'
                     }
                 ],
@@ -108,6 +109,7 @@ class PayoutRepository {
 
     //  complete (approve) payout
     async finalizePayout(payoutId: string, session: mongoose.ClientSession) {
+        // eslint-disable-next-line no-useless-catch
         try {
             const payout = await PayoutModel.findOne({
                 _id: payoutId,

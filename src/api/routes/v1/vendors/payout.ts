@@ -11,4 +11,9 @@ vendorPayoutRouter.post(
     // Validate(orderRequirement.updateStatus),
     VendorPayoutController.requestPayout
 );
+
+vendorPayoutRouter.post(
+    '/validate-account',
+    VendorPayoutController.validateAccount
+);
 export default vendorPayoutRouter;

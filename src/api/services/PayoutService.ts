@@ -26,13 +26,14 @@ class PayoutService {
         bankName: string;
         accountName: string;
         accountNumber: string;
+        bankCode: string;
     }): Promise<any | null> {
         return await PayoutRepository.requestPayout(
             payload.userId,
             payload.amount,
             payload.bankName,
             payload.accountNumber,
-            payload.accountName
+            payload.bankCode
         );
     }
 
