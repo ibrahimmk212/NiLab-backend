@@ -32,7 +32,33 @@ class AdminUserController {
             next: NextFunction
         ): Promise<void> => {
             try {
-                const user = await UserService.getUsers(req.query);
+                const {
+                    page,
+                    limit,
+                    role,
+                    status,
+                    search,
+                    sortBy,
+                    sortOrder,
+                    startDate,
+                    endDate,
+                    kycStatus,
+                    isBanned
+                } = req.query;
+
+                const user = await UserService.getUsers({
+                    page,
+                    limit,
+                    role,
+                    status,
+                    search,
+                    sortBy,
+                    sortOrder,
+                    startDate,
+                    endDate,
+                    kycStatus,
+                    isBanned
+                });
                 res.status(200).send({
                     message: 'Users fetched successfully',
                     ...user

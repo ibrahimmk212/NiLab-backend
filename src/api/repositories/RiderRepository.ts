@@ -54,13 +54,14 @@ class RiderRepository {
         }
 
         if (options.available !== undefined) {
-            filter.available = options.available === 'true';
+             filter.available = options.available === true || options.available === 'true';
         }
 
+        const sort: any = {};
         if (options.sortBy) {
-            options.sortBy = options.sortBy.replace(',', ' ');
+            sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
         } else {
-            options.sortBy = '-createdAt';
+             sort.createdAt = -1;
         }
 
         if (options.startDate && options.endDate) {
@@ -72,7 +73,7 @@ class RiderRepository {
 
         const [riders, total] = await Promise.all([
             RiderModel.find(filter)
-                .sort(options.sortBy)
+                .sort(sort)
                 .skip(skip)
                 .limit(limit)
                 .populate('user wallet vehicle'),

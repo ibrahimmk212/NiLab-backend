@@ -4,6 +4,7 @@ import OrderRepository from '../repositories/OrderRepository';
 import { Order } from '../models/Order';
 import ConfigurationService from './ConfigurationService';
 import WalletService from './WalletService';
+import PaymentService from './PaymentService';
 import {
     generateReference,
     generateShortCode
@@ -144,6 +145,16 @@ class OrderService {
                 orderType: 'products',
                 status: 'pending'
             };
+
+            // 6. PAY FOR ME LOGIC
+            if (data.paymentType === 'pay-for-me') {
+                orderPayload.payForMeToken = generateReference('PFM'); // Using similar generator
+                // Set expiry to 40 minutes from now
+                orderPayload.payForMeExpiresAt = new Date(
+                    Date.now() + 40 * 60 * 1000
+                );
+                orderPayload.payForMeStatus = 'pending';
+            }
 
             const order = await OrderRepository.createOrder(
                 orderPayload,
@@ -453,6 +464,127 @@ class OrderService {
     async deleteAll() {
         // for testing only TODO delete this after dev
         return await OrderRepository.deleteAll();
+    }
+
+    // --- PAY FOR ME HELPERS ---
+
+    async getOrderByPayForMeToken(token: string) {
+        // Use Repository to find by token
+        const order = await OrderRepository.findOrderByPayForMeToken(token);
+
+        if (!order) throw new Error('Invalid payment link');
+
+        // Check if pending
+        if (order.payForMeStatus !== 'pending') {
+            throw new Error(`This payment link is ${order.payForMeStatus}`);
+        }
+
+        // Check Expiry
+        if (order.payForMeExpiresAt && order.payForMeExpiresAt < new Date()) {
+            // Optionally update to expired if not already
+            if (order.payForMeStatus === 'pending') {
+                await OrderRepository.updateOrder(order._id as string, {
+                    payForMeStatus: 'expired'
+                });
+            }
+            throw new Error('Payment link has expired');
+        }
+
+        return order;
+    }
+
+    async completePayForMeOrder(
+        orderId: string,
+        payerId: string,
+        paymentMethod: 'wallet' | 'online' = 'wallet'
+    ): Promise<Order | any> {
+        // 1. Fetch Order
+        const order = await OrderRepository.findOrderById(orderId);
+        if (!order) throw new Error('Order not found');
+
+        // 2. Validate State
+        if (order.payForMeStatus !== 'pending') {
+            console.log(order.payForMeStatus);
+            throw new Error('Order is not valid for Pay For Me completion');
+        }
+        if (order.paymentCompleted) {
+            throw new Error('Order is already paid');
+        }
+
+        // 3. Process Payment based on Method
+
+        if (paymentMethod === 'online') {
+            // Fetch Payer Details
+            const payer = await UserRepository.findUserById(payerId);
+            if (!payer) throw new Error('Payer account not found');
+
+            // Initiate Monnify Payment for this Payer
+            // We need to ensure the webhook can identify this is a Pay For Me flow
+            // The existing webhook checks "ORD-" reference.
+            // If we use the SAME order reference, it will look like the original user paid.
+            // But we want to record the Payer.
+            // However, for MVP, as long as it is PAID, we update the order.
+            // We just need to ensure the webhook updates `payForMePayer` as well?
+            // Or we rely on the webhook detecting it's consistent.
+
+            // Calling existing service
+            return await PaymentService.initiateMonnifyPayment(order, payer);
+        }
+
+        // Default: Wallet Payment
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            // Check & Debit Payer's Wallet
+            const debitResult = await WalletService.initDebitAccount(
+                {
+                    amount: order.totalAmount,
+                    owner: payerId,
+                    role: 'user'
+                },
+                session
+            );
+
+            if (!debitResult.success) {
+                throw new Error(
+                    'Insufficient wallet balance to pay for this order'
+                );
+            }
+
+            // Move funds to System Escrow
+            await WalletService.initCreditAccount(
+                {
+                    amount: order.totalAmount,
+                    owner: 'system',
+                    role: 'system'
+                },
+                session
+            );
+
+            // 4. Update Order
+            const updatedOrder = await OrderRepository.updateOrder(
+                orderId,
+                {
+                    payForMePayer: new mongoose.Types.ObjectId(payerId),
+                    payForMeStatus: 'completed',
+                    paymentCompleted: true,
+                    status: 'pending', // Keep pending until vendor accepts
+                    transactionReference: generateReference('TXN') // Generate a transaction ref
+                },
+                session
+            );
+
+            if (!updatedOrder) throw new Error('Failed to update order');
+
+            await session.commitTransaction();
+            return updatedOrder;
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            session.endSession();
+        }
     }
 }
 

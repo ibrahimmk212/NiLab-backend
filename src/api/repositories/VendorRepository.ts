@@ -14,11 +14,15 @@ interface FindAllVendorsOptions {
     acceptDelivery?: boolean; // example filter
     openingHour?: string; // example filter
     closingHour?: string; // example filter
-    isAvailable?: boolean; // example filter
+    isAvailable?: boolean | string; // example filter
     averageReadyTime?: number | string; // example filter
     email?: string; // example filter
     phoneNumber?: string; // example filter
     status?: string; // example filter
+    identityVerificationStatus?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
 }
 class VendorRepository {
     // Create a new vendor
@@ -217,7 +221,7 @@ class VendorRepository {
             filter.lga = options.lga;
         }
         if (options.ratings) {
-            filter.ratings = { $gte: options.ratings };
+            filter.ratings = { $gte: Number(options.ratings) };
         }
         if (options.acceptDelivery !== undefined) {
             filter.acceptDelivery = options.acceptDelivery;
@@ -229,7 +233,7 @@ class VendorRepository {
             filter.closingHour = options.closingHour;
         }
         if (options.isAvailable !== undefined) {
-            filter.isAvailable = options.isAvailable;
+             filter.isAvailable = options.isAvailable === true || options.isAvailable === 'true';
         }
         if (options.averageReadyTime) {
             filter.averageReadyTime = options.averageReadyTime;
@@ -241,18 +245,43 @@ class VendorRepository {
             filter.phoneNumber = options.phoneNumber;
         }
 
+        if (options.identityVerificationStatus) {
+            filter.identityVerificationStatus = options.identityVerificationStatus;
+        }
+
+        // Search Logic
         if (options.name) {
-            filter.name = { $regex: options.name, $options: 'i' };
+             // If generic search is requested
+             const searchRegex = new RegExp(options.name, 'i');
+             filter.$or = [
+                 { name: searchRegex },
+                 { email: searchRegex },
+                 { phoneNumber: searchRegex }
+             ];
+        } else if (options.search) {
+             const searchRegex = new RegExp(options.search as string, 'i');
+             filter.$or = [
+                 { name: searchRegex },
+                 { email: searchRegex },
+                 { phoneNumber: searchRegex }
+             ];
         }
 
         if (options.status) {
             filter.status = options.status;
         }
 
+        const sort: any = {};
+        if (options.sortBy) {
+             sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
+        } else {
+             sort.createdAt = -1;
+        }
+
         const [vendors, total] = await Promise.all([
             VendorModel.find(filter)
                 .populate('categories marketCategory user')
-                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .sort(sort) // Sort dynamically
                 .skip(skip)
                 .limit(limit),
             VendorModel.countDocuments(filter)

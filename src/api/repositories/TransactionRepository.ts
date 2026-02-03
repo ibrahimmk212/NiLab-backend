@@ -29,16 +29,46 @@ class TransactionRepository {
             filter.user = options.user;
         }
 
+        if (options.status) {
+            filter.status = options.status;
+        }
+        if (options.type) {
+            filter.type = options.type;
+        }
+        if (options.category) {
+            filter.category = options.category;
+        }
+
+        if (options.search) {
+             filter.reference = { $regex: options.search, $options: 'i' };
+        }
+
+        // Search by reference (specific)
         if (options.reference) {
             filter.reference = options.reference;
         }
+
         if (options.amount) {
             filter.amount = options.amount;
         }
 
+        if (options.startDate && options.endDate) {
+            filter.createdAt = {
+                $gte: new Date(options.startDate),
+                $lte: new Date(options.endDate)
+            };
+        }
+
+        const sort: any = {};
+        if (options.sortBy) {
+             sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
+        } else {
+             sort.createdAt = -1;
+        }
+
         const [transactions, total] = await Promise.all([
             TransactionModel.find(filter)
-                .sort({ createdAt: -1 }) // Sort by createdAt descending
+                .sort(sort) // Sort dynamically
                 .skip(skip)
                 .limit(limit)
                 .populate({

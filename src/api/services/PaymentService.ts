@@ -283,6 +283,17 @@ class PaymentService {
             return await this.processWalletPayment(order, userdata);
         }
 
+        if (order.paymentType === 'pay-for-me') {
+            return {
+                valid: true,
+                payment: {
+                    payForMeToken: order.payForMeToken,
+                    expiresAt: order.payForMeExpiresAt,
+                    shareableLink: order.payForMeToken // Frontend to construct deep link
+                }
+            };
+        }
+
         return await this.initiateMonnifyPayment(order, userdata);
     }
 
@@ -350,7 +361,7 @@ class PaymentService {
     /**
      * Internal: Generate Monnify Gateway Details
      */
-    private async initiateMonnifyPayment(order: any, userdata: any) {
+    async initiateMonnifyPayment(order: any, userdata: any) {
         const monnifyToken = await monnify.genToken();
 
         // Create unique reference for this specific attempt to avoid Monnify 422 errors

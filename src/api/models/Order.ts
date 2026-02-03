@@ -46,9 +46,13 @@ export interface Order extends Document {
     discount?: mongoose.Types.ObjectId;
     totalAmount: number;
     orderType: 'products' | 'delivery';
-    paymentType: 'card' | 'transfer' | 'cash' | 'wallet' | 'online';
+    paymentType: 'card' | 'transfer' | 'cash' | 'wallet' | 'online' | 'pay-for-me';
     paymentReference: string; // The NanoID Reference (ORD-XXXXXXXX)
     transactionReference: string; // Reference for the Wallet Transaction
+    payForMeToken?: string;
+    payForMeExpiresAt?: Date;
+    payForMePayer?: mongoose.Types.ObjectId;
+    payForMeStatus?: 'pending' | 'completed' | 'expired';
     paymentCompleted: boolean;
     vat: number;
     deliveryAccepted: boolean;
@@ -147,7 +151,7 @@ const orderSchema = new Schema<Order>(
         paymentType: {
             type: String,
             required: true,
-            enum: ['card', 'transfer', 'cash', 'wallet', 'online']
+            enum: ['card', 'transfer', 'cash', 'wallet', 'online', 'pay-for-me']
         },
         // Using NanoID for these unique references
         paymentReference: {
@@ -161,6 +165,25 @@ const orderSchema = new Schema<Order>(
             unique: true,
             sparse: true,
             index: true
+        },
+        // Pay For Me Fields
+        payForMeToken: {
+            type: String,
+            unique: true,
+            sparse: true,
+            index: true
+        },
+        payForMeExpiresAt: {
+            type: Date
+        },
+        payForMePayer: {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        payForMeStatus: {
+            type: String,
+            enum: ['pending', 'completed', 'expired'],
+            default: 'pending'
         },
 
         vat: { type: Number, required: true, default: 0 },

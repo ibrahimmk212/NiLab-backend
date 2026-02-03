@@ -22,7 +22,8 @@ export const generateReference = (
         | 'PKG'
         | 'REV'
         | 'COL'
-        | 'WTH',
+        | 'WTH'
+        | 'PFM',
     length = 10
 ): string => {
     const nanoid = customAlphabet(alphabet, length);
@@ -32,7 +33,7 @@ export const generateReference = (
 /**
  * For short numeric pickup codes (e.g., 123456)
  */
-export const generateShortCode = (size: number = 6): string => {
+export const generateShortCode = (size = 6): string => {
     const nanoid = customAlphabet('0123456789', size);
     return nanoid();
 };

@@ -210,10 +210,14 @@ class WalletService {
         return wallet;
     }
 
-    async initDebitAccount(payload: any) {
+    async initDebitAccount(payload: any, session?: mongoose.ClientSession) {
         const { amount, owner, role } = payload;
 
-        const wallet = await WalletRepository.getWalletByOwner(role, owner);
+        const wallet = await WalletRepository.getWalletByOwner(
+            role,
+            owner,
+            session
+        );
         if (!wallet) throw new Error('Wallet not found');
 
         if (wallet.availableBalance < amount) {
@@ -222,7 +226,8 @@ class WalletService {
 
         const updated = await WalletRepository.debitAvailableBalance(
             wallet.id,
-            amount
+            amount,
+            session
         );
 
         return {
@@ -252,18 +257,20 @@ class WalletService {
             message: 'Wallet Debit confirmed'
         };
     }
-    async initCreditAccount(payload: any): Promise<any> {
+    async initCreditAccount(payload: any, session?: mongoose.ClientSession): Promise<any> {
         const { amount, owner, role } = payload;
         const userWallet: any = await WalletRepository.getWalletByOwner(
             role,
-            owner
+            owner,
+            session
         );
 
         if (!userWallet) throw new Error('Failed to fetch wallet');
 
         const updateWallet = await WalletRepository.creditPendingBalance(
             userWallet?.id,
-            amount
+            amount,
+            session
         );
 
         if (!updateWallet)

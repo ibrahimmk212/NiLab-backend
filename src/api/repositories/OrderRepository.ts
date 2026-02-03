@@ -47,6 +47,12 @@ class OrderRepository {
             .session(session || null); // Ensure session is explicitly handled
     }
 
+    async findOrderByPayForMeToken(token: string): Promise<Order | null> {
+        return await OrderModel.findOne({ payForMeToken: token }).populate(
+            'user vendor products'
+        );
+    }
+
     async updateOrder(
         orderId: string,
         updateData: Partial<Order>,
@@ -125,31 +131,17 @@ class OrderRepository {
 
         const filter: Record<string, any> = {};
 
-        // Add support for new reference searches
-        if (options.code) filter.code = options.code;
-        if (options.reference) filter.paymentReference = options.reference;
+        // Exact Match Filters
+        if (options.status) filter.status = options.status;
+        if (options.paymentType) filter.paymentType = options.paymentType;
         if (options.vendorId) filter.vendor = options.vendorId;
         if (options.customerId) filter.user = options.customerId;
-        if (options.status) filter.status = options.status;
         if (options.riderId) filter.rider = options.riderId;
-        if (options.search) {
-            const searchRegex = new RegExp(options.search, 'i');
-            filter.$or = [
-                { 'user.firstName': searchRegex },
-                { 'user.lastName': searchRegex },
-                { 'vendor.businessName': searchRegex },
-                { 'rider.firstName': searchRegex },
-                { 'rider.lastName': searchRegex },
-                { code: searchRegex },
-                { paymentReference: searchRegex }
-            ];
-        }
-        if (options.sortBy) {
-            filter.sort = {};
-            filter.sort[options.sortBy] = options.sortOrder === 'desc' ? -1 : 1;
-        }
+        if (options.code) filter.code = options.code;
+        if (options.reference) filter.paymentReference = options.reference;
+        if (options.orderType) filter.orderType = options.orderType;
         if (options.paymentCompleted !== undefined) {
-            filter.paymentCompleted = options.paymentCompleted;
+             filter.paymentCompleted = options.paymentCompleted === 'true';
         }
 
         // Date Range Filtering
@@ -160,12 +152,30 @@ class OrderRepository {
             };
         }
 
-        if (options.orderType) filter.orderType = options.orderType;
+        // Search (Text) on multiple fields
+        // Note: Relation searches like 'user.firstName' don't work in a single find() unless using aggregation or pre-fetching.
+        // For efficiency in this standard findAll, we'll search direct fields.
+        if (options.search) {
+            const searchRegex = new RegExp(options.search, 'i');
+            filter.$or = [
+                { code: searchRegex },
+                { paymentReference: searchRegex },
+                { transactionReference: searchRegex }
+            ];
+        }
+
+        // Sorting Logic
+        const sort: any = {};
+        if (options.sortBy) {
+            sort[options.sortBy] = options.sortOrder === 'asc' ? 1 : -1;
+        } else {
+            sort.createdAt = -1;
+        }
 
         const [orders, total] = await Promise.all([
             OrderModel.find(filter)
                 .populate('user vendor rider products')
-                .sort({ createdAt: -1 })
+                .sort(sort)
                 .skip(skip)
                 .limit(limit),
             OrderModel.countDocuments(filter)

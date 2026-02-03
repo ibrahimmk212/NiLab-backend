@@ -271,8 +271,29 @@ class ProductRepository {
         if (options.name) filter.name = { $regex: options.name, $options: 'i' };
         if (options.stock !== undefined)
             filter.stock = { $gte: Number(options.stock) };
-        if (options.price) filter.price = { $gte: Number(options.price) };
         if (options.search) filter.$text = { $search: options.search };
+
+        // Price Filter (Min & Max)
+        if (options.price || options.minPrice || options.maxPrice) {
+            filter.price = {};
+            if (options.price) filter.price.$gte = Number(options.price);
+            if (options.minPrice) filter.price.$gte = Number(options.minPrice);
+            if (options.maxPrice) filter.price.$lte = Number(options.maxPrice);
+        }
+
+        // Ratings Filter
+        if (options.ratings) {
+            filter.ratings = { $gte: Number(options.ratings) };
+        }
+
+        // Sorting Logic
+        const sort: any = {};
+        if (options.sortBy) {
+            const order = options.sortOrder === 'asc' ? 1 : -1;
+            sort[options.sortBy] = order;
+        } else {
+            sort.createdAt = -1; // Default
+        }
 
         // 2. Execute Query
         const [products, total] = await Promise.all([
@@ -287,7 +308,7 @@ class ProductRepository {
                             : { isDeleted: false, status: 'active' }
                 })
                 .populate('vendor')
-                .sort({ createdAt: -1 })
+                .sort(sort)
                 .skip(skip)
                 .limit(limit),
             ProductModel.countDocuments(filter)

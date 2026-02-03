@@ -73,7 +73,51 @@ class AdminVendorController {
     );
     getAll = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const vendors = await VendorService.getAll(req.query);
+            const {
+                page,
+                limit,
+                name,
+                marketCategoryId,
+                categories,
+                state,
+                lga,
+                ratings,
+                acceptDelivery,
+                openingHour,
+                closingHour,
+                isAvailable,
+                averageReadyTime,
+                email,
+                phoneNumber,
+                status,
+                identityVerificationStatus,
+                search,
+                sortBy,
+                sortOrder
+            } = req.query;
+
+            const vendors = await VendorService.getAll({
+                page,
+                limit,
+                name,
+                marketCategoryId,
+                categories,
+                state,
+                lga,
+                ratings,
+                acceptDelivery,
+                openingHour,
+                closingHour,
+                isAvailable,
+                averageReadyTime,
+                email,
+                phoneNumber,
+                status,
+                identityVerificationStatus,
+                search,
+                sortBy,
+                sortOrder
+            });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Venors fetched successfully',

@@ -36,4 +36,14 @@ customerOrderRouter
 customerOrderRouter.post('/:orderId/checkout', orderController.checkout);
 customerOrderRouter.post('/:orderId/review', orderController.submitReview);
 
+// Pay For Me Routes
+customerOrderRouter.get(
+    '/pay-for-me/:token',
+    orderController.getPayForMeDetails
+);
+customerOrderRouter.post(
+    '/pay-for-me/complete',
+    orderController.completePayForMe
+);
+
 export default customerOrderRouter;

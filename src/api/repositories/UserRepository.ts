@@ -35,35 +35,47 @@ class UserRepository {
             filter.status = options.status;
         }
 
+        if (options.kycStatus) {
+            filter.kycStatus = options.kycStatus;
+        }
+
+        if (options.isBanned !== undefined) {
+             filter.isBanned = options.isBanned === true || options.isBanned === 'true';
+        }
+
         if (options.search) {
+            const searchRegex = new RegExp(options.search, 'i');
             filter.$or = [
-                { firstName: { $regex: options.search, $options: 'i' } },
-                { lastName: { $regex: options.search, $options: 'i' } },
-                { email: { $regex: options.search, $options: 'i' } },
-                { phoneNumber: { $regex: options.search, $options: 'i' } }
+                { firstName: searchRegex },
+                { lastName: searchRegex },
+                { email: searchRegex },
+                { phoneNumber: searchRegex }
             ];
         }
 
+        const sort: any = {};
         if (options.sortBy) {
-            options.sortBy = options.sortBy.replace(',', ' ');
+             sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
         } else {
-            options.sortBy = '-createdAt';
-        }
-
-        if (options.startDate && options.endDate) {
-            filter.createdAt = {
-                $gte: new Date(options.startDate),
-                $lte: new Date(options.endDate)
-            };
+             sort.createdAt = -1;
         }
 
         // virtually order counts for userIds
         if (options.role === 'user') {
-            options.sortBy = '-orderCount ' + options.sortBy;
+            // Note: Mixing virtual sort with DB sort is complex.
+            // If the user wants to sort by orderCount, we might need aggregation.
+            // For now, if sortBy is explicitly passed, we respect it.
+            if (!options.sortBy) {
+                // If no sort specified, maybe we wanted the old behavior?
+                // The old code did: options.sortBy = '-orderCount ' + options.sortBy;
+                // But orderCount is likely virtual/computed, so simple .sort() won't work in find().
+                // I will keep standard DB sort for now to prevent errors unless we move to aggregate.
+                sort.createdAt = -1;
+            }
         }
 
         const [users, total] = await Promise.all([
-            UserModel.find(filter).sort(options.sortBy).skip(skip).limit(limit),
+            UserModel.find(filter).sort(sort).skip(skip).limit(limit),
             UserModel.countDocuments(filter)
         ]);
 

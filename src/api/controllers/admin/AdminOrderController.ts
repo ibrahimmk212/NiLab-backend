@@ -10,7 +10,43 @@ class AdminOrderController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const orders = await OrderService.getAll(req.query);
+            const {
+                page,
+                limit,
+                search,
+                status,
+                paymentType,
+                vendorId,
+                customerId,
+                riderId,
+                code,
+                reference,
+                startDate,
+                endDate,
+                sortBy,
+                sortOrder,
+                paymentCompleted,
+                orderType
+            } = req.query;
+
+            const orders = await OrderService.getAll({
+                page,
+                limit,
+                search,
+                status,
+                paymentType,
+                vendorId,
+                customerId,
+                riderId,
+                code,
+                reference,
+                startDate,
+                endDate,
+                sortBy,
+                sortOrder,
+                paymentCompleted,
+                orderType
+            });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Orders fetched successfully',

@@ -9,7 +9,33 @@ import WalletService from '../../services/WalletService';
 class AdminRiderController {
     getAll = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const riders = await RiderService.findAllRiders(req.query);
+            const {
+                page,
+                limit,
+                search,
+                status,
+                city,
+                vehicle,
+                available,
+                sortBy,
+                sortOrder,
+                startDate,
+                endDate
+            } = req.query;
+
+            const riders = await RiderService.findAllRiders({
+                page,
+                limit,
+                search,
+                status,
+                city,
+                vehicle,
+                available,
+                sortBy,
+                sortOrder,
+                startDate,
+                endDate
+            });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Riders fetched successfully',
