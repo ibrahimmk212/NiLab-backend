@@ -46,6 +46,7 @@ export interface Vendor extends Document {
     isAvailable: boolean;
     averageReadyTime: number | string;
     status: string;
+    user?: any; // Virtual population
 }
 
 const vendorSchema = new Schema<Vendor>(

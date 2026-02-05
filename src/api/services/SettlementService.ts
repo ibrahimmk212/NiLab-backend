@@ -7,6 +7,7 @@ import { generateReference } from '../../utils/keygen/idGenerator';
 import OrderModel, { Order } from '../models/Order';
 import PlatformRevenueService from './PlatformRevenueService';
 import VendorRepository from '../repositories/VendorRepository';
+import NotificationService from './NotificationService';
 
 class SettlementService {
     private roundToTwo(num: number): number {
@@ -215,6 +216,12 @@ class SettlementService {
                 session
             );
 
+            // 5. Notify User
+            // We need to import NotificationService carefully to avoid circular deps if any.
+            // But Services -> Services is common. NotificationService doesn't import SettlementService.
+            // Check imports at top of file first.
+            await this.notifyUserCancellation(customerId, order.code, reason);
+
             await session.commitTransaction();
         } catch (error) {
             await session.abortTransaction();
@@ -358,6 +365,18 @@ class SettlementService {
             },
             session
         );
+    }
+    async notifyUserCancellation(userId: string, orderCode: string, reason: string) {
+        try {
+            await NotificationService.create({
+                userId,
+                title: 'Order Canceled',
+                message: `Order ${orderCode} was canceled. Refund processed. Reason: ${reason}`,
+                status: 'unread'
+            });
+        } catch (error) {
+            console.error('Failed to notify cancellation:', error);
+        }
     }
 }
 

@@ -1,0 +1,20 @@
+{{> header}}
+
+<div style="padding: 20px; font-family: Arial, sans-serif;">
+    <h2>Payout Request Submitted</h2>
+    <p>Hi {{name}},</p>
+    <p>We have received your payout request for <strong>{{amount}}</strong>.</p>
+    
+    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3>Request Details:</h3>
+        <p><strong>Bank Name:</strong> {{bankName}}</p>
+        <p><strong>Account Number:</strong> {{accountNumber}}</p>
+        <p><strong>Date:</strong> {{requestDate}}</p>
+    </div>
+
+    <p>Your request is being processed. You will be notified once the funds have been transferred.</p>
+    
+    <p>Best regards,<br>The Terminus Team</p>
+</div>
+
+{{> footer}}

@@ -1,9 +1,14 @@
 import OrderModel from '../models/Order';
 import ProductModel from '../models/Product';
+import UserModel from '../models/User';
+
 import RiderModel from '../models/Rider';
 import VendorModel from '../models/Vendor';
 import WalletModel from '../models/Wallet';
 import ReviewModel from '../models/Review';
+
+import ComplaintModel from '../models/Complaint';
+import PayoutModel from '../models/Payout';
 
 class DashboardRepository {
     // Admin dashboard summary
@@ -12,17 +17,42 @@ class DashboardRepository {
         const ordersCount = await OrderModel.countDocuments();
         const vendorsCount = await VendorModel.countDocuments();
         const ridersCount = await RiderModel.countDocuments();
-        const revenue = await OrderModel.aggregate([
+        const customersCount = await UserModel.countDocuments({ role: 'user' });
+        
+        const pendingComplaints = await ComplaintModel.countDocuments({ status: 'pending' });
+        const pendingPayouts = await PayoutModel.countDocuments({ status: 'pending' });
+
+        const revenueStats = await OrderModel.aggregate([
             { $match: { status: 'completed' } },
-            { $group: { _id: null, total: { $sum: '$amount' } } }
+            { 
+                $group: { 
+                    _id: null, 
+                    gmv: { $sum: '$amount' },
+                    revenue: { 
+                        $sum: { 
+                            $add: [
+                                { $multiply: ['$amount', { $divide: ['$commission', 100] }] },
+                                { $ifNull: ['$serviceFee', 0] }
+                            ]
+                        } 
+                    }
+                } 
+            }
         ]);
+
+        const gmv = revenueStats[0]?.gmv || 0;
+        const revenue = revenueStats[0]?.revenue || 0;
 
         return {
             products: productsCount,
             orders: ordersCount,
             vendors: vendorsCount,
             riders: ridersCount,
-            revenue: revenue[0]?.total || 0
+            customers: customersCount,
+            pendingComplaints,
+            pendingPayouts,
+            gmv,
+            revenue
         };
     }
     // Vendor dashboard summary
@@ -265,11 +295,57 @@ class DashboardRepository {
         return { year, monthlySales };
     }
 
+    // Admin Recent Orders
+    async getAdminRecentOrders(limit = 5, startDate?: Date, endDate?: Date) {
+        const query: any = {};
+        if (startDate && endDate) {
+            query.createdAt = { $gte: startDate, $lte: endDate };
+        }
+        return await OrderModel.find(query)
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .populate('user', 'firstName lastName')
+            .populate('vendor', 'name');
+    }
+
+    // Admin Revenue History (Weekly)
+    async getAdminRevenueHistory() {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        return await OrderModel.aggregate([
+            {
+                $match: {
+                    status: 'completed',
+                    createdAt: { $gte: sevenDaysAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: '%Y-%m-%d',
+                            date: '$createdAt'
+                        }
+                    },
+                    revenue: {
+                        $sum: {
+                            $add: [
+                                { $multiply: ['$amount', { $divide: ['$commission', 100] }] },
+                                { $ifNull: ['$serviceFee', 0] }
+                            ]
+                        }
+                    }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+    }
+
     // Get Vendor recent orders
     async getVendorRecentOrders(vendorId: string, limit = 5) {
         return await OrderModel.find({ vendor: vendorId })
             .sort({ createdAt: -1 })
-            .limit(limit);
+            .limit(limit)
+            .populate('user', 'firstName lastName');
     }
 
     // Vendor Customer Reviews
@@ -294,6 +370,92 @@ class DashboardRepository {
             },
             { $sort: { '_id.month': 1 } }
         ]);
+    }
+    // Top Vendors by GMV
+    async getTopVendors(limit = 5, startDate?: Date, endDate?: Date) {
+        const match: any = { status: 'completed' };
+        if (startDate && endDate) {
+            match.createdAt = { $gte: startDate, $lte: endDate };
+        }
+
+        return await OrderModel.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: '$vendor',
+                    totalOrders: { $sum: 1 },
+                    gmv: { $sum: '$amount' },
+                    revenue: {
+                        $sum: {
+                            $add: [
+                                { $multiply: ['$amount', { $divide: ['$commission', 100] }] },
+                                { $ifNull: ['$serviceFee', 0] }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'vendors',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'vendor'
+                }
+            },
+            { $unwind: '$vendor' },
+            {
+                $project: {
+                    name: '$vendor.name',
+                    totalOrders: 1,
+                    gmv: 1,
+                    revenue: 1
+                }
+            },
+            { $sort: { gmv: -1 } },
+            { $limit: limit }
+        ]);
+    }
+
+    // Admin Order Metrics (Pie Chart)
+    async getAdminOrderMetrics() {
+        return await OrderModel.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    active: {
+                        $sum: {
+                            $cond: [{ $in: ['$status', ['pending', 'preparing', 'prepared', 'dispatched']] }, 1, 0]
+                        }
+                    },
+                    completed: {
+                        $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] }
+                    },
+                    cancelled: {
+                        $sum: { $cond: [{ $in: ['$status', ['canceled', 'cancelled']] }, 1, 0] }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    active: 1,
+                    completed: 1,
+                    cancelled: 1
+                }
+            }
+        ]);
+    }
+    // Recent Vendor Applications (Pending Verification)
+    async getVendorApplications(limit = 5, startDate?: Date, endDate?: Date) {
+        const query: any = { identityVerificationStatus: 'pending' };
+        if (startDate && endDate) {
+            query.createdAt = { $gte: startDate, $lte: endDate };
+        }
+        return await VendorModel.find(query)
+            .select('name email phoneNumber identityType identityNumber createdAt')
+            .sort({ createdAt: -1 })
+            .limit(limit);
     }
 }
 

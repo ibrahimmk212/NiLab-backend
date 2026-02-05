@@ -118,3 +118,20 @@ export interface IRiderAccountSuspended {
     riderName: string;
     reason: string; // Reason for the account suspension
 }
+
+export interface IPayoutRequest {
+    name: string;
+    amount: string;
+    accountNumber: string;
+    bankName: string;
+    requestDate: string;
+}
+
+export interface IPayoutCompletion {
+    name: string;
+    amount: string;
+    accountNumber: string;
+    bankName: string;
+    transactionReference: string;
+    completionDate: string;
+}

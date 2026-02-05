@@ -18,6 +18,8 @@ import { calculateStraightDistance } from '../../utils/helpers';
 import DeliveryRepository from '../repositories/DeliveryRepository';
 import DeliveryModel from '../models/Delivery';
 import DispatchRepository from '../repositories/DispatchRepository';
+import NotificationService from './NotificationService';
+import emails from '../libraries/emails';
 
 class OrderService {
     private roundToTwo(num: number): number {
@@ -186,6 +188,46 @@ class OrderService {
                     owner: 'system', // This moves money into the system's "pendingBalance"
                     role: 'system'
                 });
+
+                // Notifications
+                 try {
+                    // Admin
+                    await NotificationService.notifyAdmins(
+                        'New Order Placed',
+                        `Order ${order.code} has been placed via Wallet.`
+                    );
+
+                    // Vendor
+                    if (vendor.userId) { // Assuming Vendor model links to a User via userId
+                         await NotificationService.create({
+                            userId: vendor.userId,
+                            title: 'New Order',
+                            message: `You have a new order: ${order.code}`,
+                            status: 'unread'
+                        });
+                    }
+
+                    // User
+                    await NotificationService.create({
+                        userId: customer._id,
+                        title: 'Order Placed',
+                        message: `Your order ${order.code} has been placed successfully.`,
+                        status: 'unread'
+                    });
+                    
+                    // Vendor Email (Optional if not handled elsewhere)
+                     if (vendor.email) {
+                        emails.vendorOrder(vendor.email, {
+                            vendorName: vendor.name,
+                            orderId: order.code,
+                            orderItems: enrichedProducts,
+                            orderDetailsUrl: `https://vendor.terminus.com/orders/${order._id}` // Example URL
+                        });
+                     }
+
+                } catch (notifErr) {
+                    console.error('Notification Error:', notifErr);
+                }
             }
 
             await session.commitTransaction();
@@ -301,6 +343,36 @@ class OrderService {
             }
 
             await session.commitTransaction();
+
+             // Notifications after commit
+            try {
+                // Determine User ID (order.user is populated?)
+                // OrderRepository.findOrderById populates user and vendor
+                const populatedOrder: any = order;
+
+                if (populatedOrder.user) {
+                    // In-App
+                    await NotificationService.create({
+                        userId: populatedOrder.user._id || populatedOrder.user,
+                        title: 'Order Delivered',
+                        message: `Your order ${populatedOrder.code} has been delivered. Enjoy!`,
+                        status: 'unread'
+                    });
+                }
+
+                if (populatedOrder.vendor) {
+                    await NotificationService.create({
+                         userId: populatedOrder.vendor.userId || populatedOrder.vendor, // Check Vendor model for user link
+                         title: 'Order Delivered',
+                         message: `Order ${populatedOrder.code} has been successfully delivered.`,
+                         status: 'unread'
+                    });
+                }
+
+            } catch (err) {
+                 console.error('Completion Notification Error:', err);
+            }
+
             return updatedOrder;
         } catch (error) {
             await session.abortTransaction();

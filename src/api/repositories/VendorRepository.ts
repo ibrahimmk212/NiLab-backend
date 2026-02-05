@@ -23,6 +23,8 @@ interface FindAllVendorsOptions {
     search?: string;
     sortBy?: string;
     sortOrder?: string;
+    startDate?: string | Date;
+    endDate?: string | Date;
 }
 class VendorRepository {
     // Create a new vendor
@@ -269,6 +271,14 @@ class VendorRepository {
 
         if (options.status) {
             filter.status = options.status;
+        }
+
+        // Date Range Filtering
+        if (options.startDate && options.endDate) {
+            filter.createdAt = {
+                $gte: new Date(options.startDate),
+                $lte: new Date(options.endDate)
+            };
         }
 
         const sort: any = {};

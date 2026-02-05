@@ -18,7 +18,8 @@ export class VendorDashboardRepository {
                         $sum: {
                             $cond: [
                                 { $ne: ['$status', 'canceled'] },
-                                '$amount',
+                                // Amount - (Amount * Commission / 100)
+                                { $subtract: ['$amount', { $multiply: ['$amount', { $divide: ['$commission', 100] }] }] },
                                 0
                             ]
                         }
@@ -72,7 +73,11 @@ export class VendorDashboardRepository {
                             date: '$createdAt'
                         }
                     },
-                    revenue: { $sum: '$amount' }
+                    revenue: { 
+                        $sum: { 
+                            $subtract: ['$amount', { $multiply: ['$amount', { $divide: ['$commission', 100] }] }] 
+                        } 
+                    }
                 }
             },
             { $sort: { _id: 1 } }
@@ -109,5 +114,28 @@ export class VendorDashboardRepository {
             vendor: vendorId,
             isDeleted: { $ne: true }
         });
+    }
+
+    async getVendorComplaintsCount(vendorId: mongoose.Types.ObjectId) {
+        const result = await OrderModel.aggregate([
+            { $match: { vendor: vendorId } },
+            {
+                $lookup: {
+                    from: 'complaints', 
+                    localField: '_id',
+                    foreignField: 'order',
+                    as: 'complaints'
+                }
+            },
+            { $unwind: '$complaints' },
+            {
+                $match: {
+                    'complaints.status': { $in: ['pending', 'in-progress'] }
+                }
+            },
+            { $count: 'activeComplaints' }
+        ]);
+
+        return result[0]?.activeComplaints || 0;
     }
 }

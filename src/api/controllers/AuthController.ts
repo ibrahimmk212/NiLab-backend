@@ -28,7 +28,7 @@ class AuthController {
 
         // Login notification for test
         const notificationDetail: any = {
-            message: 'Welcome to Terminus!',
+            message: 'Welcome to Terminus Drive!',
             title: 'Successfully logged in'
         };
         if (user.role === 'admin') {

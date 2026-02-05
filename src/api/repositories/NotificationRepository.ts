@@ -33,7 +33,10 @@ class NotificationRepository {
         const filter: Record<string, any> = {};
 
         if (options.vendorId) {
-            filter.vendor = options.vendorId;
+            filter.vendorId = options.vendorId;
+        }
+        if (options.riderId) {
+            filter.riderId = options.riderId;
         }
         if (options.userId) {
             filter.userId = options.userId;

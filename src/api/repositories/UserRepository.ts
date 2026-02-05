@@ -53,6 +53,13 @@ class UserRepository {
             ];
         }
 
+        if (options.startDate && options.endDate) {
+            filter.createdAt = {
+                $gte: new Date(options.startDate),
+                $lte: new Date(options.endDate)
+            };
+        }
+
         const sort: any = {};
         if (options.sortBy) {
              sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;

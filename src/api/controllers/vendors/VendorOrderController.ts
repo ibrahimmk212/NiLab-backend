@@ -145,7 +145,7 @@ class VendorOrderController {
         ];
 
         // 1. Initial Checks
-        const order = await OrderService.getOrderById(id);
+        const order: any = await OrderService.getOrderById(id);
 
         if (!order)
             return res
@@ -176,14 +176,88 @@ class VendorOrderController {
         // 3. Handle Side Effects (Notifications/Emails)
         // These happen AFTER the DB transaction is successful
         if (status === 'preparing') {
-            // emails.orderConfirmation(order.user.email, { /* data */ });
-            // await NotificationService.create({ userId: order.user._id, title: 'Order Accepted', ... });
+            try {
+                // Ensure user is populated or fetch if needed
+                if (order.user && order.user.email) {
+                    await emails.orderConfirmation(order.user.email, {
+                        name: order.user.firstName,
+                        orderId: order.code,
+                        orderItems: order.products.map((p: any) => ({
+                            name: p.name,
+                            quantity: p.quantity,
+                            price: p.price
+                        })),
+                        total: order.totalAmount.toString(),
+                        deliveryTime: order.vendor.averageReadyTime || '45 mins'
+                    });
+
+                    await NotificationService.create({
+                        userId: order.user._id,
+                        title: 'Order Accepted',
+                        message: `Your order ${order.code} has been accepted and is being prepared.`,
+                        status: 'unread'
+                    });
+                }
+            } catch (emailError) {
+                console.error('Failed to send order email:', emailError);
+            }
         }
 
         if (status === 'prepared') {
-            // await NotificationService.create({ userId: order.user._id, title: 'Order Ready', ... });
+            try {
+                if (order.user) {
+                    await NotificationService.create({
+                        userId: order.user._id,
+                        title: 'Order Ready',
+                        message: `Your order ${order.code} is ready. We are assigning a rider.`,
+                        status: 'unread'
+                    });
+                    // Email for "Prepared" / "Rider Searching" could be added here if template exists
+                }
+
+                // Notify Riders in the state
+                if (order.vendor && order.vendor.state) {
+                    await NotificationService.notifyRidersInState(
+                        order.vendor.state,
+                        'New Delivery Available',
+                        `New delivery available in ${order.vendor.city || 'your area'}`
+                    );
+                }
+            } catch (err) {
+                console.error('Notification Error:', err);
+            }
         }
 
+        if (status === 'dispatched') {
+             try {
+                if (order.user) {
+                    await NotificationService.create({
+                        userId: order.user._id,
+                        title: 'Order Dispatched',
+                        message: `Your order ${order.code} has been dispatched and is on its way!`,
+                        status: 'unread'
+                    });
+                }
+            } catch (err) {
+                console.error('Notification Error:', err);
+            }
+        }
+
+        if (status === 'dispatched') {
+             try {
+                if (order.user) {
+                    await NotificationService.create({
+                        userId: order.user._id,
+                        title: 'Order Dispatched',
+                        message: `Your order ${order.code} has been dispatched and is on its way!`,
+                        status: 'unread'
+                    });
+                }
+            } catch (err) {
+                console.error('Notification Error:', err);
+            }
+        }
+    
         return res.status(200).json({
             message: 'Order successfully updated',
             success: true,

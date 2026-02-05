@@ -13,6 +13,8 @@ import PayoutRepository from '../repositories/PayoutRepository';
 import WalletModel from '../models/Wallet';
 import TransactionModel from '../models/Transaction';
 import PayoutModel, { Payout } from '../models/Payout';
+import NotificationService from './NotificationService';
+import { sendPushNotification } from '../libraries/firebase';
 
 class PaymentService {
     async handleMonnifyWebhook(payload: any) {
@@ -163,6 +165,18 @@ class PaymentService {
                     session
                 );
 
+                // 4. Notify User
+                try {
+                    await NotificationService.create({
+                        userId: payout.userId,
+                        title: 'Payout Failed',
+                        message: `Your payout of ${payout.amount} failed and has been reversed to your wallet. Reason: ${responseDescription || 'Bank Transfer Failed'}`,
+                        status: 'unread'
+                    });
+                } catch (err) {
+                    console.error('Payout Reversal Notification Error:', err);
+                }
+
                 await session.commitTransaction();
             } catch (error) {
                 await session.abortTransaction();
@@ -265,6 +279,18 @@ class PaymentService {
                     },
                     session
                 );
+
+                // Send Push Notification
+                try {
+                     await NotificationService.create({
+                        userId: userId,
+                        title: 'Wallet Funded',
+                        message: `Your wallet has been successfully funded with ₦${amount}`,
+                        status: 'unread'
+                    });
+                } catch (err) {
+                    console.error('Wallet Notification Error:', err);
+                }
 
                 collectionData.user = userId;
                 return userWallet;

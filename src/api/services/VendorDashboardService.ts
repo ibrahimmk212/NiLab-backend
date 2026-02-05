@@ -17,14 +17,16 @@ export class VendorDashboardService {
             revenueHistory,
             lowStock,
             vendor,
-            productsCount
+            productsCount,
+            activeComplaints
         ]: any = await Promise.all([
             repo.getVendorMetrics(vendorId, todayStart),
             repo.getRecentOrders(vendorId),
             repo.getWeeklyRevenue(vendorId),
             repo.getLowStockItems(vendorId),
             repo.getVendorProfile(vendorId),
-            repo.getVendorTotalProducts(vendorId)
+            repo.getVendorTotalProducts(vendorId),
+            repo.getVendorComplaintsCount(vendorId)
         ]);
 
         // Optional: Map YYYY-MM-DD to "Mon", "Tue" here if frontend needs it simple
@@ -41,6 +43,7 @@ export class VendorDashboardService {
                 productsCount,
                 todaySales: stats[0]?.todayNetSales || 0,
                 activeOrders: stats[0]?.activeOrders || 0,
+                activeComplaints, 
                 rating: vendor?.ratings || 0
             },
             recentOrders,

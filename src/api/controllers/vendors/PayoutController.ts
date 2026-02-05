@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import PayoutService from '../../services/PayoutService';
 import WalletService from '../../services/WalletService';
+import VendorService from '../../services/VendorService';
 import { STATUS } from '../../../constants';
 
 class VendorPayoutController {
@@ -29,15 +30,25 @@ class VendorPayoutController {
 
     requestPayout = asyncHandler(async (req: any, res: Response) => {
         const { id } = req.userdata;
-        const { amount, bankName, accountNumber, accountName, bankCode } =
+        // eslint-disable-next-line prefer-const
+        let { amount, bankName, accountNumber, accountName, bankCode } =
             req.body;
 
-        // if (amount < 1000) {
-        //     return res.status(STATUS.BAD_REQUEST).json({
-        //         success: false,
-        //         message: 'Minimum withdrawal amount is 1,000 NGN'
-        //     });
-        // }
+        if (!accountNumber || !bankCode) {
+            const vendor = await VendorService.getByUserId(id);
+            if (vendor?.bankAccount?.accountNumber) {
+                accountNumber = vendor.bankAccount.accountNumber;
+                bankCode = vendor.bankAccount.bankCode;
+                bankName = vendor.bankAccount.bankName;
+                accountName = vendor.bankAccount.accountName;
+            }
+        }
+
+        if (!accountNumber || !bankCode) {
+            throw new Error(
+                'Bank details are required. Please update your profile or provide them in the request.'
+            );
+        }
 
         const payout = await PayoutService.requestPayout({
             userId: id,

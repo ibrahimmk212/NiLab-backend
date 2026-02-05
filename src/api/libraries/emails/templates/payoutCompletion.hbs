@@ -1,0 +1,21 @@
+{{> header}}
+
+<div style="padding: 20px; font-family: Arial, sans-serif;">
+    <h2>Payout Successful</h2>
+    <p>Hi {{name}},</p>
+    <p>Good news! Your payout of <strong>{{amount}}</strong> has been successfully processed.</p>
+    
+    <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3>Transaction Details:</h3>
+        <p><strong>Bank Name:</strong> {{bankName}}</p>
+        <p><strong>Account Number:</strong> {{accountNumber}}</p>
+        <p><strong>Reference:</strong> {{transactionReference}}</p>
+        <p><strong>Date:</strong> {{completionDate}}</p>
+    </div>
+
+    <p>The funds should reflect in your account shortly.</p>
+    
+    <p>Best regards,<br>The Terminus Team</p>
+</div>
+
+{{> footer}}

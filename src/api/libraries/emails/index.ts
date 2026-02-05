@@ -14,7 +14,9 @@ import {
     IRiderDeliveryRequestAvailable,
     IOrderConfirmation,
     IDeliveryStatusUpdate,
-    IRiderDeliveryPaymentReceipt
+    IRiderDeliveryPaymentReceipt,
+    IPayoutRequest,
+    IPayoutCompletion
 } from './types';
 import { getTemplate } from './templates';
 import { mailTransporter } from '../../../utils/mail/mailer';
@@ -154,6 +156,18 @@ class EmailTemplate {
         const welcomeTemplate = getTemplate('deliveryPayment');
         const htmlContent = welcomeTemplate(data);
         await sendEmail(email, 'Welcome to Terminus', htmlContent);
+    };
+
+    payoutRequest = async (email: string, data: IPayoutRequest) => {
+        const template = getTemplate('payoutRequest');
+        const htmlContent = template(data);
+        await sendEmail(email, 'Terminus: Payout Request Received', htmlContent);
+    };
+
+    payoutCompletion = async (email: string, data: IPayoutCompletion) => {
+        const template = getTemplate('payoutCompletion');
+        const htmlContent = template(data);
+        await sendEmail(email, 'Terminus: Payout Successful', htmlContent);
     };
 }
 

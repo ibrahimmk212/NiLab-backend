@@ -12,6 +12,8 @@ import publicRouter from './public';
 import fileRouter from './file';
 import dashboardRouter from './dashboard';
 import webhookRouter from './webhooks';
+import customerComplaintRoutes from './customers/complaint';
+import adminComplaintRoutes from './admin/complaint';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -31,6 +33,10 @@ router.use(
     auth.checkRoles(ROLE.USER),
     customersRouter
 );
+
+// New complaint routes
+router.use('/customers/complaints', customerComplaintRoutes);
+router.use('/admin/complaints', adminComplaintRoutes);
 
 router.use('/vendor', auth.isVendor, vendorsRouter);
 router.use(
