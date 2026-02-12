@@ -43,6 +43,9 @@ class ProfileController {
 
         if (payload.deviceToken) user.deviceToken = payload.deviceToken;
         await user.save();
+
+        // notification
+        
         res.status(STATUS.OK).send({
             message: 'Logged in successfully',
             success: true,

@@ -20,6 +20,7 @@ import adminWalletRouter from './wallets';
 import adminPayoutRouter from './payout';
 import adminDashboardRouter from './dashboard';
 import adminDeliveryRouter from './delivery';
+import adminBannerRouter from './banners';
 
 const adminsRouter: Router = Router();
 
@@ -41,6 +42,7 @@ adminsRouter.use('/transactions', adminTransactionRouter);
 adminsRouter.use('/promotions', adminPromotionRouter);
 adminsRouter.use('/kyc', adminKycRouter);
 adminsRouter.use('/payouts', adminPayoutRouter);
+adminsRouter.use('/banners', adminBannerRouter);
 
 adminsRouter.post('/login', AdminUserController.login);
 adminsRouter.use('/dashboard', adminDashboardRouter);

@@ -90,6 +90,17 @@ class NotificationRepository {
         });
     }
 
+    async markAllAsRead(userId: string): Promise<any> {
+        return await NotificationModel.updateMany(
+            { userId: userId, status: 'unread' },
+            { $set: { status: 'read' } }
+        );
+    }
+
+    async deleteAll(userId: string): Promise<any> {
+        return await NotificationModel.deleteMany({ userId: userId });
+    }
+
     // Additional notification-specific methods...
 }
 

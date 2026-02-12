@@ -9,7 +9,7 @@ class SocketService {
     init(server: HttpServer): void {
         this.io = new SocketIOServer(server, {
             cors: {
-                origin: '*', // Configure as needed for production
+                origin: true, // Allow any origin and reflect it
                 credentials: true
             }
         });
@@ -22,11 +22,33 @@ class SocketService {
                 
                 // Join a room specific to the user
                 socket.join(`user:${userId}`);
-                Logger.debug(`User ${userId} joined room user:${userId}`);
+                socket.join('global:customers'); // Default join is for customers
+                Logger.debug(`User ${userId} joined room user:${userId} and global:customers`);
                 
                 // Also optionally store in map if needed for direct access, 
                 // but rooms are better for multi-device support
                 this.users.set(userId, socket.id);
+            });
+
+            socket.on('join_vendor', (vendorId: string) => {
+                if (!vendorId) return;
+                socket.join(`vendor:${vendorId}`);
+                socket.join('global:vendors');
+                Logger.debug(`Vendor ${vendorId} joined room vendor:${vendorId} and global:vendors`);
+            });
+
+            socket.on('join_rider', (riderId: string) => {
+                if (!riderId) return;
+                socket.join(`rider:${riderId}`);
+                socket.join('global:riders');
+                Logger.debug(`Rider ${riderId} joined room rider:${riderId} and global:riders`);
+            });
+
+            socket.on('join_admin', (adminId: string) => {
+                if (!adminId) return;
+                socket.join(`admin:${adminId}`); // Admins are also users potentially
+                socket.join('global:admins');
+                Logger.debug(`Admin ${adminId} joined room admin:${adminId} and global:admins`);
             });
             
             // Register legacy event listeners locally or refactor them here if needed
@@ -61,6 +83,14 @@ class SocketService {
         this.io.to(`user:${userId}`).emit(event, data);
     }
 
+    emitToAdmin(adminId: string, event: string, data: any): void {
+        if (!this.io) {
+            Logger.warn('Socket.io not initialized');
+            return;
+        }
+        this.io.to(`admin:${adminId}`).emit(event, data);
+    }
+
     emitToVendor(vendorId: string, event: string, data: any): void {
         if (!this.io) {
             Logger.warn('Socket.io not initialized');
@@ -81,6 +111,11 @@ class SocketService {
     broadcast(event: string, data: any): void {
          if (!this.io) return;
          this.io.emit(event, data);
+    }
+
+    broadcastToRoom(room: string, event: string, data: any): void {
+        if (!this.io) return;
+        this.io.to(room).emit(event, data);
     }
 }
 

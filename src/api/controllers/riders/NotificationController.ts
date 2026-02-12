@@ -111,6 +111,28 @@ class NotificationController {
             });
         }
     );
+
+    markAllAsRead = asyncHandler(
+        async (req: Request | any, res: Response): Promise<void> => {
+            await NotificationService.markAllAsRead(req.rider.id);
+
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'All notifications marked as read'
+            });
+        }
+    );
+
+    deleteAll = asyncHandler(
+        async (req: Request | any, res: Response): Promise<void> => {
+            await NotificationService.deleteAll(req.rider.id);
+
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'All notifications deleted successfully'
+            });
+        }
+    );
 }
 
 export default new NotificationController();

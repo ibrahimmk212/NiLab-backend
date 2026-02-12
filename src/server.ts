@@ -16,9 +16,16 @@ export function createServer(): Application {
     // ---- ALLOW ALL CORS ----
     app.use(
         cors({
-            origin: '*',
+            origin: true,
+            credentials: true,
             methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization']
+            allowedHeaders: [
+                'Content-Type',
+                'Authorization',
+                'X-Requested-With',
+                'Accept',
+                'Origin'
+            ]
         })
     );
     app.options('*', cors()); // preflight

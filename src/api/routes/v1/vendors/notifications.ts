@@ -22,4 +22,14 @@ vendorNotificationRouter.delete(
     NotificationController.delete
 );
 
+vendorNotificationRouter.put(
+    '/read-all/update',
+    NotificationController.markAllAsRead
+);
+
+vendorNotificationRouter.delete(
+    '/data/delete-all',
+    NotificationController.deleteAll
+);
+
 export default vendorNotificationRouter;

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Tester</title>
+    <!-- Load Socket.IO client library -->
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+        #logs { background: #f0f0f0; padding: 10px; height: 300px; overflow-y: scroll; border: 1px solid #999; font-family: monospace; }
+        .event { margin: 5px 0; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .server-msg { color: blue; }
+        .client-msg { color: green; }
+        .error { color: red; }
+        input, button { padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>Socket.IO Notification Tester</h1>
+
+    <div class="box">
+        <h3>1. Connection</h3>
+        <p>Status: <span id="status" style="color:red; font-weight:bold;">Disconnected</span></p>
+        <p>Socket ID: <span id="socketId">-</span></p>
+    </div>
+
+    <div class="box">
+        <h3>2. Join Room (Who are you?)</h3>
+        <input type="text" id="targetId" placeholder="Enter Vendor/Rider/User ID" style="width: 300px;">
+        <br>
+        <button onclick="joinRole('join_vendor')">Join as Vendor</button>
+        <button onclick="joinRole('join_rider')">Join as Rider</button>
+        <button onclick="joinRole('join')">Join as Customer</button>
+    </div>
+
+    <div class="box">
+        <h3>3. Event Logs</h3>
+        <div id="logs"></div>
+        <button onclick="document.getElementById('logs').innerHTML = ''">Clear Logs</button>
+    </div>
+
+    <script>
+        // Connect to your backend
+        const socket = io('http://localhost:5000', {
+            transports: ['websocket', 'polling']
+        });
+
+        const statusSpan = document.getElementById('status');
+        const socketIdSpan = document.getElementById('socketId');
+        const logsDiv = document.getElementById('logs');
+
+        function log(message, type = 'normal') {
+            const div = document.createElement('div');
+            div.className = 'event ' + type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.prepend(div);
+        }
+
+        // --- Connection Events ---
+        socket.on('connect', () => {
+            statusSpan.textContent = "Connected";
+            statusSpan.style.color = "green";
+            socketIdSpan.textContent = socket.id;
+            log('Connected to server', 'server-msg');
+        });
+
+        socket.on('disconnect', () => {
+            statusSpan.textContent = "Disconnected";
+            statusSpan.style.color = "red";
+            log('Disconnected from server', 'error');
+        });
+
+        socket.on('connect_error', (err) => {
+            log('Connection Error: ' + err.message, 'error');
+        });
+
+        // --- Joining Functions ---
+        function joinRole(event) {
+            const id = document.getElementById('targetId').value;
+            if (!id) {
+                alert("Please enter an ID first");
+                return;
+            }
+            log(`Sending '${event}' with ID: ${id}`, 'client-msg');
+            socket.emit(event, id);
+        }
+
+        // --- Listen for Notifications ---
+        socket.on('vendor_notification', (data) => {
+            log('RECEIVED VENDOR NOTIFICATION: ' + JSON.stringify(data, null, 2), 'server-msg');
+            alert("New Vendor Notification!\n" + data.message);
+        });
+
+        socket.on('rider_notification', (data) => {
+            log('RECEIVED RIDER NOTIFICATION: ' + JSON.stringify(data, null, 2), 'server-msg');
+            alert("New Rider Notification!\n" + data.message);
+        });
+
+        socket.on('customer_notification', (data) => {
+            log('RECEIVED CUSTOMER NOTIFICATION: ' + JSON.stringify(data, null, 2), 'server-msg');
+            alert("New Customer Notification!\n" + data.message);
+        });
+
+    </script>
+</body>
+</html>

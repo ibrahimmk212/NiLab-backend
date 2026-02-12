@@ -17,4 +17,19 @@ customerNotificationRouter.put(
     NotificationController.getNotificationById
 );
 
+customerNotificationRouter.put(
+    '/read-all/update',
+    NotificationController.markAllAsRead
+);
+
+customerNotificationRouter.delete(
+    '/data/delete-all',
+    NotificationController.deleteAll
+);
+
+customerNotificationRouter.delete(
+    '/:notificationId',
+    NotificationController.delete
+);
+
 export default customerNotificationRouter;

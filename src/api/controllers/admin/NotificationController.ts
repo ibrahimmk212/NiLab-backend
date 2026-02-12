@@ -107,15 +107,34 @@ class NotificationController {
 
     create = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
-            const created = NotificationService.create(req.body);
-
-            if (!created) {
-                throw Error('failed to create a notification');
+            const { target, title, message, ...rest } = req.body;
+            
+            // Handle Bulk Targets
+            if (target === 'all_vendors') {
+                await NotificationService.notifyAllVendors(title, message);
+            } else if (target === 'all_riders') {
+                await NotificationService.notifyAllRiders(title, message);
+            } else if (target === 'all_customers') {
+                await NotificationService.notifyAllCustomers(title, message);
+            } else if (target === 'all_admins') {
+                await NotificationService.notifyAllAdmins(title, message);
+            } else {
+                // Individual Creation
+                const created = await NotificationService.create(req.body);
+                if (!created) {
+                    throw Error('failed to create a notification');
+                }
+                res.status(STATUS.OK).send({
+                    success: true,
+                    message: 'Notification Created Successfully',
+                    data: created
+                });
+                return;
             }
+
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'Notification Updated Successfully',
-                data: created
+                message: `Bulk Notification triggered for ${target}`
             });
         }
     );
@@ -140,6 +159,28 @@ class NotificationController {
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Notification deleted Successfully'
+            });
+        }
+    );
+
+    markAllAsRead = asyncHandler(
+        async (req: Request | any, res: Response): Promise<void> => {
+            await NotificationService.markAllAsRead(req.user.id);
+
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'All notifications marked as read'
+            });
+        }
+    );
+
+    deleteAll = asyncHandler(
+        async (req: Request | any, res: Response): Promise<void> => {
+            await NotificationService.deleteAll(req.user.id);
+
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'All notifications deleted successfully'
             });
         }
     );

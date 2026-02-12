@@ -26,10 +26,10 @@ class AuthController {
         const payload: LoginType = req.body;
         const { token, user } = await AuthService.login(payload);
 
-        // Login notification for test
         const notificationDetail: any = {
             message: 'Welcome to Terminus Drive!',
-            title: 'Successfully logged in'
+            title: 'Successfully logged in',
+            role: user.role
         };
         if (user.role === 'admin') {
             const admin = await AdminService.getByUserId(user.id);
@@ -43,6 +43,9 @@ class AuthController {
 
             if (payload.deviceToken) user.deviceToken = payload.deviceToken;
             await user.save();
+
+            NotificationService.create(notificationDetail);
+
             return res.status(STATUS.OK).send({
                 message: 'Logged in successfully',
                 success: true,

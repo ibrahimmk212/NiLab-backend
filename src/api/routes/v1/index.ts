@@ -14,6 +14,7 @@ import dashboardRouter from './dashboard';
 import webhookRouter from './webhooks';
 import customerComplaintRoutes from './customers/complaint';
 import adminComplaintRoutes from './admin/complaint';
+import publicBannerRouter from './public/banners';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -51,4 +52,5 @@ router.use('/users', usersRouter);
 router.use('/file', fileRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/webhooks', webhookRouter);
+router.use('/banners', publicBannerRouter);
 export default router;

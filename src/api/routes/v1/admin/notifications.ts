@@ -4,15 +4,33 @@ import NotificationController from '../../../controllers/admin/NotificationContr
 const customerNotificationRouter: Router = Router();
 
 customerNotificationRouter.get('/', NotificationController.getNotifications);
+
+customerNotificationRouter.put(
+    '/read-all',
+    NotificationController.markAllAsRead
+);
+
+customerNotificationRouter.delete(
+    '/delete-all',
+    NotificationController.deleteAll
+);
+
+customerNotificationRouter.post(
+    '/',
+    NotificationController.create
+);
+
 customerNotificationRouter.put(
     '/:notificationId/read',
     NotificationController.markAsRead
 );
+
 customerNotificationRouter.put(
     '/:notificationId/unread',
     NotificationController.markAsUnread
 );
-customerNotificationRouter.put(
+
+customerNotificationRouter.get(
     '/:notificationId',
     NotificationController.getNotificationById
 );
@@ -27,9 +45,9 @@ customerNotificationRouter.put(
     NotificationController.update
 );
 
-customerNotificationRouter.post(
+customerNotificationRouter.put(
     '/:notificationId',
-    NotificationController.create
+    NotificationController.update
 );
 
 export default customerNotificationRouter;
