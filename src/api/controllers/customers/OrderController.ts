@@ -83,7 +83,9 @@ class OrderController {
         const { userdata }: any = req;
         const order = await OrderService.createPackageOrder({
             ...req.body,
-            user: userdata.id
+            user: userdata.id,
+            deliveryLocation: req.body.destination?.coordinates,
+            pickupLocation: req.body.pickup?.coordinates,
         });
         const paymentResult: any = await PaymentService.initiateCheckout(
             order,

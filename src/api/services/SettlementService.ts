@@ -18,7 +18,7 @@ class SettlementService {
         riderUserId: string,
         session?: ClientSession
     ) {
-        if (order.orderType === 'delivery') {
+        if (order.orderType === 'package') {
             return await this.settlePackageOrder(order, riderUserId, session);
         }
         return await this.settleProductOrder(order, riderUserId, session);

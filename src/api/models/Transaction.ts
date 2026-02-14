@@ -12,13 +12,14 @@ export interface Transaction extends Document {
     category:
         | 'COMMISSION'
         | 'ORDER'
-        | 'DELIVERY'
+        | 'PACKAGE'
         | 'ADMIN'
         | 'SETTLEMENT'
         | 'TOPUP'
         | 'REFUND'
         | 'REVERSAL'
-        | 'WITHDRAWAL';
+        | 'WITHDRAWAL'
+        | 'DELIVERY'; // Added DELIVERY
     status: 'pending' | 'successful' | 'failed' | 'reversed';
     remark?: string;
     balanceBefore?: number;
@@ -89,13 +90,14 @@ const transactionSchema = new Schema<Transaction>(
             enum: [
                 'COMMISSION',
                 'ORDER',
-                'DELIVERY',
+                'PACKAGE',
                 'ADMIN',
                 'SETTLEMENT',
                 'TOPUP',
                 'REFUND',
                 'REVERSAL',
-                'WITHDRAWAL'
+                'WITHDRAWAL',
+                'DELIVERY' // Added DELIVERY
             ],
             required: true
         },

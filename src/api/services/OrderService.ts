@@ -256,6 +256,7 @@ class OrderService {
 
             const orderData: Partial<Order> = {
                 ...data,
+                amount: data.amount || 0,
                 code: generateReference('PKG'),
                 paymentReference: generateReference('ORD'),
                 orderType: 'package', // Aligned with your Schema Enum

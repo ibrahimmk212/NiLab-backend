@@ -45,7 +45,7 @@ export interface Order extends Document {
     discountAmount: number;
     discount?: mongoose.Types.ObjectId;
     totalAmount: number;
-    orderType: 'products' | 'delivery';
+    orderType: 'products' | 'package';
     paymentType: 'card' | 'transfer' | 'cash' | 'wallet' | 'online' | 'pay-for-me';
     paymentReference: string; // The NanoID Reference (ORD-XXXXXXXX)
     transactionReference: string; // Reference for the Wallet Transaction
@@ -139,7 +139,7 @@ const orderSchema = new Schema<Order>(
             type: String,
             required: true,
             default: 'products',
-            enum: ['products', 'delivery']
+            enum: ['products', 'package']
         },
         paymentCompleted: { type: Boolean, default: false },
         amount: { type: Number, required: true },
