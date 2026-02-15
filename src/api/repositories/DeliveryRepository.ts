@@ -30,11 +30,11 @@ class DeliveryRepository {
             }
         } else if (options.isActiveSearch) {
             // If we just want everything NOT delivered or canceled
-            filter.status = { $in: ['accepted', 'picked-up', 'in-transit'] };
+            filter.status = { $in: ['accepted', 'picked', 'in-transit'] };
         }
         // Add support for new reference searches
         // if (options.status) filter.status = options.status;
-        if (options.riderId) filter.rider = options.riderId;
+        // if (options.riderId) filter.rider = options.riderId;
         if (options.search) {
             const searchRegex = new RegExp(options.search, 'i');
 
@@ -57,6 +57,8 @@ class DeliveryRepository {
         }
 
         if (options.orderType) filter.orderType = options.orderType;
+
+        console.log('Final Filter for getAll:', JSON.stringify(filter, null, 2));
 
         const [deliveries, total] = await Promise.all([
             DeliveryModel.find(filter)

@@ -133,7 +133,7 @@ class DeliveryService {
     async getActiveDeliveries(riderId: string) {
         return await DeliveryRepository.getAll({
             riderId,
-            status: ['accepted', 'picked-up', 'in-transit'],
+            status: ['accepted', 'picked', 'in-transit'],
             sortBy: 'createdAt',
             sortOrder: 'desc',
             limit: 50,
