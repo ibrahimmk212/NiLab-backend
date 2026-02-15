@@ -51,9 +51,11 @@ class DeliveryRepository {
         if (options.receiverPhone)
             filter['receiverDetails.contactNumber'] = options.receiverPhone;
         if (options.deliveryCode) filter.deliveryCode = options.deliveryCode;
+        let sortOptions: any = { createdAt: -1 };
+
         if (options.sortBy) {
-            filter.sort = {};
-            filter.sort[options.sortBy] = options.sortOrder === 'desc' ? -1 : 1;
+            sortOptions = {};
+            sortOptions[options.sortBy] = options.sortOrder === 'desc' ? -1 : 1;
         }
 
         if (options.orderType) filter.orderType = options.orderType;
@@ -62,6 +64,7 @@ class DeliveryRepository {
 
         const [deliveries, total] = await Promise.all([
             DeliveryModel.find(filter)
+                .sort(sortOptions)
                 .populate({
                     path: 'order rider dispatch',
                     populate: {

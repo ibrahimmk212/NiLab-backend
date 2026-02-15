@@ -135,8 +135,8 @@ class DeliveryService {
             riderId,
             status: ['accepted', 'picked', 'in-transit'],
             sortBy: 'createdAt',
-            sortOrder: 'desc',
-            limit: 50,
+            sortOrder: 'desc', 
+            limit: 1000,
             page: 1
         });
     }
@@ -152,7 +152,7 @@ class DeliveryService {
             if (!delivery) throw new Error('Delivery not found!');
             if (delivery.rider && delivery.status !== 'pending') {
                 throw new Error('This delivery has already been accepted');
-            }
+            }``
 
             // 2. Get Order
             const orderId =
