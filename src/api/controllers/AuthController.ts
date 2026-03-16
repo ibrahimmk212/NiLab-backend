@@ -20,6 +20,7 @@ import CouponService from '../services/CouponService';
 import PromotionService from '../services/PromotionService';
 import dayjs from 'dayjs';
 import NotificationService from '../services/NotificationService';
+import VehicleTypeService from '../services/VehicleTypeService';
 
 class AuthController {
     login = asyncHandler(async (req: Request, res: Response): Promise<any> => {
@@ -132,7 +133,7 @@ class AuthController {
         const payload: SignUpType = req.body;
 
         payload.role = 'user';
-        console.log(payload);
+
         const user = await AuthService.signUp(payload);
 
         if (!user) {
@@ -331,7 +332,13 @@ class AuthController {
             const payload = req.body;
 
             payload.role = 'rider';
-            console.log(payload);
+            // check existing vehicle type
+            const vehicleType = await VehicleTypeService.getVehicleTypeById(
+                payload.vehicleTypeId
+            );
+            if (!vehicleType) {
+                throw Error('Vehicle type not found');
+            }
 
             const user = await AuthService.riderSignUp(payload);
 

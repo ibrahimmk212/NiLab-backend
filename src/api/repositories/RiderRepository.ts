@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import RiderModel, { Rider } from '../models/Rider';
 import users from '../routes/v1/users';
 
@@ -9,13 +10,13 @@ class RiderRepository {
 
     async findRiderById(riderId: string): Promise<Rider | null> {
         return await RiderModel.findById(riderId).populate(
-            'user wallet vehicle'
+            'user wallet vehicleType'
         );
     }
 
     async findByKey(key: string, value: string): Promise<Rider | null> {
         return await RiderModel.findOne({ [key]: value }).populate(
-            'user wallet vehicle'
+            'user wallet vehicleType'
         );
     }
     // find Riders options
@@ -23,7 +24,7 @@ class RiderRepository {
         options: Record<string, unknown>
     ): Promise<Rider[] | null> {
         return await RiderModel.find(options)
-            .populate('userId')
+            .populate('userId wallet vehicleType')
             .sort({ createdAt: -1 });
     }
 
@@ -49,19 +50,23 @@ class RiderRepository {
             filter.city = options.city;
         }
 
-        if (options.vehicle) {
-            filter.vehicle = options.vehicle;
+        if (options.vehicleType && options.vehicleType !== 'all') {
+            filter.vehicleType = new mongoose.Types.ObjectId(
+                options.vehicleType
+            );
         }
 
         if (options.available !== undefined) {
-             filter.available = options.available === true || options.available === 'true';
+            filter.available =
+                options.available === true || options.available === 'true';
         }
 
         const sort: any = {};
         if (options.sortBy) {
-            sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
+            sort[options.sortBy as string] =
+                options.sortOrder === 'asc' ? 1 : -1;
         } else {
-             sort.createdAt = -1;
+            sort.createdAt = -1;
         }
 
         if (options.startDate && options.endDate) {
@@ -76,7 +81,7 @@ class RiderRepository {
                 .sort(sort)
                 .skip(skip)
                 .limit(limit)
-                .populate('user wallet vehicle'),
+                .populate('user wallet vehicleType'),
             RiderModel.countDocuments(filter)
         ]);
 
@@ -98,7 +103,7 @@ class RiderRepository {
     async findCityRiders(city: string): Promise<Rider[]> {
         return await RiderModel.find({
             city: city
-        }).populate('user wallet vehicle');
+        }).populate('user wallet vehicleType');
     }
 
     async updateRider(
@@ -107,7 +112,7 @@ class RiderRepository {
     ): Promise<Rider | null> {
         return await RiderModel.findByIdAndUpdate(riderId, updateData, {
             new: true
-        }).populate('user wallet vehicle');
+        }).populate('user wallet vehicleType');
     }
 
     async deleteRider(riderId: string): Promise<Rider | null> {

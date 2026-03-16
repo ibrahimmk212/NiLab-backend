@@ -267,6 +267,7 @@ class AuthService implements IAuthService {
             ...payload,
             email: savedData.email,
             phoneNumber: payload.phoneNumber,
+            vehicleTypeId: payload.vehicleTypeId,
             password: payload.password
         });
     }

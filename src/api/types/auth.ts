@@ -39,7 +39,7 @@ export type RiderSignUpType = {
     role: string;
     gender?: string;
     city?: string;
-    vehicle?: string;
+    vehicleTypeId?: string;
     token?: string;
 };
 export type ResetPasswordType = {

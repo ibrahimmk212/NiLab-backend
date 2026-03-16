@@ -13,13 +13,14 @@ import SettlementService from './SettlementService';
 import ProductModel from '../models/Product';
 import VendorModel from '../models/Vendor';
 import UserRepository from '../repositories/UserRepository';
-import { Address } from '../models/User';
 import { calculateStraightDistance } from '../../utils/helpers';
 import DeliveryRepository from '../repositories/DeliveryRepository';
 import DeliveryModel from '../models/Delivery';
 import DispatchRepository from '../repositories/DispatchRepository';
 import NotificationService from './NotificationService';
 import emails from '../libraries/emails';
+import VehicleTypeModel from '../models/VehicleType';
+import VehicleTypeService from './VehicleTypeService';
 
 class OrderService {
     private roundToTwo(num: number): number {
@@ -190,7 +191,7 @@ class OrderService {
                 });
 
                 // Notifications
-                 try {
+                try {
                     // Admin
                     await NotificationService.notifyAdmins(
                         'New Order Placed',
@@ -198,8 +199,9 @@ class OrderService {
                     );
 
                     // Vendor
-                    if (vendor.userId) { // Assuming Vendor model links to a User via userId
-                         await NotificationService.create({
+                    if (vendor.userId) {
+                        // Assuming Vendor model links to a User via userId
+                        await NotificationService.create({
                             userId: vendor.userId,
                             title: 'New Order',
                             message: `You have a new order: ${order.code}`,
@@ -214,17 +216,16 @@ class OrderService {
                         message: `Your order ${order.code} has been placed successfully.`,
                         status: 'unread'
                     });
-                    
+
                     // Vendor Email (Optional if not handled elsewhere)
-                     if (vendor.email) {
+                    if (vendor.email) {
                         emails.vendorOrder(vendor.email, {
                             vendorName: vendor.name,
                             orderId: order.code,
                             orderItems: enrichedProducts,
                             orderDetailsUrl: `https://vendor.terminus.com/orders/${order._id}` // Example URL
                         });
-                     }
-
+                    }
                 } catch (notifErr) {
                     console.error('Notification Error:', notifErr);
                 }
@@ -241,6 +242,11 @@ class OrderService {
     }
 
     async createPackageOrder(data: any): Promise<Order> {
+        // check vehicle Type
+        const vehicleType = await VehicleTypeService.getVehicleTypeById(
+            data.vehicleType
+        );
+        if (!vehicleType) throw new Error('Vehicle type not found');
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -248,18 +254,24 @@ class OrderService {
             const config = await ConfigurationService.getConfiguration();
             if (!config) throw new Error('System configuration not found');
 
+            // data.vehicleType should be 'bike', 'car', etc.
             const deliveryFee = await this.calculateDeliveryFee(
-                data.distance ?? 0
+                data.distance ?? 0,
+                data.vehicleType
             );
-            const serviceFee = config.baseServiceFee || 100;
-            const totalAmount = (data.amount || 0) + deliveryFee + serviceFee;
 
-            const orderData: Partial<Order> = {
+            const serviceFee = config.baseServiceFee || 100;
+            const totalAmount = this.roundToTwo(
+                (data.amount || 0) + deliveryFee + serviceFee
+            );
+
+            const orderData: any = {
                 ...data,
                 amount: data.amount || 0,
+                vehicleType: data.vehicleType,
                 code: generateReference('PKG'),
                 paymentReference: generateReference('ORD'),
-                orderType: 'package', // Aligned with your Schema Enum
+                orderType: 'package',
                 deliveryFee,
                 serviceFee,
                 totalAmount,
@@ -345,7 +357,7 @@ class OrderService {
 
             await session.commitTransaction();
 
-             // Notifications after commit
+            // Notifications after commit
             try {
                 // Determine User ID (order.user is populated?)
                 // OrderRepository.findOrderById populates user and vendor
@@ -363,15 +375,16 @@ class OrderService {
 
                 if (populatedOrder.vendor) {
                     await NotificationService.create({
-                         userId: populatedOrder.vendor.userId || populatedOrder.vendor, // Check Vendor model for user link
-                         title: 'Order Delivered',
-                         message: `Order ${populatedOrder.code} has been successfully delivered.`,
-                         status: 'unread'
+                        userId:
+                            populatedOrder.vendor.userId ||
+                            populatedOrder.vendor, // Check Vendor model for user link
+                        title: 'Order Delivered',
+                        message: `Order ${populatedOrder.code} has been successfully delivered.`,
+                        status: 'unread'
                     });
                 }
-
             } catch (err) {
-                 console.error('Completion Notification Error:', err);
+                console.error('Completion Notification Error:', err);
             }
 
             return updatedOrder;
@@ -403,14 +416,32 @@ class OrderService {
     /**
      * Calculation logic using System Config
      */
-    async calculateDeliveryFee(distanceInMeters: number): Promise<number> {
-        const config = await ConfigurationService.getConfiguration();
-        if (!config) return 0;
+    async calculateDeliveryFee(
+        distanceInMeters: number,
+        vehicleTypeId?: string
+    ): Promise<number> {
         const distanceInKm = distanceInMeters / 1000;
-        return Math.max(
-            config.baseDeliveryFee + distanceInKm * config.feePerKm,
-            config.baseDeliveryFee
-        );
+
+        // 1. If it's a product delivery (no vehicle specified), use global config
+        if (!vehicleTypeId) {
+            const config = await ConfigurationService.getConfiguration();
+            return Math.max(
+                this.roundToTwo(
+                    config.baseDeliveryFee + distanceInKm * config.feePerKm
+                ),
+                config.baseDeliveryFee
+            );
+        }
+
+        // 2. For packages, find the specific vehicle "table" entry
+        const vehicle = await VehicleTypeModel.findOne({
+            _id: vehicleTypeId,
+            active: true
+        });
+        if (!vehicle) throw new Error('Invalid vehicle type');
+
+        const calculatedFee = distanceInKm * vehicle.feePerKm;
+        return this.roundToTwo(calculatedFee);
     }
 
     async calculateServiceFee(subTotal: number): Promise<number> {
@@ -477,6 +508,7 @@ class OrderService {
                                 status: 'pending',
                                 deliveryCode: generatedDeliveryCode,
                                 deliveryFee: order.deliveryFee,
+                                vehicleType: order.vehicleType,
                                 rider: null,
                                 pickup: {
                                     ...order.pickup,

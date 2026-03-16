@@ -16,7 +16,8 @@ export interface Rider extends Document {
     email: string;
     city: string;
     state: string;
-    vehicle: string;
+    // vehicle: string;
+    vehicleTypeId: mongoose.Types.ObjectId;
     status: 'unverified' | 'verified' | 'suspended';
     available: boolean;
     gender: string;
@@ -32,7 +33,12 @@ const riderSchema = new Schema<Rider>(
         city: { type: String, required: false },
         state: { type: String, required: true, default: 'Kano' },
         gender: { type: String, required: false },
-        vehicle: { type: String, required: true, default: 'bicycle' },
+        // vehicle: { type: String, required: true, default: 'bicycle' },
+        vehicleTypeId: {
+            type: Schema.Types.ObjectId,
+            ref: 'VehicleType',
+            required: false
+        },
         ratings: { type: Number, default: 0 },
         status: { type: String, required: true, default: 'verified' },
         available: {
@@ -70,6 +76,13 @@ riderSchema.virtual('user', {
     ref: 'User',
     localField: 'userId', // ✅ Vendor.userId
     foreignField: '_id', // ✅ User._id
+    justOne: true
+});
+
+riderSchema.virtual('vehicleType', {
+    ref: 'VehicleType',
+    localField: 'vehicleTypeId',
+    foreignField: '_id',
     justOne: true
 });
 

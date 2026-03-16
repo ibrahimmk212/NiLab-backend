@@ -21,6 +21,7 @@ import adminPayoutRouter from './payout';
 import adminDashboardRouter from './dashboard';
 import adminDeliveryRouter from './delivery';
 import adminBannerRouter from './banners';
+import adminVehicleTypeRouter from './vehicleType';
 
 const adminsRouter: Router = Router();
 
@@ -43,6 +44,7 @@ adminsRouter.use('/promotions', adminPromotionRouter);
 adminsRouter.use('/kyc', adminKycRouter);
 adminsRouter.use('/payouts', adminPayoutRouter);
 adminsRouter.use('/banners', adminBannerRouter);
+adminsRouter.use('/vehicle-types', adminVehicleTypeRouter);
 
 adminsRouter.post('/login', AdminUserController.login);
 adminsRouter.use('/dashboard', adminDashboardRouter);

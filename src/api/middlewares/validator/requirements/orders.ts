@@ -32,7 +32,8 @@ const orderRequirement = {
         body('pickup').isObject(),
         body('destination').isObject(),
         body('senderDetails').isObject(),
-        body('receiverDetails').isObject()
+        body('receiverDetails').isObject(),
+        body('vehicleType').isString()
         // body('pickupTime').isString()
     ],
     getOrderDetail: [

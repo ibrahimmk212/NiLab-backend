@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Validate, Requirements } from '../../../middlewares/validator';
 import orderController from '../../../controllers/customers/OrderController';
+import VehicleTypeController from '../../../controllers/customers/VehicleTypeController';
 
 const customerOrderRouter: Router = Router();
 
@@ -8,13 +9,21 @@ customerOrderRouter.route('/').get(orderController.getAllOrder).post(
     // Validate(Requirements.createOrder),
     orderController.createOrder
 );
+customerOrderRouter.get(
+    '/delivery-vehicle-types',
+    VehicleTypeController.getDeliveryVehicleTypes
+);
+customerOrderRouter.get(
+    '/delivery-vehicle-types/:vehicleTypeId',
+    VehicleTypeController.getVehicleTypeById
+);
 
 customerOrderRouter
     .route('/package')
     // .get(orderController.getOrders)
     .post(
         Validate(Requirements.createPackageOrder),
-        orderController.createDeliveryOrder
+        orderController.createPackageDeliveryOrder
     );
 customerOrderRouter.post('/upload-file', orderController.upload);
 

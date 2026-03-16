@@ -56,6 +56,7 @@ export interface Order extends Document {
     paymentCompleted: boolean;
     vat: number;
     deliveryAccepted: boolean;
+    vehicleType?: mongoose.Types.ObjectId;
     deliveryAddress: string;
     deliveryLocation: number[];
     pickup: OrderAddress;
@@ -196,6 +197,7 @@ const orderSchema = new Schema<Order>(
         rated: { type: Boolean, default: false },
         delivery: { type: Boolean, default: false },
         deliveryAccepted: { type: Boolean, default: false },
+        vehicleType: { type: Schema.Types.ObjectId, ref: 'VehicleType' },
         deliveryAddress: { type: String },
         deliveryLocation: {
             type: [Number],

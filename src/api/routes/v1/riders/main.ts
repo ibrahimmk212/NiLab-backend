@@ -50,9 +50,10 @@ mainRiderRouter
 mainRiderRouter
     .route('/availability')
     .get(auth.isRider, ProfileController.updateAvailability);
-// mainRiderRouter
-// .route('/withdraw')
-// .post(auth.isRider, ProfileController.withdraw);
+mainRiderRouter
+    .route('/update-vehicle-type')
+    .put(auth.isRider, ProfileController.updateVehicleType);
+
 mainRiderRouter
     .route('/bank-details')
     .put(auth.isRider, ProfileController.updateBankDetails);

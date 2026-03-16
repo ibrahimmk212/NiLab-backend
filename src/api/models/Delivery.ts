@@ -20,6 +20,7 @@ export interface Delivery extends Document {
     order: mongoose.Types.ObjectId;
     rider?: mongoose.Types.ObjectId | null;
     dispatch: mongoose.Types.ObjectId | null;
+    vehicleType?: mongoose.Types.ObjectId;
     deliveryCode: string;
     deliveryFee: number;
     status:
@@ -55,6 +56,7 @@ const deliverySchema = new Schema(
             ref: 'Dispatch',
             required: false
         },
+        vehicleType: { type: Schema.Types.ObjectId, ref: 'VehicleType' },
         status: { type: String, required: true, default: 'pending' },
         deliveryCode: { type: String, required: true },
         deliveryFee: { type: Number, required: true },

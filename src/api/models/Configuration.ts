@@ -33,11 +33,17 @@ const CitySchema = new Schema({
     }
 });
 
+export interface IVehicleRate {
+    vehicleType: string; // 'bike', 'car', 'van'
+    feePerKm: number;    // Specific rate for this vehicle
+}
+
 export interface Configuration extends Document {
     // Delivery & Logistics
     nearbyDistance: number; // In meters (e.g., 5000 for 5km)
     baseDeliveryFee: number; // Flat starting fee
     feePerKm: number; // NEW: Variable fee for distance
+    vehicleRates: IVehicleRate[];
 
     // Commissions
     vendorCommission: number; // Platform cut from vendor sales (%)
@@ -45,6 +51,7 @@ export interface Configuration extends Document {
     packageCommission: number; // Flat or % for parcel services
 
     baseServiceFee: number;
+    
 
     // Tax & Discounts
     vatRate: number;
@@ -61,6 +68,12 @@ const configurationSchema = new Schema<Configuration>(
         baseDeliveryFee: { type: Number, default: 200 },
         baseServiceFee: { type: Number, default: 200 },
         feePerKm: { type: Number, default: 50 },
+        vehicleRates: [
+            {
+                vehicleType: { type: String, required: true },
+                feePerKm: { type: Number, required: true }
+            }
+        ],
 
         vendorCommission: { type: Number, default: 15 },
         riderCommission: { type: Number, default: 20 },

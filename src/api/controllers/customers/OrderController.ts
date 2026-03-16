@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // controllers/customers/OrderController.ts
 import { Request, Response } from 'express';
 import { STATUS } from '../../../constants';
@@ -6,6 +7,7 @@ import OrderService from '../../services/OrderService';
 import PaymentService from '../../services/PaymentService';
 import UserService from '../../services/UserService';
 import { sendPushNotification } from '../../libraries/firebase';
+import { calculateStraightDistance } from '../../../utils/helpers';
 
 class OrderController {
     getAllOrder = asyncHandler(async (req: any, res: Response) => {
@@ -52,6 +54,7 @@ class OrderController {
             ...order
         });
     });
+
     // Standard Product Order
     createOrder = asyncHandler(async (req: Request, res: Response) => {
         const { userdata }: any = req;
@@ -79,25 +82,44 @@ class OrderController {
     });
 
     // Parcel/Package Delivery
-    createDeliveryOrder = asyncHandler(async (req: Request, res: Response) => {
-        const { userdata }: any = req;
-        const order = await OrderService.createPackageOrder({
-            ...req.body,
-            user: userdata.id,
-            deliveryLocation: req.body.destination?.coordinates,
-            pickupLocation: req.body.pickup?.coordinates,
-        });
-        const paymentResult: any = await PaymentService.initiateCheckout(
-            order,
-            userdata
-        );
+    createPackageDeliveryOrder = asyncHandler(
+        async (req: Request, res: Response) => {
+            const { userdata }: any = req;
 
-        res.status(STATUS.CREATED).json({
-            success: true,
-            data: order,
-            payment: paymentResult.payment
-        });
-    });
+            // Compute straight-line distance explicitly here rather than depending on payload distance
+            let computedDistance = 0;
+            if (
+                req.body.pickup?.coordinates &&
+                req.body.destination?.coordinates
+            ) {
+                computedDistance = calculateStraightDistance(
+                    req.body.pickup.coordinates[1],
+                    req.body.pickup.coordinates[0],
+                    req.body.destination.coordinates[1],
+                    req.body.destination.coordinates[0]
+                );
+            }
+
+            const order = await OrderService.createPackageOrder({
+                ...req.body,
+                distance: computedDistance,
+                user: userdata.id,
+                deliveryLocation: req.body.destination?.coordinates,
+                pickupLocation: req.body.pickup?.coordinates,
+                vehicleType: req.body.vehicleType
+            });
+            const paymentResult: any = await PaymentService.initiateCheckout(
+                order,
+                userdata
+            );
+
+            res.status(STATUS.CREATED).json({
+                success: true,
+                data: order,
+                payment: paymentResult.payment
+            });
+        }
+    );
 
     // Fetch Details (for tracking)
     getOrderDetails = asyncHandler(async (req: Request, res: Response) => {
@@ -184,7 +206,7 @@ class OrderController {
 
         // If result has 'valid' property, it means it's an online payment initiation
         if (result.valid && result.payment) {
-             return res.status(STATUS.OK).json({
+            return res.status(STATUS.OK).json({
                 success: true,
                 message: 'Payment link generated',
                 data: result
@@ -198,7 +220,7 @@ class OrderController {
         // updatedOrder.user is populated (based on OrderRepository.updateOrder)
         // We can cast it to 'any' to access fields safely at runtime
         const requesterDetails = updatedOrder.user as any;
-        const payer = userdata; 
+        const payer = userdata;
 
         // 1. Notify Requester
         if (requesterDetails?.deviceToken) {
@@ -214,7 +236,9 @@ class OrderController {
             await sendPushNotification(
                 payer.deviceToken,
                 'Payment Successful',
-                `You have successfully paid for ${requesterDetails?.firstName || 'User'}'s order.`
+                `You have successfully paid for ${
+                    requesterDetails?.firstName || 'User'
+                }'s order.`
             );
         }
 

@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
-import UserService from '../../services/UserService';
 import AuthService from '../../services/AuthService';
 import RiderService from '../../../api/services/RiderService';
 import { LoginType, RiderSignUpType, VerifyOTP } from '../../types/auth';
@@ -9,16 +8,16 @@ import jwt from '../../../utils/jwt';
 import WalletService from '../../services/WalletService';
 import emails from '../../libraries/emails';
 import ConfigurationService from '../../services/ConfigurationService';
+import VehicleTypeService from '../../../api/services/VehicleTypeService';
 
 class ProfileController {
     currentUser = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            // const user = await UserService.findUserById(req.userdata.id);
             const { userdata, rider }: any = req;
 
             const wallet = await WalletService.getMyWallet({
                 role: 'rider',
-                owner: rider.id
+                owner: userdata.id
             });
 
             const systemConfig = await ConfigurationService.getConfiguration();
@@ -45,7 +44,7 @@ class ProfileController {
         await user.save();
 
         // notification
-        
+
         res.status(STATUS.OK).send({
             message: 'Logged in successfully',
             success: true,
@@ -106,7 +105,7 @@ class ProfileController {
                 phone: user.phoneNumber,
                 email: user.email,
                 city: payload.city,
-                vehicle: payload.vehicle
+                vehicleTypeId: payload.vehicleTypeId
             });
 
             if (!rider) {
@@ -201,6 +200,29 @@ class ProfileController {
                 success: true,
                 data: user,
                 message: 'Password updated successfully'
+            });
+        }
+    );
+
+    updateVehicleType = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const { userdata, rider }: any = req;
+
+            const { vehicleTypeId } = req.body;
+
+            const vehicleType = await VehicleTypeService.getVehicleTypeById(
+                vehicleTypeId
+            );
+            if (!vehicleType) {
+                throw Error('Vehicle type not found');
+            }
+            rider.vehicleTypeId = vehicleTypeId;
+            await rider.save();
+
+            res.status(STATUS.OK).send({
+                success: true,
+                data: rider,
+                message: 'Vehicle type updated successfully'
             });
         }
     );
