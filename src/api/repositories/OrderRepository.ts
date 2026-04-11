@@ -22,7 +22,7 @@ class OrderRepository {
 
     async findOrderById(orderId: string): Promise<Order | null> {
         return await OrderModel.findById(orderId).populate(
-            'user vendor rider products'
+            'user vendor rider products deliveryDetails'
         );
     }
 
@@ -31,7 +31,7 @@ class OrderRepository {
      */
     async findOrderByCode(code: string): Promise<Order | null> {
         return await OrderModel.findOne({ code }).populate(
-            'user vendor rider products'
+            'user vendor rider products deliveryDetails'
         );
     }
 
@@ -43,7 +43,7 @@ class OrderRepository {
         session?: ClientSession
     ): Promise<Order | null> {
         return await OrderModel.findOne({ paymentReference })
-            .populate('user vendor rider products')
+            .populate('user vendor rider products deliveryDetails')
             .session(session || null); // Ensure session is explicitly handled
     }
 
@@ -61,7 +61,7 @@ class OrderRepository {
         return await OrderModel.findByIdAndUpdate(orderId, updateData, {
             new: true,
             session
-        }).populate('user vendor rider products');
+        }).populate('user vendor rider products deliveryDetails');
     }
 
     /**
@@ -174,7 +174,7 @@ class OrderRepository {
 
         const [orders, total] = await Promise.all([
             OrderModel.find(filter)
-                .populate('user vendor rider products')
+                .populate('user vendor rider products deliveryDetails')
                 .sort(sort)
                 .skip(skip)
                 .limit(limit),

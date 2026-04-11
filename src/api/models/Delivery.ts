@@ -43,7 +43,9 @@ export interface Delivery extends Document {
     specialInstructions: string; // Any special delivery instructions
     estimatedDeliveryTime: number; // Estimated delivery time
     actualDeliveryTime?: number; // Actual delivery time, if available
-    // Additional fields...
+    deliveryImage?: string;
+    customerSignature?: string;
+    deliveryNotes?: string;
 }
 
 const deliverySchema = new Schema(
@@ -90,8 +92,10 @@ const deliverySchema = new Schema(
         },
         specialInstructions: { type: String },
         estimatedDeliveryTime: { type: Date, required: false },
-        actualDeliveryTime: { type: Date }
-        // Additional fields...
+        actualDeliveryTime: { type: Date },
+        deliveryImage: { type: String },
+        customerSignature: { type: String },
+        deliveryNotes: { type: String }
     },
     { timestamps: true }
 );

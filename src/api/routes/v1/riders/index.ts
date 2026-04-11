@@ -13,9 +13,11 @@ import auth from '../../../middlewares/auth';
 import riderWalletRouter from './wallet';
 import riderKycRouter from './kyc';
 import riderPayoutRouter from './payout';
+import locationRouter from './locations';
 
 ridersRouter.use('/', mainRiderRouter);
 ridersRouter.use('/deliveries', auth.isRider, riderDeliveryRouter);
+ridersRouter.use('/locations', auth.isRider, locationRouter);
 // ridersRouter.use('/dispatches', riderOrderRouter);
 ridersRouter.use('/reviews', auth.isRider, riderReviewRouter);
 ridersRouter.use('/notifications', auth.isRider, riderNotificationRouter);

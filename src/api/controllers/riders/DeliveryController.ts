@@ -236,7 +236,7 @@ class DeliveryController {
 
     confirmDelivery = asyncHandler(async (req: Request, res: Response) => {
         const { deliveryId } = req.params;
-        const { deliveryCode } = req.body;
+        const { deliveryCode, deliveryImage, customerSignature, deliveryNotes } = req.body;
         const { rider, userdata }: any = req;
 
         const delivery = await DeliveryService.getDeliveryById(deliveryId);
@@ -267,6 +267,11 @@ class DeliveryController {
         // 3. Update Statuses
         delivery.status = 'delivered';
         delivery.actualDeliveryTime = currentTimestamp();
+        
+        // Add POD metadata if provided
+        if (deliveryImage) (delivery as any).deliveryImage = deliveryImage;
+        if (customerSignature) (delivery as any).customerSignature = customerSignature;
+        if (deliveryNotes) (delivery as any).deliveryNotes = deliveryNotes;
 
         order.status = 'delivered';
         order.deliveredAt = new Date();

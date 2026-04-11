@@ -34,6 +34,9 @@ export interface Order extends Document {
     package: {
         description: string;
         image: string;
+        weight?: number;
+        size?: 'small' | 'medium' | 'large' | 'extra-large';
+        isFragile?: boolean;
     };
     completedBy?: 'user' | 'vendor' | 'rider';
     amount: number;
@@ -104,7 +107,13 @@ const orderSchema = new Schema<Order>(
         discount: { type: Schema.Types.ObjectId, ref: 'Discount' },
         package: {
             description: { type: String },
-            image: { type: String }
+            image: { type: String },
+            weight: { type: Number },
+            size: {
+                type: String,
+                enum: ['small', 'medium', 'large', 'extra-large']
+            },
+            isFragile: { type: Boolean, default: false }
         },
         products: [
             {
@@ -337,6 +346,14 @@ orderSchema.statics.getAverageReadyTime = async function (vendorId: any) {
         });
     }
 };
+
+// reverse populate delivery details
+orderSchema.virtual('deliveryDetails', {
+    ref: 'Delivery',
+    localField: '_id',
+    foreignField: 'order',
+    justOne: true
+});
 
 const OrderModel = mongoose.model<Order, IOrderModel>('Order', orderSchema);
 
