@@ -4,6 +4,25 @@ import RiderModel from '../models/Rider';
 import OrderModel from '../models/Order';
 import DispatchModel from '../models/Dispatch';
 
+export const FULL_DELIVERY_POPULATE = [
+    {
+        path: 'order',
+        populate: [
+            { path: 'vendor' },
+            {
+                path: 'user',
+                select: 'firstName lastName email phoneNumber profilePicture'
+            },
+            { path: 'products.product' }
+        ]
+    },
+    {
+        path: 'rider',
+        populate: { path: 'userId', select: 'firstName lastName phone' }
+    },
+    { path: 'dispatch' }
+];
+
 class DeliveryRepository {
     async createDelivery(
         deliveryData: Partial<Delivery>,
@@ -60,17 +79,15 @@ class DeliveryRepository {
 
         if (options.orderType) filter.orderType = options.orderType;
 
-        console.log('Final Filter for getAll:', JSON.stringify(filter, null, 2));
+        console.log(
+            'Final Filter for getAll:',
+            JSON.stringify(filter, null, 2)
+        );
 
         const [deliveries, total] = await Promise.all([
             DeliveryModel.find(filter)
                 .sort(sortOptions)
-                .populate({
-                    path: 'order rider dispatch',
-                    populate: {
-                        path: 'vendor'
-                    }
-                })
+                .populate(FULL_DELIVERY_POPULATE)
                 .skip(skip)
                 .limit(limit),
             DeliveryModel.countDocuments(filter)
@@ -98,20 +115,7 @@ class DeliveryRepository {
         return await DeliveryModel.findByIdAndUpdate(deliveryId, updateData, {
             new: true,
             session
-        }).populate([
-            {
-                path: 'order',
-                populate: { path: 'vendor' }
-            },
-            {
-                path: 'rider',
-                // If Rider profile links to a User, populate that too
-                populate: { path: 'userId', select: 'firstName lastName phone' }
-            },
-            {
-                path: 'dispatch'
-            }
-        ]);
+        }).populate(FULL_DELIVERY_POPULATE);
     }
 
     async getAvailableDeliveries(state: string): Promise<Delivery[]> {
@@ -119,31 +123,20 @@ class DeliveryRepository {
             rider: null,
             'pickup.state': state
         })
-            .populate({
-                path: 'order rider dispatch',
-                populate: {
-                    path: 'vendor'
-                }
-            })
+            .populate(FULL_DELIVERY_POPULATE)
             .sort({ createdAt: -1 }); // Most recent first
     }
 
     async getDeliveryById(deliveryId: string): Promise<Delivery | null> {
-        return await DeliveryModel.findById(deliveryId).populate({
-            path: 'order rider dispatch',
-            populate: {
-                path: 'vendor'
-            }
-        });
+        return await DeliveryModel.findById(deliveryId).populate(
+            FULL_DELIVERY_POPULATE
+        );
     }
 
     async getDeliveryByOrder(orderId: string): Promise<Delivery | null> {
-        return await DeliveryModel.findOne({ orderId: orderId }).populate({
-            path: 'order rider dispatch',
-            populate: {
-                path: 'vendor'
-            }
-        });
+        return await DeliveryModel.findOne({ orderId: orderId }).populate(
+            FULL_DELIVERY_POPULATE
+        );
     }
     async getDeliveriesForRider(
         rider: string,
@@ -155,12 +148,7 @@ class DeliveryRepository {
         const endIndex = page * limit;
 
         const deliveries = await DeliveryModel.find({ rider })
-            .populate({
-                path: 'order rider dispatch',
-                populate: {
-                    path: 'vendor'
-                }
-            })
+            .populate(FULL_DELIVERY_POPULATE)
             .sort({ createdAt: -1 }) // Most recent first
             .skip(startIndex)
             .limit(limit);
@@ -189,12 +177,7 @@ class DeliveryRepository {
             rider,
             status: { $ne: 'delivered' }
         })
-            .populate({
-                path: 'order rider dispatch',
-                populate: {
-                    path: 'vendor'
-                }
-            })
+            .populate(FULL_DELIVERY_POPULATE)
             .sort({ createdAt: -1 }); // Most recent first
     }
 
