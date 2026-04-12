@@ -133,7 +133,7 @@ class DeliveryController {
         const deliveries = await DeliveryService.getActiveDeliveries(rider?.id);
         res.status(STATUS.OK).json({
             success: true,
-            data: deliveries
+            ...deliveries
         });
     });
 

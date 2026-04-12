@@ -14,7 +14,8 @@
         "lint": "eslint . --ext .ts",
         "prettier": "prettier --config .prettierrc --write .",
         "test": "jest",
-        "test:noCoverage": "jest --collectCoverage=false"
+        "test:noCoverage": "jest --collectCoverage=false",
+        "seed:dev": "ts-node src/scripts/seedDevData.ts"
     },
     "lint-staged": {
         "*.+(ts)": "eslint --fix",
