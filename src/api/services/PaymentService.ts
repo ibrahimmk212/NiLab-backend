@@ -203,7 +203,10 @@ class PaymentService {
         if (order && !order.paymentCompleted) {
             const updatedOrder = await OrderRepository.updateOrder(
                 order._id,
-                { paymentCompleted: true },
+                { 
+                    paymentCompleted: true,
+                    transactionReference: payload.transactionReference
+                },
                 session
             );
 
