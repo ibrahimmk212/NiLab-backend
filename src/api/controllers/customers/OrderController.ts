@@ -81,6 +81,20 @@ class OrderController {
         });
     });
 
+    previewOrder = asyncHandler(async (req: Request, res: Response) => {
+        const { userdata }: any = req;
+        const preview = await OrderService.previewOrder({
+            ...req.body,
+            user: userdata.id
+        });
+
+        res.status(STATUS.OK).json({
+            success: true,
+            message: 'Order preview successful',
+            data: preview
+        });
+    });
+
     // Parcel/Package Delivery
     createPackageDeliveryOrder = asyncHandler(
         async (req: Request, res: Response) => {

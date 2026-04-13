@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import mongoose from 'mongoose';
+console.log('OrderService module loading...');
+
 import OrderRepository from '../repositories/OrderRepository';
 import { Order } from '../models/Order';
 import ConfigurationService from './ConfigurationService';
@@ -35,116 +36,31 @@ class OrderService {
             const config = await ConfigurationService.getConfiguration();
             if (!config) throw new Error('System configuration not found');
 
-            // 1. Get Vendor (Pickup) and Customer (Destination)
-            const vendor = await VendorModel.findById(data.vendor).session(
-                session
-            );
-            if (!vendor) throw new Error('Vendor not found');
-            console.log('vendor: ', vendor);
-
-            const customer = await UserRepository.findUserById(data.user);
-            if (!customer) throw new Error('Customer not found');
-
-            const deliveryAddress = customer.addresses.find(
-                (addr: any) => addr._id.toString() === data.addressId
-            );
-
-            if (!deliveryAddress) throw new Error('Delivery address not found');
-            console.log('deliveryAddress: ', deliveryAddress);
-
-            // 2. ENRICH PRODUCTS & CALCULATE SUBTOTAL
-            // We fetch the prices from the DB so the user can't fake them
-            const productIds = data.products.map((p: any) => p.product);
-            const dbProducts = await ProductModel.find({
-                _id: { $in: productIds }
-            }).session(session);
-
-            let subtotal = 0;
-            const enrichedProducts = data.products.map((p: any) => {
-                const dbP = dbProducts.find(
-                    (item) => item._id.toString() === p.product
-                );
-                if (!dbP) throw new Error(`Product not found: ${p.product}`);
-
-                const lineTotal = dbP.price * p.quantity;
-                subtotal += lineTotal;
-
-                return {
-                    product: dbP._id,
-                    name: dbP.name,
-                    category: dbP.category,
-                    price: dbP.price,
-                    quantity: p.quantity
-                };
-            });
-
-            // 3. LOGISTICS (Hybrid Math)
-            const straightKm = calculateStraightDistance(
-                vendor.location.coordinates[1],
-                vendor.location.coordinates[0],
-                deliveryAddress.coordinates[1],
-                deliveryAddress.coordinates[0]
-            );
-
-            const estimatedRoadKm = straightKm; // Road Factor
-            const deliveryBaseFee = config.baseDeliveryFee;
-            const feePerKm = config.feePerKm;
-
-            let deliveryFee = 0;
-            // if (estimatedRoadKm < 1) {
-            //     deliveryFee = deliveryBaseFee;
-            // } else {
-            deliveryFee = feePerKm * estimatedRoadKm;
-            // }
-
-            console.log(
-                'Calculated Charges: ',
-                (feePerKm * estimatedRoadKm).toFixed(2) + subtotal.toFixed(2)
-            );
-
-            console.log('distance in KM: ', straightKm);
-            console.log('estimated distance in KM: ', estimatedRoadKm);
-
-            // 4. CALCULATE PLATFORM FEES (Rounded)
-            // const serviceFee = this.roundToTwo(
-            //     (subtotal * config.vendorCommission) / 100
-            // );
-            const vat = 0; //this.roundToTwo((subtotal + deliveryFee) * (config.vatRate / 100 || 0));
-
-            // Calculate total and round one final time to be safe
-            const totalAmount = this.roundToTwo(
-                subtotal + deliveryFee
-                //  + serviceFee
-                //  + vat
-            );
+            const pricing = await this.calculateProductOrderDetails({
+                vendorId: data.vendor,
+                userId: data.user,
+                addressId: data.addressId,
+                products: data.products
+            }, session);
 
             // 5. ASSEMBLE PAYLOAD
             const orderPayload: any = {
                 ...data,
                 code: generateShortCode(),
                 paymentReference: generateReference('ORD'),
-                vendor: vendor._id,
-                user: customer._id,
-                products: enrichedProducts,
-                pickup: {
-                    coordinates: vendor.location.coordinates,
-                    street: vendor.address
-                },
-                pickupLocation: vendor.location.coordinates,
-                deliveryLocation: vendor.location.coordinates,
-                destination: {
-                    coordinates: deliveryAddress.coordinates,
-                    street: deliveryAddress.street,
-                    city: deliveryAddress.city,
-                    label: deliveryAddress.label
-                },
-
-                deliveryFee: this.roundToTwo(deliveryFee), // Also round delivery fee
-                // serviceFee,
-                vat,
-                amount: subtotal,
-                totalAmount,
-                commission: config.vendorCommission,
+                vendor: pricing.vendor._id,
+                user: pricing.customer._id,
+                products: pricing.enrichedProducts,
+                pickup: pricing.pickup,
+                pickupLocation: pricing.pickup.coordinates,
+                deliveryLocation: pricing.pickup.coordinates,
+                destination: pricing.destination,
+                deliveryFee: pricing.deliveryFee,
+                vat: pricing.vat,
+                amount: pricing.subtotal,
+                totalAmount: pricing.totalAmount,
+                distance: pricing.distance,
+                commission: pricing.commission,
                 orderType: 'products',
                 status: 'pending'
             };
@@ -168,7 +84,7 @@ class OrderService {
             if (data.paymentType === 'wallet') {
                 // 1. Check & Debit the user's available balance
                 const debitResult = await WalletService.initDebitAccount({
-                    amount: totalAmount,
+                    amount: pricing.totalAmount,
                     owner: data.user,
                     role: 'user'
                 });
@@ -185,7 +101,7 @@ class OrderService {
 
                 // 3. Move funds to System Escrow (Pending)
                 await WalletService.initCreditAccount({
-                    amount: totalAmount,
+                    amount: pricing.totalAmount,
                     owner: 'system', // This moves money into the system's "pendingBalance"
                     role: 'system'
                 });
@@ -199,10 +115,10 @@ class OrderService {
                     );
 
                     // Vendor
-                    if (vendor.userId) {
+                    if (pricing.vendor.userId) {
                         // Assuming Vendor model links to a User via userId
                         await NotificationService.create({
-                            userId: vendor.userId,
+                            userId: pricing.vendor.userId,
                             title: 'New Order',
                             message: `You have a new order: ${order.code}`,
                             status: 'unread'
@@ -211,18 +127,18 @@ class OrderService {
 
                     // User
                     await NotificationService.create({
-                        userId: customer._id,
+                        userId: pricing.customer._id,
                         title: 'Order Placed',
                         message: `Your order ${order.code} has been placed successfully.`,
                         status: 'unread'
                     });
 
                     // Vendor Email (Optional if not handled elsewhere)
-                    if (vendor.email) {
-                        emails.vendorOrder(vendor.email, {
-                            vendorName: vendor.name,
+                    if (pricing.vendor.email) {
+                        emails.vendorOrder(pricing.vendor.email, {
+                            vendorName: pricing.vendor.name,
                             orderId: order.code,
-                            orderItems: enrichedProducts,
+                            orderItems: pricing.enrichedProducts,
                             orderDetailsUrl: `https://vendor.terminus.com/orders/${order._id}` // Example URL
                         });
                     }
@@ -288,6 +204,128 @@ class OrderService {
         } finally {
             session.endSession();
         }
+    }
+
+    async previewOrder(data: any): Promise<any> {
+        return await this.calculateProductOrderDetails({
+            vendorId: data.vendor,
+            userId: data.user,
+            addressId: data.addressId,
+            products: data.products
+        });
+    }
+
+    private async calculateProductOrderDetails(
+        params: {
+            vendorId: string;
+            userId: string;
+            addressId: string;
+            products: any[];
+        },
+        session?: mongoose.ClientSession
+    ): Promise<any> {
+        const config = await ConfigurationService.getConfiguration();
+        if (!config) throw new Error('System configuration not found');
+
+        // 1. Get Vendor (Pickup) and Customer (Destination)
+        const vendor = await VendorModel.findById(params.vendorId).session(
+            session as mongoose.ClientSession
+        );
+        if (!vendor) throw new Error('Vendor not found');
+
+        const customer = await UserRepository.findUserById(params.userId);
+        if (!customer) throw new Error('Customer not found');
+
+        const deliveryAddress = customer.addresses.find(
+            (addr: any) => addr._id.toString() === params.addressId
+        );
+
+        if (!deliveryAddress) throw new Error('Delivery address not found');
+
+        // 2. ENRICH PRODUCTS & CALCULATE SUBTOTAL
+        const productIds = params.products.map((p: any) => p.product);
+        const dbProducts = await ProductModel.find({
+            _id: { $in: productIds }
+        }).session(session as mongoose.ClientSession);
+
+        let subtotal = 0;
+        const enrichedProducts = params.products.map((p: any) => {
+            const dbP = dbProducts.find(
+                (item) => item._id.toString() === p.product
+            );
+            if (!dbP) throw new Error(`Product not found: ${p.product}`);
+
+            const lineTotal = dbP.price * p.quantity;
+            subtotal += lineTotal;
+
+            return {
+                product: dbP._id,
+                name: dbP.name,
+                category: dbP.category,
+                price: dbP.price,
+                quantity: p.quantity
+            };
+        });
+
+        // 3. LOGISTICS (Hybrid Math)
+        if (
+            !vendor.location ||
+            !vendor.location.coordinates ||
+            vendor.location.coordinates.length < 2
+        ) {
+            throw new Error('Vendor location is not properly set');
+        }
+
+        if (
+            !deliveryAddress.coordinates ||
+            deliveryAddress.coordinates.length < 2
+        ) {
+            throw new Error('Delivery address coordinates are not set');
+        }
+
+        const straightKm = calculateStraightDistance(
+            vendor.location.coordinates[1],
+            vendor.location.coordinates[0],
+            deliveryAddress.coordinates[1],
+            deliveryAddress.coordinates[0]
+        );
+
+        const estimatedRoadKm = straightKm; // Road Factor
+        const feePerKm = config.feePerKm;
+
+        let deliveryFee = this.roundToTwo(feePerKm * estimatedRoadKm);
+        
+        // Ensure it doesn't drop below base fee if configured
+        if (deliveryFee < config.baseDeliveryFee) {
+            deliveryFee = config.baseDeliveryFee;
+        }
+
+        const vat = 0; 
+        const totalAmount = this.roundToTwo(subtotal + deliveryFee);
+
+        return {
+            vendorId: vendor._id,
+            vendorName: vendor.name,
+            customerId: customer._id,
+            pickup: {
+                coordinates: vendor.location.coordinates,
+                street: vendor.address
+            },
+            destination: {
+                coordinates: deliveryAddress.coordinates,
+                street: deliveryAddress.street,
+                city: deliveryAddress.city,
+                label: deliveryAddress.label
+            },
+            products: enrichedProducts,
+            subtotal,
+            deliveryFee,
+            serviceFee: config.baseServiceFee,
+            vat,
+            totalAmount,
+            distance: this.roundToTwo(estimatedRoadKm),
+            commission: config.vendorCommission
+        };
     }
 
     async completeOrder(orderId: string, riderUserId: string): Promise<any> {

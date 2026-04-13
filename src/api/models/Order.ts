@@ -31,6 +31,7 @@ export interface Order extends Document {
     code: string;
     commission: number;
     products: OrderItem[];
+    distance?: number; // Distance in KM
     package: {
         description: string;
         image: string;
@@ -158,6 +159,7 @@ const orderSchema = new Schema<Order>(
         serviceFee: { type: Number, required: true, default: 0 },
         discountAmount: { type: Number, required: true, default: 0 },
         totalAmount: { type: Number, required: true },
+        distance: { type: Number, default: 0 },
         paymentType: {
             type: String,
             required: true,
