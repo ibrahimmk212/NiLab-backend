@@ -211,7 +211,7 @@ class VendorInfoController {
 
             // if vendor.status==inactive, set to active
             const update = await VendorService.updateLocation(vendor.id, {
-                coordinates: body.coordinates,
+                ...body,
                 status:
                     vendor.status == 'inactive' || vendor.status == 'pending'
                         ? 'active'

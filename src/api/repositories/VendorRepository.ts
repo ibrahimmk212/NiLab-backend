@@ -372,20 +372,24 @@ class VendorRepository {
 
     async updateLocation(
         vendorId: string,
-        updateData: any //Partial<BankAccount>
+        updateData: any
     ): Promise<Vendor | null> {
+        const { status, ...locationData } = updateData;
+        const updatePayload: any = {
+            location: {
+                ...locationData,
+                type: 'Point'
+            }
+        };
+
+        if (status) {
+            updatePayload.status = status;
+        }
+
         return await VendorModel.findByIdAndUpdate(
             vendorId,
-            {
-                // $set: {
-                //     'bankAccount.$': updateData
-                // }
-                location: { coordinates: updateData.coordinates },
-                status: updateData?.status
-            },
-            {
-                new: true
-            }
+            { $set: updatePayload },
+            { new: true }
         );
     }
     // Delete a vendor

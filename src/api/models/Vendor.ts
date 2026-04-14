@@ -5,10 +5,12 @@ interface Location {
     type: string;
     coordinates: number[];
     formattedAddress: string;
+    buildingNumber?: string;
     street: string;
     city: string;
     state: string;
     zipcode: string;
+    label?: string;
 }
 
 export interface BankAccount {
@@ -97,10 +99,12 @@ const vendorSchema = new Schema<Vendor>(
             type: { type: String, enum: ['Point'], default: 'Point' },
             coordinates: { type: [Number], index: '2dsphere' }, // [longitude, latitude]
             formattedAddress: String,
+            buildingNumber: String,
             street: String,
             city: String,
             state: String,
-            zipcode: String
+            zipcode: String,
+            label: String
         },
         openingHour: { type: String, required: true, default: '09:30' },
         closingHour: { type: String, required: true, default: '18:00' },

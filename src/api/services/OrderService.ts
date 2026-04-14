@@ -48,12 +48,12 @@ class OrderService {
                 ...data,
                 code: generateShortCode(),
                 paymentReference: generateReference('ORD'),
-                vendor: pricing.vendor._id,
-                user: pricing.customer._id,
+                vendor: pricing.vendorId,
+                user: pricing.customerId,
                 products: pricing.enrichedProducts,
                 pickup: pricing.pickup,
                 pickupLocation: pricing.pickup.coordinates,
-                deliveryLocation: pricing.pickup.coordinates,
+                deliveryLocation: pricing.destination.coordinates,
                 destination: pricing.destination,
                 deliveryFee: pricing.deliveryFee,
                 vat: pricing.vat,
@@ -291,17 +291,19 @@ class OrderService {
         );
 
         const estimatedRoadKm = straightKm; // Road Factor
-        const feePerKm = config.feePerKm;
+        const feePerKm = config.feePerKm || 50;
+        const baseDeliveryFee = config.baseDeliveryFee || 200;
+        const baseServiceFee = config.baseServiceFee || 200;
 
         let deliveryFee = this.roundToTwo(feePerKm * estimatedRoadKm);
         
         // Ensure it doesn't drop below base fee if configured
-        if (deliveryFee < config.baseDeliveryFee) {
-            deliveryFee = config.baseDeliveryFee;
+        if (deliveryFee < baseDeliveryFee) {
+            deliveryFee = baseDeliveryFee;
         }
 
         const vat = 0; 
-        const totalAmount = this.roundToTwo(subtotal + deliveryFee);
+        const totalAmount = this.roundToTwo(subtotal + deliveryFee + config.baseServiceFee + vat);
 
         return {
             vendorId: vendor._id,
@@ -320,10 +322,11 @@ class OrderService {
             products: enrichedProducts,
             subtotal,
             deliveryFee,
-            serviceFee: config.baseServiceFee,
+            serviceFee: baseServiceFee,
             vat,
             totalAmount,
             distance: this.roundToTwo(estimatedRoadKm),
+            chargePerKm: feePerKm,
             commission: config.vendorCommission
         };
     }
