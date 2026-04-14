@@ -101,7 +101,7 @@ class OrderController {
         async (req: Request, res: Response) => {
             const { userdata }: any = req;
 
-            // Compute straight-line distance explicitly here rather than depending on payload distance
+            // Compute straight-line distance explicitly here rather than depending on payload distance.
             let computedDistance = 0;
             if (
                 req.body.pickup?.coordinates &&
