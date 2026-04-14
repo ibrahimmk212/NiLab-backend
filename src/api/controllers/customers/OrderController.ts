@@ -58,6 +58,7 @@ class OrderController {
     // Standard Product Order
     createOrder = asyncHandler(async (req: Request, res: Response) => {
         const { userdata }: any = req;
+        console.log('Order payload: ', { ...req.body, user: userdata.id });
         const order = await OrderService.createOrder({
             ...req.body,
             user: userdata.id
