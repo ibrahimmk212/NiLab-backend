@@ -13,7 +13,7 @@ class BannerService {
 
     async getById(id: string, isAdmin = false): Promise<Banner | null> {
         if (isAdmin) {
-             return await BannerRepository.findBannerById(id);
+            return await BannerRepository.findBannerById(id);
         }
         return await BannerRepository.findActiveBannerById(id);
     }

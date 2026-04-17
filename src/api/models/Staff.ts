@@ -1,5 +1,4 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { deflate } from 'zlib';
 
 export interface Staff extends Document {
     name: string;
@@ -8,20 +7,22 @@ export interface Staff extends Document {
     vendor: mongoose.Types.ObjectId;
     user: mongoose.Types.ObjectId;
     status: 'suspended' | 'active';
+    permissions: string[];
 }
 
 const staffSchema = new Schema<Staff>(
     {
-        name: { type: String, required: true },
-        email: { type: String, required: true },
-        role: { type: String, required: true },
+        name: { type: String },
+        email: { type: String },
+        role: { type: String, required: true, default: 'staff' },
         vendor: {
             type: Schema.Types.ObjectId,
             ref: 'Vendor',
             required: true
         },
         user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        status: { type: String, required: true, default: 'active' }
+        status: { type: String, required: true, default: 'active' },
+        permissions: [{ type: String, default: [] }]
     },
     {
         timestamps: true,

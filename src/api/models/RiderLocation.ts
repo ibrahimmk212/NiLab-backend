@@ -12,8 +12,18 @@ export interface RiderLocation extends Document {
 
 const RiderLocationSchema = new Schema(
     {
-        rider: { type: Schema.Types.ObjectId, ref: 'Rider', required: true, index: true },
-        order: { type: Schema.Types.ObjectId, ref: 'Order', required: false, index: true },
+        rider: {
+            type: Schema.Types.ObjectId,
+            ref: 'Rider',
+            required: true,
+            index: true
+        },
+        order: {
+            type: Schema.Types.ObjectId,
+            ref: 'Order',
+            required: false,
+            index: true
+        },
         location: {
             type: { type: String, default: 'Point' },
             coordinates: { type: [Number], index: '2dsphere' }
@@ -24,7 +34,10 @@ const RiderLocationSchema = new Schema(
 );
 
 // TTL index to automatically delete records older than 30 days (optional, but good for performance)
-RiderLocationSchema.index({ timestamp: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
+RiderLocationSchema.index(
+    { timestamp: 1 },
+    { expireAfterSeconds: 30 * 24 * 60 * 60 }
+);
 
 const RiderLocationModel = mongoose.model<RiderLocation>(
     'RiderLocation',

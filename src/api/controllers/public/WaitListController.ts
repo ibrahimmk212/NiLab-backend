@@ -11,7 +11,10 @@ class WaitListController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const existingRecord = await WaitListService.findByEmailOrPhone(req.body.email, req.body.phone)
+            const existingRecord = await WaitListService.findByEmailOrPhone(
+                req.body.email,
+                req.body.phone
+            );
             if (existingRecord && existingRecord.phone === req.body.phone) {
                 res.status(STATUS.BAD_REQUEST).send({
                     success: false,

@@ -40,7 +40,7 @@ class TransactionRepository {
         }
 
         if (options.search) {
-             filter.reference = { $regex: options.search, $options: 'i' };
+            filter.reference = { $regex: options.search, $options: 'i' };
         }
 
         // Search by reference (specific)
@@ -61,9 +61,10 @@ class TransactionRepository {
 
         const sort: any = {};
         if (options.sortBy) {
-             sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
+            sort[options.sortBy as string] =
+                options.sortOrder === 'asc' ? 1 : -1;
         } else {
-             sort.createdAt = -1;
+            sort.createdAt = -1;
         }
 
         const [transactions, total] = await Promise.all([

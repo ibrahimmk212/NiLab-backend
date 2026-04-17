@@ -20,7 +20,7 @@ class RefundRepository {
     }
 
     async deleteRefund(refundId: string): Promise<Refund | null> {
-        return await RefundModel.findByIdAndDelete(refundId, {new:true});
+        return await RefundModel.findByIdAndDelete(refundId, { new: true });
     }
 
     // Additional refund-specific methods...

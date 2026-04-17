@@ -257,7 +257,10 @@ class WalletService {
             message: 'Wallet Debit confirmed'
         };
     }
-    async initCreditAccount(payload: any, session?: mongoose.ClientSession): Promise<any> {
+    async initCreditAccount(
+        payload: any,
+        session?: mongoose.ClientSession
+    ): Promise<any> {
         const { amount, owner, role } = payload;
         const userWallet: any = await WalletRepository.getWalletByOwner(
             role,
@@ -391,7 +394,10 @@ class WalletService {
 
     async getSystemWalletBalance(walletAccountNumber: string) {
         const token = await monnify.genToken();
-        const balance = await monnify.getWalletBalance(walletAccountNumber, token);
+        const balance = await monnify.getWalletBalance(
+            walletAccountNumber,
+            token
+        );
 
         if (!balance.requestSuccessful) {
             return {

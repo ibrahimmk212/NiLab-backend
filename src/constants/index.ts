@@ -1,9 +1,9 @@
 export const ROLE = {
     ADMIN: 'admin',
-    STAFF:'staff',
+    STAFF: 'staff',
     USER: 'user',
     VENDOR: 'vendor',
-    RIDER:"rider"
+    RIDER: 'rider'
 };
 
 export const STATUS = {

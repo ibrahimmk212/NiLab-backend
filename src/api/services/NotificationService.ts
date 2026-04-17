@@ -42,7 +42,7 @@ class NotificationService implements INotificationService {
                 notification
             );
         } else if (payload.role === 'vendor') {
-          const scc =  SocketService.emitToVendor(
+            const scc = SocketService.emitToVendor(
                 payload.vendorId,
                 'vendor_notification',
                 notification
@@ -194,67 +194,78 @@ class NotificationService implements INotificationService {
 
     async notifyAllVendors(title: string, message: string) {
         try {
-            const { default: VendorRepository } = await import('../repositories/VendorRepository');
+            const { default: VendorRepository } = await import(
+                '../repositories/VendorRepository'
+            );
             // Fetch all vendors (with pagination handling? ideally we need ALL. Set high limit)
             // Warning: High memory usage for large datasets.
-            const result = await VendorRepository.findVendorsByOption({}, 10000); // Limit 10000 for now
-            
+            const result = await VendorRepository.findVendorsByOption(
+                {},
+                10000
+            ); // Limit 10000 for now
+
             if (result && result.vendors) {
                 const notifications = [];
                 for (const vendor of result.vendors) {
                     // Start process to extract User ID from Vendor
                     // Vendor object populates user? Yes, based on findVendorsByOption
-                    
+
                     if (vendor.user) {
-                         const userId = typeof vendor.user === 'object' ? (vendor.user as any)._id : vendor.user;
-                         
-                         // Create directly to trigger socket
-                         await this.create({
-                             userId,
-                             vendorId: vendor._id,
-                             role: 'vendor',
-                             title,
-                             message,
-                             status: 'unread'
-                         });
+                        const userId =
+                            typeof vendor.user === 'object'
+                                ? (vendor.user as any)._id
+                                : vendor.user;
+
+                        // Create directly to trigger socket
+                        await this.create({
+                            userId,
+                            vendorId: vendor._id,
+                            role: 'vendor',
+                            title,
+                            message,
+                            status: 'unread'
+                        });
                     }
                 }
             }
         } catch (error) {
-            console.error("Failed to notify all vendors", error);
+            console.error('Failed to notify all vendors', error);
         }
     }
 
     async notifyAllRiders(title: string, message: string) {
-         try {
-             // Assuming Riders have a similar bulk fetch
-             const riders = await RiderService.findAllRiders({
+        try {
+            // Assuming Riders have a similar bulk fetch
+            const riders = await RiderService.findAllRiders({
                 status: 'verified', // Optional: notify all or only verified? Usually all active.
                 limit: 10000
-             });
+            });
 
-             if (riders && riders.data) {
-                 for (const rider of riders.data) {
-                     await this.create({
-                         userId: rider.userId,
-                         riderId: rider._id,
-                         role: 'rider',
-                         title,
-                         message,
-                         status: 'unread'
-                     });
-                 }
-             }
-         } catch (error) {
-             console.error("Failed to notify all riders", error);
-         }
+            if (riders && riders.data) {
+                for (const rider of riders.data) {
+                    await this.create({
+                        userId: rider.userId,
+                        riderId: rider._id,
+                        role: 'rider',
+                        title,
+                        message,
+                        status: 'unread'
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to notify all riders', error);
+        }
     }
 
     async notifyAllCustomers(title: string, message: string) {
         try {
             // Fetch all users with role 'customer'
-            const result = await UserRepository.findAll({ role: 'customer', limit: 10000 });
-            
+            const result = await UserRepository.findAll({
+                role: 'customer',
+                limit: 10000
+            });
+
             if (result && result.data) {
                 for (const user of result.data) {
                     await this.create({
@@ -267,15 +278,18 @@ class NotificationService implements INotificationService {
                 }
             }
         } catch (error) {
-             console.error("Failed to notify all customers", error);
+            console.error('Failed to notify all customers', error);
         }
     }
 
     async notifyAllAdmins(title: string, message: string) {
         try {
             // Fetch all admins
-            const result = await UserRepository.findAll({ role: 'admin', limit: 10000 });
-            
+            const result = await UserRepository.findAll({
+                role: 'admin',
+                limit: 10000
+            });
+
             if (result && result.data) {
                 for (const user of result.data) {
                     await this.create({
@@ -288,10 +302,8 @@ class NotificationService implements INotificationService {
                 }
             }
         } catch (error) {
-             console.error("Failed to notify all admins", error);
+            console.error('Failed to notify all admins', error);
         }
     }
-
-
 }
 export default new NotificationService();

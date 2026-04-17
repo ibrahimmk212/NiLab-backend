@@ -366,7 +366,11 @@ class SettlementService {
             session
         );
     }
-    async notifyUserCancellation(userId: string, orderCode: string, reason: string) {
+    async notifyUserCancellation(
+        userId: string,
+        orderCode: string,
+        reason: string
+    ) {
         try {
             await NotificationService.create({
                 userId,

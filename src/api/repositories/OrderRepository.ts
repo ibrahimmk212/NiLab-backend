@@ -141,7 +141,7 @@ class OrderRepository {
         if (options.reference) filter.paymentReference = options.reference;
         if (options.orderType) filter.orderType = options.orderType;
         if (options.paymentCompleted !== undefined) {
-             filter.paymentCompleted = options.paymentCompleted === 'true';
+            filter.paymentCompleted = options.paymentCompleted === 'true';
         }
 
         // Date Range Filtering

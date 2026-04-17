@@ -16,6 +16,7 @@ export type CreateAdminType = {
     firstName: string;
     lastName: string;
     role: string;
+    permissions?: string[];
 };
 
 export type SignUpType = {

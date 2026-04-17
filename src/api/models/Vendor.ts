@@ -109,7 +109,7 @@ const vendorSchema = new Schema<Vendor>(
         openingHour: { type: String, required: true, default: '09:30' },
         closingHour: { type: String, required: true, default: '18:00' },
         isAvailable: { type: Boolean, required: true, default: false },
-        averageReadyTime: { type: Number, required: true, default: 54000000 }, // 15 minutes default
+        averageReadyTime: { type: Number, required: true, default: 15 }, // 15 minutes default
         acceptDelivery: { type: Boolean, required: true, default: false },
         bankAccount: {
             accountName: String,
@@ -160,6 +160,10 @@ vendorSchema.virtual('products', {
     localField: '_id',
     foreignField: 'vendor',
     justOne: false
+});
+
+vendorSchema.virtual('formattedAverageReadyTime').get(function () {
+    return `${this.averageReadyTime} mins`;
 });
 
 // reverse populate reviews

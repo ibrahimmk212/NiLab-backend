@@ -35,7 +35,7 @@ const CitySchema = new Schema({
 
 export interface IVehicleRate {
     vehicleType: string; // 'bike', 'car', 'van'
-    feePerKm: number;    // Specific rate for this vehicle
+    feePerKm: number; // Specific rate for this vehicle
 }
 
 export interface Configuration extends Document {
@@ -51,7 +51,6 @@ export interface Configuration extends Document {
     packageCommission: number; // Flat or % for parcel services
 
     baseServiceFee: number;
-    
 
     // Tax & Discounts
     vatRate: number;

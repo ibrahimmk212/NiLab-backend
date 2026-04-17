@@ -4,7 +4,7 @@ export interface Banner extends Document {
     name: string;
     image: string;
     link?: string;
-    type: 'home_top' | 'home_middle' | 'home_bottom' | 'category';
+    type: 'scroll' | 'home' | 'popup';
     status: 'active' | 'inactive';
     isDeleted: boolean;
     createdAt?: Date;
@@ -18,8 +18,8 @@ const bannerSchema = new Schema<Banner>(
         link: { type: String, required: false },
         type: {
             type: String,
-            enum: ['home_top', 'home_middle', 'home_bottom', 'category'],
-            default: 'home_top',
+            enum: ['scroll', 'home', 'popup'],
+            default: 'home',
             required: true
         },
         status: {

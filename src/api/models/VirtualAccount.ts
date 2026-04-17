@@ -8,11 +8,11 @@ export interface VirtualAccount extends Document {
     accountNumber: string;
     accountName?: string;
     bankName?: string;
-    amount?:number;
-    reference?: string; 
-    type: 'temporary'|'permanent';
-    provider?: 'flutterwave'|"others";
-    status: string;//created, expired, used,active
+    amount?: number;
+    reference?: string;
+    type: 'temporary' | 'permanent';
+    provider?: 'flutterwave' | 'others';
+    status: string; //created, expired, used,active
 }
 
 const virtualAccountSchema = new Schema<VirtualAccount>(
@@ -29,10 +29,10 @@ const virtualAccountSchema = new Schema<VirtualAccount>(
         accountName: { type: String, required: false },
         bankName: { type: String, required: false },
         amount: { type: Number, required: false },
-        reference: { type: String, required: true }, 
+        reference: { type: String, required: true },
         type: { type: String, required: false },
         provider: { type: String, required: false },
-        status: { type: String, required: false },
+        status: { type: String, required: false }
     },
     {
         timestamps: true,
@@ -44,7 +44,10 @@ const virtualAccountSchema = new Schema<VirtualAccount>(
         }
     }
 );
- 
-const VirtualAccountModel = mongoose.model<VirtualAccount>('VirtualAccount', virtualAccountSchema);
+
+const VirtualAccountModel = mongoose.model<VirtualAccount>(
+    'VirtualAccount',
+    virtualAccountSchema
+);
 
 export default VirtualAccountModel;

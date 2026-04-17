@@ -39,7 +39,12 @@ router.use(
 router.use('/customers/complaints', customerComplaintRoutes);
 router.use('/admin/complaints', adminComplaintRoutes);
 
-router.use('/vendor', auth.isVendor, vendorsRouter);
+router.use(
+    '/vendor',
+    auth.authenticate,
+    auth.checkRoles(ROLE.VENDOR, ROLE.STAFF),
+    vendorsRouter
+);
 router.use(
     '/rider',
     //  auth.isRider,

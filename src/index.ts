@@ -66,7 +66,7 @@ function startServer(): Server {
     SocketService.init(server);
 
     // Legacy logic migration/placeholder
-    // The SocketService now handles connection. 
+    // The SocketService now handles connection.
     // If we need to preserve strict backward compatibility for specific event handlers defined in index.ts:
     // They should be moved to SocketService.handleLegacyEvents or a specialized controller.
     // For now, the existing logic in index.ts is replaced by the Service initialization.

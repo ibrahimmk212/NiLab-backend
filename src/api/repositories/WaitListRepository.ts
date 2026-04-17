@@ -1,5 +1,4 @@
-import WaitListModel, { WaitList } from "../models/WaitList";
-
+import WaitListModel, { WaitList } from '../models/WaitList';
 
 class WaitListRepository {
     async createWaitList(data: Partial<WaitList>) {
@@ -14,17 +13,18 @@ class WaitListRepository {
     async findWaitlistByEmailOrPhone(email: string, phone: string) {
         return await WaitListModel.findOne({
             $or: [{ email }, { phone }]
-        })
+        });
     }
 
     async updateWaitList(waitListId: string, updateData: Partial<WaitList>) {
-        return await WaitListModel.findByIdAndUpdate(waitListId, updateData, { new: true });
+        return await WaitListModel.findByIdAndUpdate(waitListId, updateData, {
+            new: true
+        });
     }
 
     async getAllWaitLists() {
         return await WaitListModel.find();
     }
-
 }
 
 export default new WaitListRepository();

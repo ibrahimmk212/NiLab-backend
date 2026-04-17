@@ -16,13 +16,15 @@ class AdminWalletController {
                 const walletNumber = appConfig.monnify.walletAccountNumber;
 
                 if (!walletNumber) {
-                    throw new Error('Monnify Wallet Account Number not configured');
+                    throw new Error(
+                        'Monnify Wallet Account Number not configured'
+                    );
                 }
 
                 const balance = await WalletService.getSystemWalletBalance(
                     walletNumber
                 );
-                
+
                 res.status(200).send(balance);
             } catch (error) {
                 next(error);

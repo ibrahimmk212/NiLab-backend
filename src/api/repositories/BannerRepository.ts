@@ -34,9 +34,8 @@ class BannerRepository {
         }
         filter.isDeleted = false;
 
-
         if (options.status && includeInactive) {
-             filter.status = options.status;
+            filter.status = options.status;
         }
 
         if (options.type) {

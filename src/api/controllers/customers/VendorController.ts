@@ -78,7 +78,7 @@ class VendorController {
             // vendors.map((vendor: Vendor) => vendor.populate('categories'));
             res.status(STATUS.OK).json({
                 success: true,
-                data: vendors
+                ...vendors
             });
         }
     );

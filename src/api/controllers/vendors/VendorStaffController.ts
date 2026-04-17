@@ -15,30 +15,40 @@ class VendorStaffController {
 
             const user = await UserService.findByEmailOrPhone(
                 body.email,
-                body.phone
+                body.phoneNumber
             );
 
             if (user) {
-                throw Error('Account already exist');
+                throw Error('Account already exists');
             }
+
+            // Auto-generate a temporary password for the invitation flow
+            const tempPassword =
+                Math.random().toString(36).slice(-8) +
+                Math.random().toString(36).slice(-8).toUpperCase() +
+                '!';
 
             const newUser = await UserService.createUser({
                 ...body,
+                password: tempPassword,
                 role: 'staff'
             });
+
             const staff = await StaffService.createStaff({
                 user: newUser.id,
-                role: body.role,
+                role: body.role || 'staff',
+                permissions: body.permissions || [],
                 vendor: vendor.id
             });
 
             if (!staff) {
-                throw Error('Failed to create Product');
+                throw Error('Failed to create staff');
             }
+
             res.status(STATUS.CREATED).json({
                 success: true,
-                message: 'Staff Created',
-                data: vendor
+                message: 'Staff invited successfully',
+                data: staff
             });
         }
     );
@@ -82,11 +92,34 @@ class VendorStaffController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { vendor, body, params } = req;
+            const { body, params } = req;
             const { id } = params;
 
-            // res.json(vendor)
-            throw Error('Failed to update staff');
+            const updatedStaff = await StaffService.updateStaff(id, body);
+
+            res.status(STATUS.OK).json({
+                success: true,
+                message: 'Staff Updated Successfully',
+                data: updatedStaff
+            });
+        }
+    );
+
+    delete = asyncHandler(
+        async (
+            req: Request | any,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { params } = req;
+            const { id } = params;
+
+            await StaffService.deleteStaff(id);
+
+            res.status(STATUS.OK).json({
+                success: true,
+                message: 'Staff Deleted Successfully'
+            });
         }
     );
 }

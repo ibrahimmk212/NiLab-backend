@@ -19,7 +19,22 @@ export class VendorDashboardRepository {
                             $cond: [
                                 { $ne: ['$status', 'canceled'] },
                                 // Amount - (Amount * Commission / 100)
-                                { $subtract: ['$amount', { $multiply: ['$amount', { $divide: ['$commission', 100] }] }] },
+                                {
+                                    $subtract: [
+                                        '$amount',
+                                        {
+                                            $multiply: [
+                                                '$amount',
+                                                {
+                                                    $divide: [
+                                                        '$commission',
+                                                        100
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
                                 0
                             ]
                         }
@@ -73,10 +88,18 @@ export class VendorDashboardRepository {
                             date: '$createdAt'
                         }
                     },
-                    revenue: { 
-                        $sum: { 
-                            $subtract: ['$amount', { $multiply: ['$amount', { $divide: ['$commission', 100] }] }] 
-                        } 
+                    revenue: {
+                        $sum: {
+                            $subtract: [
+                                '$amount',
+                                {
+                                    $multiply: [
+                                        '$amount',
+                                        { $divide: ['$commission', 100] }
+                                    ]
+                                }
+                            ]
+                        }
                     }
                 }
             },
@@ -121,7 +144,7 @@ export class VendorDashboardRepository {
             { $match: { vendor: vendorId } },
             {
                 $lookup: {
-                    from: 'complaints', 
+                    from: 'complaints',
                     localField: '_id',
                     foreignField: 'order',
                     as: 'complaints'

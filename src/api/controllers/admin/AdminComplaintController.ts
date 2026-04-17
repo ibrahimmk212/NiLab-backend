@@ -16,11 +16,13 @@ class AdminComplaintController {
     });
 
     getSingle = asyncHandler(async (req: Request, res: Response) => {
-         const { id } = req.params;
+        const { id } = req.params;
         const complaint = await ComplaintService.getComplaintById(id);
-        
+
         if (!complaint) {
-            return res.status(STATUS.NOT_FOUND).json({ success: false, message: 'Complaint not found' });
+            return res
+                .status(STATUS.NOT_FOUND)
+                .json({ success: false, message: 'Complaint not found' });
         }
 
         res.status(STATUS.OK).json({
@@ -34,7 +36,12 @@ class AdminComplaintController {
         const { resolution, status } = req.body;
         const adminId = req.userdata.id;
 
-        const complaint = await ComplaintService.resolveComplaint(id, adminId, resolution, status);
+        const complaint = await ComplaintService.resolveComplaint(
+            id,
+            adminId,
+            resolution,
+            status
+        );
 
         res.status(STATUS.OK).json({
             success: true,

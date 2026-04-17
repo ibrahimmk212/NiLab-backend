@@ -1,5 +1,5 @@
-import FileModel from "../models/File";
-import { File } from "../models/File";
+import FileModel from '../models/File';
+import { File } from '../models/File';
 
 class FileRepository {
     async createFile(data: File): Promise<File> {

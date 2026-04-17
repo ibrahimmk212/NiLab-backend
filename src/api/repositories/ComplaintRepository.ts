@@ -13,7 +13,14 @@ class ComplaintRepository {
     }
 
     async findAll(params: any = {}): Promise<any> {
-        const { limit = 10, page = 1, sort = '-createdAt', startDate, endDate, ...filter } = params;
+        const {
+            limit = 10,
+            page = 1,
+            sort = '-createdAt',
+            startDate,
+            endDate,
+            ...filter
+        } = params;
         const skip = (Number(page) - 1) * Number(limit);
 
         // Date Filtering
@@ -45,7 +52,10 @@ class ComplaintRepository {
         };
     }
 
-    async update(id: string, data: Partial<IComplaint>): Promise<IComplaint | null> {
+    async update(
+        id: string,
+        data: Partial<IComplaint>
+    ): Promise<IComplaint | null> {
         return await ComplaintModel.findByIdAndUpdate(id, data, { new: true });
     }
 

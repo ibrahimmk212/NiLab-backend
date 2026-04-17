@@ -14,6 +14,7 @@ export interface Product extends Document {
     thumbnail: string;
     status: 'active' | 'inactive';
     isDeleted: boolean;
+    prepTime?: number;
     deletedAt?: Date | null;
 }
 
@@ -41,6 +42,7 @@ const productSchema = new Schema<Product>(
             index: true
         },
         isDeleted: { type: Boolean, default: false, index: true },
+        prepTime: { type: Number, default: 0 },
         deletedAt: { type: Date, default: null }
     },
     {

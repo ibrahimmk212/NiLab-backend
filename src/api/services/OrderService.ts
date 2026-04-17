@@ -36,12 +36,15 @@ class OrderService {
             const config = await ConfigurationService.getConfiguration();
             if (!config) throw new Error('System configuration not found');
 
-            const pricing = await this.calculateProductOrderDetails({
-                vendorId: data.vendor,
-                userId: data.user,
-                addressId: data.addressId,
-                products: data.products
-            }, session);
+            const pricing = await this.calculateProductOrderDetails(
+                {
+                    vendorId: data.vendor,
+                    userId: data.user,
+                    addressId: data.addressId,
+                    products: data.products
+                },
+                session
+            );
 
             // 5. ASSEMBLE PAYLOAD
             const orderPayload: any = {
@@ -105,46 +108,47 @@ class OrderService {
                     owner: 'system', // This moves money into the system's "pendingBalance"
                     role: 'system'
                 });
+            }
 
-                // Notifications
-                try {
-                    // Admin
-                    await NotificationService.notifyAdmins(
-                        'New Order Placed',
-                        `Order ${order.code} has been placed via Wallet.`
-                    );
+            // Notifications (Trigger for all orders)
+            try {
+                // Admin
+                await NotificationService.notifyAdmins(
+                    'New Order Placed',
+                    `Order ${order.code} has been placed via ${data.paymentType}.`
+                );
 
-                    // Vendor
-                    if (pricing.vendor.userId) {
-                        // Assuming Vendor model links to a User via userId
-                        await NotificationService.create({
-                            userId: pricing.vendor.userId,
-                            title: 'New Order',
-                            message: `You have a new order: ${order.code}`,
-                            status: 'unread'
-                        });
-                    }
-
-                    // User
+                // Vendor
+                if (pricing.vendor.userId) {
                     await NotificationService.create({
-                        userId: pricing.customer._id,
-                        title: 'Order Placed',
-                        message: `Your order ${order.code} has been placed successfully.`,
+                        userId: pricing.vendor.userId,
+                        vendorId: pricing.vendor._id,
+                        role: 'vendor',
+                        title: 'New Order',
+                        message: `You have a new order: ${order.code}`,
                         status: 'unread'
                     });
-
-                    // Vendor Email (Optional if not handled elsewhere)
-                    if (pricing.vendor.email) {
-                        emails.vendorOrder(pricing.vendor.email, {
-                            vendorName: pricing.vendor.name,
-                            orderId: order.code,
-                            orderItems: pricing.enrichedProducts,
-                            orderDetailsUrl: `https://vendor.terminus.com/orders/${order._id}` // Example URL
-                        });
-                    }
-                } catch (notifErr) {
-                    console.error('Notification Error:', notifErr);
                 }
+
+                // Customer
+                await NotificationService.create({
+                    userId: pricing.customer._id,
+                    title: 'Order Placed',
+                    message: `Your order ${order.code} has been placed successfully.`,
+                    status: 'unread'
+                });
+
+                // Vendor Email
+                if (pricing.vendor.email) {
+                    emails.vendorOrder(pricing.vendor.email, {
+                        vendorName: pricing.vendor.name,
+                        orderId: order.code,
+                        orderItems: pricing.enrichedProducts,
+                        orderDetailsUrl: `https://vendor.terminus.com/orders/${order._id}`
+                    });
+                }
+            } catch (notifErr) {
+                console.error('Notification Error:', notifErr);
             }
 
             await session.commitTransaction();
@@ -296,16 +300,20 @@ class OrderService {
         const baseServiceFee = config.baseServiceFee || 200;
 
         let deliveryFee = this.roundToTwo(feePerKm * estimatedRoadKm);
-        
+
         // Ensure it doesn't drop below base fee if configured
         if (deliveryFee < baseDeliveryFee) {
             deliveryFee = baseDeliveryFee;
         }
 
-        const vat = 0; 
-        const totalAmount = this.roundToTwo(subtotal + deliveryFee + config.baseServiceFee + vat);
+        const vat = 0;
+        const totalAmount = this.roundToTwo(
+            subtotal + deliveryFee + config.baseServiceFee + vat
+        );
 
         return {
+            vendor,
+            customer,
             vendorId: vendor._id,
             vendorName: vendor.name,
             customerId: customer._id,

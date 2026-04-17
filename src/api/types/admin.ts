@@ -1,6 +1,6 @@
-import mongoose from 'mongoose'; 
+import mongoose from 'mongoose';
 
-export type CreateAdminType = { 
+export type CreateAdminType = {
     firstname: number;
     address: string;
     phone: string;

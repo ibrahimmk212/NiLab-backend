@@ -170,7 +170,11 @@ class PaymentService {
                     await NotificationService.create({
                         userId: payout.userId,
                         title: 'Payout Failed',
-                        message: `Your payout of ${payout.amount} failed and has been reversed to your wallet. Reason: ${responseDescription || 'Bank Transfer Failed'}`,
+                        message: `Your payout of ${
+                            payout.amount
+                        } failed and has been reversed to your wallet. Reason: ${
+                            responseDescription || 'Bank Transfer Failed'
+                        }`,
                         status: 'unread'
                     });
                 } catch (err) {
@@ -203,7 +207,7 @@ class PaymentService {
         if (order && !order.paymentCompleted) {
             const updatedOrder = await OrderRepository.updateOrder(
                 order._id,
-                { 
+                {
                     paymentCompleted: true,
                     transactionReference: payload.transactionReference
                 },
@@ -285,7 +289,7 @@ class PaymentService {
 
                 // Send Push Notification
                 try {
-                     await NotificationService.create({
+                    await NotificationService.create({
                         userId: userId,
                         title: 'Wallet Funded',
                         message: `Your wallet has been successfully funded with ₦${amount}`,
@@ -510,10 +514,14 @@ class PaymentService {
             const response = await monnify.singleOutboundTransfer(requestBody);
 
             if (!response.requestSuccessful) {
-                console.error('Monnify Payout Failed:', response.responseMessage);
+                console.error(
+                    'Monnify Payout Failed:',
+                    response.responseMessage
+                );
                 return {
                     success: false,
-                    message: response.responseMessage || 'Transfer initiation failed'
+                    message:
+                        response.responseMessage || 'Transfer initiation failed'
                 };
             }
 

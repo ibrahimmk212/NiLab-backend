@@ -22,6 +22,8 @@ import adminDashboardRouter from './dashboard';
 import adminDeliveryRouter from './delivery';
 import adminBannerRouter from './banners';
 import adminVehicleTypeRouter from './vehicleType';
+import adminStaffRouter from './staffs';
+import adminLogRouter from './logs';
 
 const adminsRouter: Router = Router();
 
@@ -45,6 +47,8 @@ adminsRouter.use('/kyc', adminKycRouter);
 adminsRouter.use('/payouts', adminPayoutRouter);
 adminsRouter.use('/banners', adminBannerRouter);
 adminsRouter.use('/vehicle-types', adminVehicleTypeRouter);
+adminsRouter.use('/staffs', adminStaffRouter);
+adminsRouter.use('/logs', adminLogRouter);
 
 adminsRouter.post('/login', AdminUserController.login);
 adminsRouter.use('/dashboard', adminDashboardRouter);

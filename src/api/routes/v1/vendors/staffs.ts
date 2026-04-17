@@ -12,4 +12,6 @@ vendorStaffRouter.post(
 vendorStaffRouter.get('/', VendorStaffController.getAll);
 
 vendorStaffRouter.get('/:id', VendorStaffController.getSingle);
+vendorStaffRouter.patch('/:id', VendorStaffController.update);
+vendorStaffRouter.delete('/:id', VendorStaffController.delete);
 export default vendorStaffRouter;

@@ -2,9 +2,10 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface Admin extends Document {
     name: string;
-    role: 'admin' | 'agent';
+    role: 'superadmin' | 'admin' | 'customer_care' | 'finance' | 'agent';
     userId: mongoose.Types.ObjectId;
     status: 'suspended' | 'active';
+    permissions: string[];
     phone: string;
     email: string;
 }
@@ -16,7 +17,8 @@ const adminSchema = new Schema<Admin>(
         phone: { type: String, required: false },
         email: { type: String, required: false },
         userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        status: { type: String, required: true, default: 'active' }
+        status: { type: String, required: true, default: 'active' },
+        permissions: [{ type: String, default: [] }]
     },
 
     {

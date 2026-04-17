@@ -50,7 +50,13 @@ export interface Order extends Document {
     discount?: mongoose.Types.ObjectId;
     totalAmount: number;
     orderType: 'products' | 'package';
-    paymentType: 'card' | 'transfer' | 'cash' | 'wallet' | 'online' | 'pay-for-me';
+    paymentType:
+        | 'card'
+        | 'transfer'
+        | 'cash'
+        | 'wallet'
+        | 'online'
+        | 'pay-for-me';
     paymentReference: string; // The NanoID Reference (ORD-XXXXXXXX)
     transactionReference: string; // Reference for the Wallet Transaction
     payForMeToken?: string;

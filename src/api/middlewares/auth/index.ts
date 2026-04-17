@@ -6,7 +6,6 @@ import { ROLE, STATUS } from '../../../constants';
 import VendorRepository from '../../repositories/VendorRepository';
 import RiderRepository from '../../repositories/RiderRepository';
 import AdminService from '../../services/AdminService';
-import MarketCategoryRepository from '../../repositories/MarketCategoryRepository';
 
 class Auth {
     async authenticate(
@@ -137,6 +136,21 @@ class Auth {
             });
         }
     }
+
+    async isSuperAdmin(
+        req: Request | any,
+        res: Response,
+        next: NextFunction
+    ): Promise<any> {
+        const admin = req.admin;
+        if (!admin || admin.role !== 'superadmin') {
+            return res.status(STATUS.FORBIDDEN).json({
+                success: false,
+                message: 'Access denied: Superadmin privileges required'
+            });
+        }
+        next();
+    }
     async isVendor(
         req: Request | any,
         res: Response,
@@ -169,62 +183,59 @@ class Auth {
                     message: 'Account not found'
                 });
             }
-            if (userdata.role != ROLE.VENDOR) {
-                return res.status(STATUS.UNAUTHORIZED).json({
-                    success: false,
-                    message: 'This is not a Vendor Account'
-                });
-            }
-            //Get vendor by user
-            const vendor = await VendorRepository.findByKey(
-                'userId',
-                userdata.id
-            );
-
-            if (!vendor) {
-                return res.status(STATUS.UNAUTHORIZED).json({
-                    success: false,
-                    message: 'Invalid Vendor'
-                });
-            }
-            const marketCategory =
-                await MarketCategoryRepository.findMarketCategoryById(
-                    vendor?.marketCategoryId.toString()
-                );
-
-            // if (marketCategory) {
-            //     vendor.marketCategory = marketCategory;
-            // }
-
-            if (
-                // req.path !== '/location' &&
-                vendor.status != 'active'
-            ) {
-                return res.status(STATUS.FORBIDDEN).json({
-                    success: false,
-                    message: 'Vendor Not Active',
-                    code: 'VENDOR_NOT_ACTIVE'
-                });
-            }
 
             req.userdata = userdata;
-            // req.vendor.marketCategory = marketCategory;
-            req.vendor = vendor;
-            next();
+
+            // Case 1: Primary Vendor Owner
+            if (userdata.role === ROLE.VENDOR) {
+                const vendor = await VendorRepository.findByKey(
+                    'userId',
+                    userdata.id
+                );
+                if (!vendor) {
+                    return res.status(STATUS.UNAUTHORIZED).json({
+                        success: false,
+                        message: 'Vendor record not found'
+                    });
+                }
+                req.vendor = vendor;
+                return next();
+            }
+
+            // Case 2: Vendor Staff
+            if (userdata.role === 'staff') {
+                const { default: StaffModel } = await import(
+                    '../../models/Staff'
+                );
+                const staff = await StaffModel.findOne({
+                    user: userdata.id
+                }).populate('vendor');
+
+                if (!staff) {
+                    return res.status(STATUS.UNAUTHORIZED).json({
+                        success: false,
+                        message: 'Staff record not found'
+                    });
+                }
+
+                if (staff.status === 'suspended') {
+                    return res.status(STATUS.FORBIDDEN).json({
+                        success: false,
+                        message: 'Your staff account has been suspended'
+                    });
+                }
+
+                req.staff = staff;
+                req.vendor = staff.vendor; // Attach the associated vendor
+                return next();
+            }
+
+            return res.status(STATUS.FORBIDDEN).json({
+                success: false,
+                message: 'Access denied: You are not a Vendor or Staff member'
+            });
         } catch (err: any) {
             console.log('JWT Error:', err.name, err.message);
-            if (err.name === 'TokenExpiredError') {
-                return res.status(STATUS.UNAUTHORIZED).json({
-                    success: false,
-                    message: 'Token expired'
-                });
-            }
-            if (err.name === 'JsonWebTokenError') {
-                return res.status(STATUS.UNAUTHORIZED).json({
-                    success: false,
-                    message: 'Invalid token'
-                });
-            }
             return res.status(STATUS.UNAUTHORIZED).json({
                 success: false,
                 message: 'Authentication failed'
@@ -355,8 +366,49 @@ class Auth {
             }
             const isRoleValid = roles.includes(roleUser);
             if (!isRoleValid) {
-                return res.sendStatus(STATUS.FORBIDDEN);
+                return res.status(STATUS.FORBIDDEN).json({
+                    success: false,
+                    message: 'Permission denied: Invalid role'
+                });
             }
+            next();
+        };
+    }
+
+    checkPermissions(...requiredPermissions: string[]) {
+        return async (
+            req: Request | any,
+            res: Response,
+            next: NextFunction
+        ) => {
+            const admin = req.admin;
+            const staff = req.staff;
+
+            // 1. Superadmin has all permissions
+            if (admin && admin.role === 'superadmin') {
+                return next();
+            }
+
+            // 2. Combine permissions from admin or staff records
+            const userPermissions = [
+                ...(admin?.permissions || []),
+                ...(staff?.permissions || [])
+            ];
+
+            // 3. Check if any of the required permissions are present
+            // (Or all, depending on required logic. Usually "any" is sufficient for route gating)
+            const hasPermission = requiredPermissions.every((p) =>
+                userPermissions.includes(p)
+            );
+
+            if (!hasPermission) {
+                return res.status(STATUS.FORBIDDEN).json({
+                    success: false,
+                    message: 'Permission denied: Insufficient privileges',
+                    required: requiredPermissions
+                });
+            }
+
             next();
         };
     }

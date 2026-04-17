@@ -2,13 +2,14 @@ import DashboardRepository from '../repositories/DashboardRepository';
 
 class DashboardService {
     async getAdminDashboard() {
-        const [stats, recentOrders, revenueHistory, orderMetrics, topVendors] = await Promise.all([
-            DashboardRepository.getAdminSummary(),
-            DashboardRepository.getAdminRecentOrders(),
-            DashboardRepository.getAdminRevenueHistory(),
-            DashboardRepository.getAdminOrderMetrics(),
-            DashboardRepository.getTopVendors()
-        ]);
+        const [stats, recentOrders, revenueHistory, orderMetrics, topVendors] =
+            await Promise.all([
+                DashboardRepository.getAdminSummary(),
+                DashboardRepository.getAdminRecentOrders(),
+                DashboardRepository.getAdminRevenueHistory(),
+                DashboardRepository.getAdminOrderMetrics(),
+                DashboardRepository.getTopVendors()
+            ]);
 
         // Map YYYY-MM-DD to "Mon", "Tue" etc
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -21,7 +22,11 @@ class DashboardService {
             metrics: stats,
             charts: {
                 revenue: formattedRevenue,
-                orderStatus: orderMetrics[0] || { active: 0, completed: 0, cancelled: 0 },
+                orderStatus: orderMetrics[0] || {
+                    active: 0,
+                    completed: 0,
+                    cancelled: 0
+                },
                 topVendors
             },
             recentOrders
@@ -50,21 +55,41 @@ class DashboardService {
 
         return {
             revenue: formattedRevenue,
-            orderStatus: orderMetrics[0] || { active: 0, completed: 0, cancelled: 0 },
+            orderStatus: orderMetrics[0] || {
+                active: 0,
+                completed: 0,
+                cancelled: 0
+            },
             topVendors
         };
     }
 
-    async getAdminRecentOrders(limit = 5, startDate?:any, endDate?: any) {
-        return await DashboardRepository.getAdminRecentOrders(limit, startDate, endDate);
+    async getAdminRecentOrders(limit = 5, startDate?: any, endDate?: any) {
+        return await DashboardRepository.getAdminRecentOrders(
+            limit,
+            startDate,
+            endDate
+        );
     }
 
     async getAdminTopVendors(limit = 5, startDate?: any, endDate?: any) {
-        return await DashboardRepository.getTopVendors(limit, startDate, endDate);
+        return await DashboardRepository.getTopVendors(
+            limit,
+            startDate,
+            endDate
+        );
     }
 
-    async getAdminVendorApplications(limit = 5, startDate?: any, endDate?: any) {
-        return await DashboardRepository.getVendorApplications(limit, startDate, endDate);
+    async getAdminVendorApplications(
+        limit = 5,
+        startDate?: any,
+        endDate?: any
+    ) {
+        return await DashboardRepository.getVendorApplications(
+            limit,
+            startDate,
+            endDate
+        );
     }
 
     async getVendorDashboard(vendorId: string) {

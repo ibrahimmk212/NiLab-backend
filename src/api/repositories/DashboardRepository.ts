@@ -18,25 +18,34 @@ class DashboardRepository {
         const vendorsCount = await VendorModel.countDocuments();
         const ridersCount = await RiderModel.countDocuments();
         const customersCount = await UserModel.countDocuments({ role: 'user' });
-        
-        const pendingComplaints = await ComplaintModel.countDocuments({ status: 'pending' });
-        const pendingPayouts = await PayoutModel.countDocuments({ status: 'pending' });
+
+        const pendingComplaints = await ComplaintModel.countDocuments({
+            status: 'pending'
+        });
+        const pendingPayouts = await PayoutModel.countDocuments({
+            status: 'pending'
+        });
 
         const revenueStats = await OrderModel.aggregate([
             { $match: { status: 'completed' } },
-            { 
-                $group: { 
-                    _id: null, 
+            {
+                $group: {
+                    _id: null,
                     gmv: { $sum: '$amount' },
-                    revenue: { 
-                        $sum: { 
+                    revenue: {
+                        $sum: {
                             $add: [
-                                { $multiply: ['$amount', { $divide: ['$commission', 100] }] },
+                                {
+                                    $multiply: [
+                                        '$amount',
+                                        { $divide: ['$commission', 100] }
+                                    ]
+                                },
                                 { $ifNull: ['$serviceFee', 0] }
                             ]
-                        } 
+                        }
                     }
-                } 
+                }
             }
         ]);
 
@@ -329,7 +338,12 @@ class DashboardRepository {
                     revenue: {
                         $sum: {
                             $add: [
-                                { $multiply: ['$amount', { $divide: ['$commission', 100] }] },
+                                {
+                                    $multiply: [
+                                        '$amount',
+                                        { $divide: ['$commission', 100] }
+                                    ]
+                                },
                                 { $ifNull: ['$serviceFee', 0] }
                             ]
                         }
@@ -388,7 +402,12 @@ class DashboardRepository {
                     revenue: {
                         $sum: {
                             $add: [
-                                { $multiply: ['$amount', { $divide: ['$commission', 100] }] },
+                                {
+                                    $multiply: [
+                                        '$amount',
+                                        { $divide: ['$commission', 100] }
+                                    ]
+                                },
                                 { $ifNull: ['$serviceFee', 0] }
                             ]
                         }
@@ -425,14 +444,36 @@ class DashboardRepository {
                     _id: null,
                     active: {
                         $sum: {
-                            $cond: [{ $in: ['$status', ['pending', 'preparing', 'prepared', 'dispatched']] }, 1, 0]
+                            $cond: [
+                                {
+                                    $in: [
+                                        '$status',
+                                        [
+                                            'pending',
+                                            'preparing',
+                                            'prepared',
+                                            'dispatched'
+                                        ]
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
                         }
                     },
                     completed: {
-                        $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] }
+                        $sum: {
+                            $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0]
+                        }
                     },
                     cancelled: {
-                        $sum: { $cond: [{ $in: ['$status', ['canceled', 'cancelled']] }, 1, 0] }
+                        $sum: {
+                            $cond: [
+                                { $in: ['$status', ['canceled', 'cancelled']] },
+                                1,
+                                0
+                            ]
+                        }
                     }
                 }
             },
@@ -453,7 +494,9 @@ class DashboardRepository {
             query.createdAt = { $gte: startDate, $lte: endDate };
         }
         return await VendorModel.find(query)
-            .select('name email phoneNumber identityType identityNumber createdAt')
+            .select(
+                'name email phoneNumber identityType identityNumber createdAt'
+            )
             .sort({ createdAt: -1 })
             .limit(limit);
     }

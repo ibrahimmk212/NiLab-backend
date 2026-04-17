@@ -3,7 +3,12 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IComplaint extends Document {
     user: mongoose.Types.ObjectId;
     order?: mongoose.Types.ObjectId;
-    category: 'wrong_item' | 'missing_item' | 'late_delivery' | 'payment_issue' | 'other';
+    category:
+        | 'wrong_item'
+        | 'missing_item'
+        | 'late_delivery'
+        | 'payment_issue'
+        | 'other';
     subject: string;
     description: string;
     status: 'open' | 'in_progress' | 'resolved' | 'rejected';

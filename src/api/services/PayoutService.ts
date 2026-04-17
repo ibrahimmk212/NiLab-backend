@@ -102,7 +102,10 @@ class PayoutService {
                     amount: payout.amount.toString(),
                     accountNumber: payout.accountNumber,
                     bankName: payout.bankName,
-                    transactionReference: transferResult.data?.transactionReference || transferResult.data?.reference || 'N/A',
+                    transactionReference:
+                        transferResult.data?.transactionReference ||
+                        transferResult.data?.reference ||
+                        'N/A',
                     completionDate: new Date().toDateString()
                 });
 

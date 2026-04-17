@@ -108,7 +108,7 @@ class NotificationController {
     create = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
             const { target, title, message, ...rest } = req.body;
-            
+
             // Handle Bulk Targets
             if (target === 'all_vendors') {
                 await NotificationService.notifyAllVendors(title, message);

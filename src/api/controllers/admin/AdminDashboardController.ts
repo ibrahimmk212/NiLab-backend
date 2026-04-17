@@ -23,7 +23,11 @@ class DashboardController {
     async getRecentOrders(req: Request, res: Response) {
         const limit = req.query.limit ? Number(req.query.limit) : 5;
         const { startDate, endDate } = req.query;
-        const data = await DashboardService.getAdminRecentOrders(limit, startDate, endDate);
+        const data = await DashboardService.getAdminRecentOrders(
+            limit,
+            startDate,
+            endDate
+        );
         return res.json({
             success: true,
             message: 'Recent orders fetched successfully',
@@ -34,7 +38,11 @@ class DashboardController {
     async getTopVendors(req: Request, res: Response) {
         const limit = req.query.limit ? Number(req.query.limit) : 5;
         const { startDate, endDate } = req.query;
-        const data = await DashboardService.getAdminTopVendors(limit, startDate, endDate);
+        const data = await DashboardService.getAdminTopVendors(
+            limit,
+            startDate,
+            endDate
+        );
         return res.json({
             success: true,
             message: 'Top vendors fetched successfully',
@@ -45,7 +53,11 @@ class DashboardController {
     async getVendorApplications(req: Request, res: Response) {
         const limit = req.query.limit ? Number(req.query.limit) : 5;
         const { startDate, endDate } = req.query;
-        const data = await DashboardService.getAdminVendorApplications(limit, startDate, endDate);
+        const data = await DashboardService.getAdminVendorApplications(
+            limit,
+            startDate,
+            endDate
+        );
         return res.json({
             success: true,
             message: 'Vendor applications fetched successfully',

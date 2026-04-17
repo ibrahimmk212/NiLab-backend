@@ -220,7 +220,9 @@ class VendorOrderController {
                     await NotificationService.notifyRidersInState(
                         order.vendor.state,
                         'New Delivery Available',
-                        `New delivery available in ${order.vendor.city || 'your area'}`
+                        `New delivery available in ${
+                            order.vendor.city || 'your area'
+                        }`
                     );
                 }
             } catch (err) {
@@ -229,7 +231,7 @@ class VendorOrderController {
         }
 
         if (status === 'dispatched') {
-             try {
+            try {
                 if (order.user) {
                     await NotificationService.create({
                         userId: order.user._id,
@@ -244,7 +246,7 @@ class VendorOrderController {
         }
 
         if (status === 'dispatched') {
-             try {
+            try {
                 if (order.user) {
                     await NotificationService.create({
                         userId: order.user._id,
@@ -257,7 +259,7 @@ class VendorOrderController {
                 console.error('Notification Error:', err);
             }
         }
-    
+
         return res.status(200).json({
             message: 'Order successfully updated',
             success: true,

@@ -6,7 +6,10 @@ import { STATUS } from '../../../constants';
 class ComplaintController {
     create = asyncHandler(async (req: Request | any, res: Response) => {
         const userId = req.userdata.id;
-        const complaint = await ComplaintService.createComplaint(userId, req.body);
+        const complaint = await ComplaintService.createComplaint(
+            userId,
+            req.body
+        );
 
         res.status(STATUS.CREATED).json({
             success: true,
@@ -15,29 +18,38 @@ class ComplaintController {
         });
     });
 
-    getMyComplaints = asyncHandler(async (req: Request | any, res: Response) => {
-        const userId = req.userdata.id;
-        const result = await ComplaintService.getUserComplaints(userId, req.query);
+    getMyComplaints = asyncHandler(
+        async (req: Request | any, res: Response) => {
+            const userId = req.userdata.id;
+            const result = await ComplaintService.getUserComplaints(
+                userId,
+                req.query
+            );
 
-        res.status(STATUS.OK).json({
-            success: true,
-            message: 'Complaints fetched successfully',
-            data: result.data,
-            pagination: result.pagination
-        });
-    });
+            res.status(STATUS.OK).json({
+                success: true,
+                message: 'Complaints fetched successfully',
+                data: result.data,
+                pagination: result.pagination
+            });
+        }
+    );
 
     getSingle = asyncHandler(async (req: Request | any, res: Response) => {
         const { id } = req.params;
         // Ensure user owns this complaint
         const complaint = await ComplaintService.getComplaintById(id);
-        
+
         if (!complaint) {
-            return res.status(STATUS.NOT_FOUND).json({ success: false, message: 'Complaint not found' });
+            return res
+                .status(STATUS.NOT_FOUND)
+                .json({ success: false, message: 'Complaint not found' });
         }
-        
+
         if (complaint.user._id.toString() !== req.userdata.id) {
-             return res.status(STATUS.FORBIDDEN).json({ success: false, message: 'Unauthorized' });
+            return res
+                .status(STATUS.FORBIDDEN)
+                .json({ success: false, message: 'Unauthorized' });
         }
 
         res.status(STATUS.OK).json({

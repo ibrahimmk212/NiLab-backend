@@ -22,8 +22,10 @@ class ComplaintService {
 
         // Notify Admins
         const user = await UserRepository.findUserById(userId);
-        const userName = user ? `${user.firstName} ${user.lastName}` : 'A customer';
-        
+        const userName = user
+            ? `${user.firstName} ${user.lastName}`
+            : 'A customer';
+
         await NotificationService.notifyAdmins(
             'New Complaint Received',
             `${userName} submitted a complaint: ${data.subject}`
@@ -71,21 +73,29 @@ class ComplaintService {
     }
 
     async updateStatus(id: string, status: string): Promise<IComplaint | null> {
-         return await ComplaintRepository.update(id, { status: status as any });
+        return await ComplaintRepository.update(id, { status: status as any });
     }
 
-    async notifyVendorAboutComplaint(complaintId: string, message?: string): Promise<void> {
+    async notifyVendorAboutComplaint(
+        complaintId: string,
+        message?: string
+    ): Promise<void> {
         const complaint = await ComplaintRepository.findById(complaintId);
         if (!complaint) throw new Error('Complaint not found');
-        if (!complaint.order) throw new Error('Complaint is not linked to an order');
+        if (!complaint.order)
+            throw new Error('Complaint is not linked to an order');
 
-        const order = await OrderRepository.findOrderById(complaint.order.toString());
-        if (!order || !order.vendor) throw new Error('Vendor not found for this order');
+        const order = await OrderRepository.findOrderById(
+            complaint.order.toString()
+        );
+        if (!order || !order.vendor)
+            throw new Error('Vendor not found for this order');
 
         await NotificationService.notifyVendor(
             order.vendor._id.toString(),
             'Complaint Alert',
-            message || `Complaint linked to Order ${order.code}: ${complaint.subject}. Please contact Admin.`
+            message ||
+                `Complaint linked to Order ${order.code}: ${complaint.subject}. Please contact Admin.`
         );
     }
 }

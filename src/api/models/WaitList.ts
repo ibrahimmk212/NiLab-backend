@@ -14,7 +14,7 @@ const waitListSchema = new Schema<WaitList>(
         email: { type: String, required: false },
         firstname: { type: String, required: true },
         lastname: { type: String, required: false },
-        state: { type: String, required: true },
+        state: { type: String, required: true }
     },
     {
         timestamps: true,

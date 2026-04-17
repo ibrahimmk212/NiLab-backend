@@ -4,10 +4,10 @@ const staffRequirement = {
     createStaff: [
         body('email').isEmail(),
         body('phoneNumber').isString().isLength({ min: 11 }),
-        body('password').isString().isLength({ min: 5 }),
         body('firstName').isString().isLength({ min: 1 }),
         body('lastName').isString().optional({ nullable: true }),
-        body('role').isString().optional({ nullable: true })
+        body('role').isString().optional({ nullable: true }),
+        body('permissions').isArray().optional({ nullable: true })
     ],
     getStaffDetail: [param('id').isInt()],
     updateStaff: [

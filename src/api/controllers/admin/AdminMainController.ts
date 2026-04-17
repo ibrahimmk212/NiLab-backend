@@ -5,10 +5,8 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import { CreateAdminType, LoginType } from '../../types/auth';
 import AuthService from '../../services/AuthService';
 import AdminService from '../../services/AdminService';
-import { generateRandomNumbers } from '../../../utils/helpers';
 import dayjs from 'dayjs';
 import OrderService from '../../services/OrderService';
-import emails from '../../libraries/emails';
 
 class AdminMainController {
     dashboard = asyncHandler(
@@ -139,11 +137,16 @@ class AdminMainController {
     create = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
             const payload: CreateAdminType = req.body;
-            const password = '123456'; //generateRandomNumbers(8).toString();
+
+            // Auto-generate a secure temporary password
+            const tempPassword =
+                Math.random().toString(36).slice(-8) +
+                Math.random().toString(36).slice(-8).toUpperCase() +
+                '!';
 
             const user = await UserService.createUser({
                 ...payload,
-                password,
+                password: tempPassword,
                 role: 'admin'
             });
 
@@ -156,7 +159,8 @@ class AdminMainController {
                 name: `${user.firstName} ${user.lastName}`,
                 phone: user.phoneNumber,
                 email: user.email,
-                role: payload.role
+                role: payload.role,
+                permissions: payload.permissions || []
             });
 
             if (!admin) {
@@ -164,12 +168,12 @@ class AdminMainController {
                 throw Error('Admin not created');
             }
 
-            // TODO send admin password to email
-            console.log(password);
+            // TODO: send tempPassword to admin's email
+            console.log('Temp password for', user.email, ':', tempPassword);
 
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'Signed up successfully',
+                message: 'Admin account created successfully',
                 data: { user, admin }
             });
         }

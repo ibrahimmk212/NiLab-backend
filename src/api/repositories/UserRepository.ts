@@ -40,7 +40,8 @@ class UserRepository {
         }
 
         if (options.isBanned !== undefined) {
-             filter.isBanned = options.isBanned === true || options.isBanned === 'true';
+            filter.isBanned =
+                options.isBanned === true || options.isBanned === 'true';
         }
 
         if (options.search) {
@@ -62,9 +63,10 @@ class UserRepository {
 
         const sort: any = {};
         if (options.sortBy) {
-             sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
+            sort[options.sortBy as string] =
+                options.sortOrder === 'asc' ? 1 : -1;
         } else {
-             sort.createdAt = -1;
+            sort.createdAt = -1;
         }
 
         // virtually order counts for userIds

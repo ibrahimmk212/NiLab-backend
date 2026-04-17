@@ -161,7 +161,11 @@ class EmailTemplate {
     payoutRequest = async (email: string, data: IPayoutRequest) => {
         const template = getTemplate('payoutRequest');
         const htmlContent = template(data);
-        await sendEmail(email, 'Terminus: Payout Request Received', htmlContent);
+        await sendEmail(
+            email,
+            'Terminus: Payout Request Received',
+            htmlContent
+        );
     };
 
     payoutCompletion = async (email: string, data: IPayoutCompletion) => {

@@ -235,7 +235,8 @@ class VendorRepository {
             filter.closingHour = options.closingHour;
         }
         if (options.isAvailable !== undefined) {
-             filter.isAvailable = options.isAvailable === true || options.isAvailable === 'true';
+            filter.isAvailable =
+                options.isAvailable === true || options.isAvailable === 'true';
         }
         if (options.averageReadyTime) {
             filter.averageReadyTime = options.averageReadyTime;
@@ -248,25 +249,26 @@ class VendorRepository {
         }
 
         if (options.identityVerificationStatus) {
-            filter.identityVerificationStatus = options.identityVerificationStatus;
+            filter.identityVerificationStatus =
+                options.identityVerificationStatus;
         }
 
         // Search Logic
         if (options.name) {
-             // If generic search is requested
-             const searchRegex = new RegExp(options.name, 'i');
-             filter.$or = [
-                 { name: searchRegex },
-                 { email: searchRegex },
-                 { phoneNumber: searchRegex }
-             ];
+            // If generic search is requested
+            const searchRegex = new RegExp(options.name, 'i');
+            filter.$or = [
+                { name: searchRegex },
+                { email: searchRegex },
+                { phoneNumber: searchRegex }
+            ];
         } else if (options.search) {
-             const searchRegex = new RegExp(options.search as string, 'i');
-             filter.$or = [
-                 { name: searchRegex },
-                 { email: searchRegex },
-                 { phoneNumber: searchRegex }
-             ];
+            const searchRegex = new RegExp(options.search as string, 'i');
+            filter.$or = [
+                { name: searchRegex },
+                { email: searchRegex },
+                { phoneNumber: searchRegex }
+            ];
         }
 
         if (options.status) {
@@ -283,9 +285,10 @@ class VendorRepository {
 
         const sort: any = {};
         if (options.sortBy) {
-             sort[options.sortBy as string] = options.sortOrder === 'asc' ? 1 : -1;
+            sort[options.sortBy as string] =
+                options.sortOrder === 'asc' ? 1 : -1;
         } else {
-             sort.createdAt = -1;
+            sort.createdAt = -1;
         }
 
         const [vendors, total] = await Promise.all([

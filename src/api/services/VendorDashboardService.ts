@@ -43,7 +43,7 @@ export class VendorDashboardService {
                 productsCount,
                 todaySales: stats[0]?.todayNetSales || 0,
                 activeOrders: stats[0]?.activeOrders || 0,
-                activeComplaints, 
+                activeComplaints,
                 rating: vendor?.ratings || 0
             },
             recentOrders,

@@ -15,10 +15,7 @@ customerNotificationRouter.delete(
     NotificationController.deleteAll
 );
 
-customerNotificationRouter.post(
-    '/',
-    NotificationController.create
-);
+customerNotificationRouter.post('/', NotificationController.create);
 
 customerNotificationRouter.put(
     '/:notificationId/read',
