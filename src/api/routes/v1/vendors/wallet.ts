@@ -9,6 +9,7 @@ vendorWalletRouter.post(
     VendorWalletController.accountEnquiry
 );
 
+vendorWalletRouter.get('/virtual-account', VendorWalletController.getVirtualAccount);
 vendorWalletRouter.post('/withdraw', VendorWalletController.withdraw);
 
 export default vendorWalletRouter;

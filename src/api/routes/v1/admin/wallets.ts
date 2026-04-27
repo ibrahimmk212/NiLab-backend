@@ -9,7 +9,10 @@ adminWalletRouter.get(
     AdminWalletController.getMonnifyBalance
 );
 adminWalletRouter.get('/:walletId', AdminWalletController.getWallet);
+adminWalletRouter.get('/:walletId/virtual-account', AdminWalletController.getVirtualAccount);
+adminWalletRouter.post('/:walletId/virtual-account/regenerate', AdminWalletController.regenerateVirtualAccount);
 
+adminWalletRouter.get('/platform/system-wallet', AdminWalletController.getSystemWallet);
 adminWalletRouter.delete('/:walletId', AdminWalletController.deleteWallet);
 
 adminWalletRouter.get('/', AdminWalletController.getAllWallets);

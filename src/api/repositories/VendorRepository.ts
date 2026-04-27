@@ -50,6 +50,10 @@ class VendorRepository {
             { path: 'marketCategory' }
         ]);
     }
+
+    async findByKeyLight(key: string, value: string): Promise<Vendor | null> {
+        return await VendorModel.findOne({ [key]: value });
+    }
     // find vendors options
     async findVendorsByOption(
         options: Record<string, unknown>,

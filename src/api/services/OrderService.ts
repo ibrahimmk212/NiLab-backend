@@ -59,6 +59,7 @@ class OrderService {
                 deliveryLocation: pricing.destination.coordinates,
                 destination: pricing.destination,
                 deliveryFee: pricing.deliveryFee,
+                serviceFee: pricing.serviceFee,
                 vat: pricing.vat,
                 amount: pricing.subtotal,
                 totalAmount: pricing.totalAmount,

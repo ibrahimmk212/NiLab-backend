@@ -97,10 +97,11 @@ class Auth {
                     message: 'Account not found'
                 });
             }
-            if (userdata.role != ROLE.ADMIN) {
+            const administrativeRoles = [ROLE.ADMIN, ROLE.FINANCE, ROLE.MANAGER, ROLE.SUPPORT];
+            if (!administrativeRoles.includes(userdata.role)) {
                 return res.status(STATUS.UNAUTHORIZED).json({
                     success: false,
-                    message: 'This is not an Admin Account'
+                    message: 'Access denied: Administrative privileges required'
                 });
             }
 
@@ -188,7 +189,7 @@ class Auth {
 
             // Case 1: Primary Vendor Owner
             if (userdata.role === ROLE.VENDOR) {
-                const vendor = await VendorRepository.findByKey(
+                const vendor = await VendorRepository.findByKeyLight(
                     'userId',
                     userdata.id
                 );

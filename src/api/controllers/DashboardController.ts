@@ -22,7 +22,7 @@ class DashboardController {
     }
 
     async riderDashboard(req: Request | any, res: Response) {
-        const riderId = req.user.riderId;
+        const riderId = req.rider.id;
         const data = await DashboardService.getRiderDashboard(riderId);
         return res.json({
             success: true,

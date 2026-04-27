@@ -67,6 +67,43 @@ class PayoutService {
         return payout;
     }
 
+    async requestAdminPayout(payload: {
+        userId: string;
+        amount: number;
+        bankName: string;
+        accountName: string;
+        accountNumber: string;
+        bankCode: string;
+    }): Promise<any | null> {
+        const payout = await PayoutRepository.requestSystemPayout(
+            payload.userId,
+            payload.amount,
+            payload.bankName,
+            payload.accountNumber,
+            payload.bankCode
+        );
+
+        // Send Email Notification
+        const user = await UserRepository.findUserById(payload.userId);
+        if (user) {
+            emails.payoutRequest(user.email, {
+                name: user.firstName,
+                amount: payload.amount.toString(),
+                accountNumber: payload.accountNumber,
+                bankName: payload.bankName,
+                requestDate: new Date().toDateString()
+            });
+
+            // Admin Notification (Broadcast to other admins)
+            await NotificationService.notifyAdmins(
+                'New System Payout Request',
+                `Admin ${user.firstName} ${user.lastName} requested a system payout of ${payload.amount}`
+            );
+        }
+
+        return payout;
+    }
+
     async completePayout(payoutId: string): Promise<any | null> {
         const session = await mongoose.startSession();
         session.startTransaction();

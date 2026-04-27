@@ -20,6 +20,32 @@ class AdminPayoutController {
         }
     );
 
+    requestPayout = asyncHandler(
+        async (req: any, res: Response, next: NextFunction): Promise<void> => {
+            try {
+                const { amount, bankName, accountName, accountNumber, bankCode } =
+                    req.body;
+                const userId = req.userdata.id; // From admin's user credential
+
+                const payout = await PayoutService.requestAdminPayout({
+                    userId,
+                    amount: parseFloat(amount),
+                    bankName,
+                    accountName,
+                    accountNumber,
+                    bankCode
+                });
+
+                res.status(200).send({
+                    message: 'System payout requested successfully',
+                    data: payout
+                });
+            } catch (error) {
+                next(error);
+            }
+        }
+    );
+
     getAllPayouts = asyncHandler(
         async (req: any, res: Response, next: NextFunction): Promise<void> => {
             try {

@@ -10,6 +10,9 @@ import AuthService from '../../services/AuthService';
 import OrderService from '../../services/OrderService';
 import dayjs from 'dayjs';
 import MarketCategoryService from '../../services/MarketCategoryService';
+import { v2 as cloudinaryV2 } from 'cloudinary';
+import { Readable } from 'stream';
+import VendorRepository from '../../repositories/VendorRepository';
 
 class VendorInfoController {
     currentUser = asyncHandler(
@@ -231,21 +234,45 @@ class VendorInfoController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { vendor, body } = req;
+            const { vendor } = req;
+            const file = req?.file;
 
-            const file = req?.files?.file;
-            if (!req?.files?.file) throw Error('File Not selected');
-            file.name = `${Date.now()}_${file.name.replace(/ /g, '_')}`;
+            if (!file) throw Error('File Not selected');
 
-            // const upload = await uploadFileToS3(file, 'banners/');
-            // const updated = await VendorService.update(vendor.id, {
-            //     banner: upload?.url
-            // });
-            res.status(STATUS.CREATED).send({
-                success: true,
-                message: 'Banner Updated Successfully.'
-                // data: updated
-            });
+            const stream = cloudinaryV2.uploader.upload_stream(
+                {
+                    resource_type: 'auto',
+                    public_id: `banner_${vendor.id}_${Date.now()}`
+                },
+                async (error, result) => {
+                    if (error) {
+                        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+                            success: false,
+                            message: 'Banner upload failed',
+                            error: error.message
+                        });
+                    }
+
+                    if (result) {
+                        await VendorRepository.update(vendor.id, {
+                            banner: result.secure_url
+                        });
+
+                        return res.status(STATUS.CREATED).send({
+                            success: true,
+                            message: 'Banner Updated Successfully.',
+                            data: {
+                                url: result.secure_url
+                            }
+                        });
+                    }
+                }
+            );
+
+            const bufferStream = new Readable();
+            bufferStream.push(file.buffer);
+            bufferStream.push(null);
+            bufferStream.pipe(stream);
         }
     );
 }

@@ -333,12 +333,12 @@ class AuthController {
 
             payload.role = 'rider';
             // check existing vehicle type
-            const vehicleType = await VehicleTypeService.getVehicleTypeById(
-                payload.vehicleTypeId
-            );
-            if (!vehicleType) {
-                throw Error('Vehicle type not found');
-            }
+            // const vehicleType = await VehicleTypeService.getVehicleTypeById(
+            //     payload.vehicleTypeId
+            // );
+            // if (!vehicleType) {
+            //     throw Error('Vehicle type not found');
+            // }
 
             const user = await AuthService.riderSignUp(payload);
 

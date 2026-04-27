@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import WalletService from '../../services/WalletService';
+import VirtualAccountService from '../../services/VirtualAccountService';
 import appConfig from '../../../config/appConfig';
+import WalletModel from '../../models/Wallet';
 
 class AdminWalletController {
     getMonnifyBalance = asyncHandler(
@@ -141,6 +143,47 @@ class AdminWalletController {
             });
         }
     );
+
+    getSystemWallet = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            try {
+                const { default: WalletModel } = await import('../../models/Wallet');
+                const wallet = await WalletModel.findOne({ role: 'system' });
+                
+                res.status(200).send({
+                    success: true,
+                    message: 'System wallet fetched successfully',
+                    data: wallet
+                });
+            } catch (error) {
+                next(error);
+            }
+        }
+    );
+
+    getVirtualAccount = asyncHandler(async (req: Request, res: Response) => {
+        const { walletId } = req.params;
+        const wallet = await WalletModel.findById(walletId);
+        if (!wallet) return res.status(404).json({ message: 'Wallet not found' });
+        if (!wallet.owner) return res.status(400).json({ message: 'Wallet owner not found' });
+
+        const virtualAccount = await VirtualAccountService.getOrCreateVirtualAccount(wallet.owner.toString());
+        res.status(200).json({ success: true, data: virtualAccount });
+    });
+
+    regenerateVirtualAccount = asyncHandler(async (req: Request, res: Response) => {
+        const { walletId } = req.params;
+        const wallet = await WalletModel.findById(walletId);
+        if (!wallet) return res.status(404).json({ message: 'Wallet not found' });
+        if (!wallet.owner) return res.status(400).json({ message: 'Wallet owner not found' });
+
+        const virtualAccount = await VirtualAccountService.getOrCreateVirtualAccount(wallet.owner.toString(), true);
+        res.status(200).json({ success: true, message: 'Account regenerated', data: virtualAccount });
+    });
 }
 
 export default new AdminWalletController();

@@ -107,6 +107,95 @@ class PayoutRepository {
         }
     }
 
+    // Request a payout from the system wallet (admin)
+    async requestSystemPayout(
+        userId: string,
+        amount: number,
+        bankName: string,
+        accountNumber: string,
+        bankCode: string
+    ) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const validation = await monnify.validateBankAccount(
+                accountNumber,
+                bankCode
+            );
+
+            if (!validation.requestSuccessful) {
+                throw new Error(
+                    'Invalid bank account details. Please check and try again.'
+                );
+            }
+
+            const accountName = validation.responseBody.accountName;
+            
+            // 1. Atomic Balance Check and Move to Pending for system wallet
+            const wallet = await WalletModel.findOneAndUpdate(
+                {
+                    role: 'system',
+                    availableBalance: { $gte: amount }
+                },
+                {
+                    $inc: {
+                        availableBalance: -amount,
+                        pendingBalance: amount
+                    }
+                },
+                { new: true, session }
+            );
+
+            if (!wallet)
+                throw new Error('Insufficient system balance or wallet not found');
+
+            // 3. Create the Payout Record
+            const [payout] = await PayoutModel.create(
+                [
+                    {
+                        userId, // admin user id that requested it
+                        walletId: wallet._id,
+                        amount,
+                        bankName,
+                        accountNumber,
+                        accountName,
+                        bankCode,
+                        status: 'pending'
+                    }
+                ],
+                { session }
+            );
+
+            // 4. LOG THE "HOLD" TRANSACTION
+            await TransactionModel.create(
+                [
+                    {
+                        userId,
+                        role: 'system',
+                        reference: generateReference('WTH'),
+                        amount,
+                        type: 'DEBIT',
+                        category: 'WITHDRAWAL',
+                        status: 'pending',
+                        remark: `System withdrawal request for ${amount} initiated`,
+                        balanceBefore: wallet.availableBalance + amount,
+                        balanceAfter: wallet.availableBalance
+                    }
+                ],
+                { session }
+            );
+
+            await session.commitTransaction();
+            return payout;
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
+        }
+    }
+
     //  complete (approve) payout
     async finalizePayout(payoutId: string, session: mongoose.ClientSession) {
         // eslint-disable-next-line no-useless-catch

@@ -15,6 +15,7 @@ import webhookRouter from './webhooks';
 import customerComplaintRoutes from './customers/complaint';
 import adminComplaintRoutes from './admin/complaint';
 import publicBannerRouter from './public/banners';
+import bankAccountRouter from './bank-accounts';
 
 const router: Router = Router();
 router.use('/', mainRouter);
@@ -58,4 +59,17 @@ router.use('/file', fileRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/webhooks', webhookRouter);
 router.use('/banners', publicBannerRouter);
+router.use(
+    '/bank-accounts',
+    auth.authenticate,
+    auth.checkRoles(
+        ROLE.VENDOR,
+        ROLE.STAFF,
+        ROLE.RIDER,
+        ROLE.ADMIN,
+        ROLE.FINANCE,
+        ROLE.MANAGER
+    ),
+    bankAccountRouter
+);
 export default router;

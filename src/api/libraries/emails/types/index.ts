@@ -77,6 +77,10 @@ export interface IVendorNewStaff {
     loginUrl: string;
 }
 
+export interface IVendorKycSubmission {
+    vendorName: string;
+}
+
 // RIDER
 
 export interface IRiderWelcome {
@@ -134,4 +138,12 @@ export interface IPayoutCompletion {
     bankName: string;
     transactionReference: string;
     completionDate: string;
+}
+
+export interface IAdminNewVendorSignup {
+    vendorName: string;
+    vendorEmail: string;
+    vendorPhone: string;
+    marketCategory: string;
+    signupDate: string;
 }

@@ -16,7 +16,9 @@ import {
     IDeliveryStatusUpdate,
     IRiderDeliveryPaymentReceipt,
     IPayoutRequest,
-    IPayoutCompletion
+    IPayoutCompletion,
+    IVendorKycSubmission,
+    IAdminNewVendorSignup
 } from './types';
 import { getTemplate } from './templates';
 import { mailTransporter } from '../../../utils/mail/mailer';
@@ -172,6 +174,26 @@ class EmailTemplate {
         const template = getTemplate('payoutCompletion');
         const htmlContent = template(data);
         await sendEmail(email, 'Terminus: Payout Successful', htmlContent);
+    };
+
+    vendorKycSubmitted = async (email: string, data: IVendorKycSubmission) => {
+        const template = getTemplate('vendorKycSubmitted');
+        const htmlContent = template(data);
+        await sendEmail(
+            email,
+            'Terminus: KYC Documents Received',
+            htmlContent
+        );
+    };
+
+    adminNewVendorSignup = async (email: string, data: IAdminNewVendorSignup) => {
+        const template = getTemplate('adminNewVendorSignup');
+        const htmlContent = template(data);
+        await sendEmail(
+            email,
+            'Terminus ALERT: New Vendor Registration',
+            htmlContent
+        );
     };
 }
 

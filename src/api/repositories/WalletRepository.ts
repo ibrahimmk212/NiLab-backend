@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import WalletModel, { Wallet } from '../models/Wallet';
 import { create } from 'domain';
 
@@ -10,6 +10,10 @@ class WalletRepository {
 
     async createWallet(payload: any) {
         return WalletModel.create(payload);
+    }
+
+    async updateWallet(walletId: string | Types.ObjectId, payload: any) {
+        return WalletModel.findByIdAndUpdate(walletId, payload, { new: true });
     }
 
     async findSystemWallet(): Promise<Wallet | null> {

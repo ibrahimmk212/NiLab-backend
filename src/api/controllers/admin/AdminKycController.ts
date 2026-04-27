@@ -3,6 +3,7 @@ import KycService from '../../services/KycService';
 import { Types } from 'mongoose';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
+import NotificationService from '../../services/NotificationService';
 
 class AdminKycController {
     getKycs = asyncHandler(async (req: Request, res: Response) => {
@@ -39,6 +40,21 @@ class AdminKycController {
                 message: 'KYC not found'
             });
         }
+        // Notify User
+        if (kyc && kyc.user) {
+            const notificationTitle = status === 'approved' ? 'KYC Approved' : 'KYC Application Update';
+            const notificationMessage = status === 'approved' 
+                ? 'Congratulations! Your full KYC application has been approved.' 
+                : `Your KYC application status has been updated to ${status}. ${message || ''}`;
+            
+            await NotificationService.create({
+                userId: kyc.user._id || kyc.user,
+                title: notificationTitle,
+                message: notificationMessage,
+                status: 'unread'
+            });
+        }
+
         return res.status(STATUS.OK).json({
             success: true,
             message: `KYC status updated to ${status}`,
@@ -61,6 +77,16 @@ class AdminKycController {
         const updatedKyc = await KycService.updateKyc(kyc.user._id, {
             address: { ...kyc.address, status, message }
         });
+
+        // Notify User if rejected
+        if (updatedKyc && status === 'rejected') {
+            await NotificationService.create({
+                userId: kyc.user._id || kyc.user,
+                title: 'KYC Document Rejected',
+                message: `Your Proof of Address was rejected. Reason: ${message}`,
+                status: 'unread'
+            });
+        }
 
         return res.status(STATUS.OK).json({
             success: true,
@@ -85,6 +111,16 @@ class AdminKycController {
             identity: { ...kyc.identity, status, message }
         });
 
+        // Notify User if rejected
+        if (updatedKyc && status === 'rejected') {
+            await NotificationService.create({
+                userId: kyc.user._id || kyc.user,
+                title: 'KYC Document Rejected',
+                message: `Your Identity Verification was rejected. Reason: ${message}`,
+                status: 'unread'
+            });
+        }
+
         return res.status(STATUS.OK).json({
             success: true,
             message: `KYC status updated to ${status}`,
@@ -108,6 +144,16 @@ class AdminKycController {
             nextOfKin: { ...kyc.nextOfKin, status, message }
         });
 
+        // Notify User if rejected
+        if (updatedKyc && status === 'rejected') {
+            await NotificationService.create({
+                userId: kyc.user._id || kyc.user,
+                title: 'KYC Document Rejected',
+                message: `Your Next of Kin details were rejected. Reason: ${message}`,
+                status: 'unread'
+            });
+        }
+
         return res.status(STATUS.OK).json({
             success: true,
             message: `KYC status updated to ${status}`,
@@ -130,6 +176,16 @@ class AdminKycController {
         const updatedKyc = await KycService.updateKyc(kyc.user._id, {
             guarantor: { ...kyc.guarantor, status, message }
         });
+
+        // Notify User if rejected
+        if (updatedKyc && status === 'rejected') {
+            await NotificationService.create({
+                userId: kyc.user._id || kyc.user,
+                title: 'KYC Document Rejected',
+                message: `Your Guarantor details were rejected. Reason: ${message}`,
+                status: 'unread'
+            });
+        }
 
         return res.status(STATUS.OK).json({
             success: true,

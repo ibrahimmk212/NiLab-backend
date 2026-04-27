@@ -40,7 +40,7 @@ class NotificationController {
                 throw Error('Failed to update status');
             }
 
-            if (notification.userId !== req.user.id) {
+            if (notification.userId !== req.userdata.id) {
                 throw Error('Unauthorized');
             }
 
@@ -66,7 +66,7 @@ class NotificationController {
                 throw Error('Failed to update status');
             }
 
-            if (notification.userId !== req.user.id) {
+            if (notification.userId !== req.userdata.id) {
                 throw Error('Unauthorized');
             }
 
@@ -92,7 +92,7 @@ class NotificationController {
                 throw Error('Failed to update status');
             }
 
-            if (notification.userId !== req.user.id) {
+            if (notification.userId !== req.userdata.id) {
                 throw Error('Unauthorized');
             }
 
@@ -150,7 +150,7 @@ class NotificationController {
                 throw Error('Failed to delete status');
             }
 
-            if (notification.userId !== req.user.id) {
+            if (notification.userId !== req.userdata.id) {
                 throw Error('Unauthorized');
             }
 
@@ -165,7 +165,7 @@ class NotificationController {
 
     markAllAsRead = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
-            await NotificationService.markAllAsRead(req.user.id);
+            await NotificationService.markAllAsRead(req.userdata.id);
 
             res.status(STATUS.OK).send({
                 success: true,
@@ -176,7 +176,7 @@ class NotificationController {
 
     deleteAll = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
-            await NotificationService.deleteAll(req.user.id);
+            await NotificationService.deleteAll(req.userdata.id);
 
             res.status(STATUS.OK).send({
                 success: true,

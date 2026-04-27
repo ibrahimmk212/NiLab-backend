@@ -8,6 +8,14 @@ export interface Wallet extends Document {
 
     prevAvailableBalance: number;
     prevPendingBalance: number;
+
+    virtualAccount?: {
+        bankName: string;
+        accountNumber: string;
+        accountName: string;
+        accountReference: string;
+        bankCode: string;
+    };
 }
 
 const walletSchema = new Schema<Wallet>(
@@ -30,7 +38,14 @@ const walletSchema = new Schema<Wallet>(
         pendingBalance: { type: Number, default: 0 },
 
         prevAvailableBalance: { type: Number, default: 0 },
-        prevPendingBalance: { type: Number, default: 0 }
+        prevPendingBalance: { type: Number, default: 0 },
+        virtualAccount: {
+            bankName: String,
+            accountNumber: String,
+            accountName: String,
+            accountReference: String,
+            bankCode: String
+        }
     },
     {
         timestamps: true,

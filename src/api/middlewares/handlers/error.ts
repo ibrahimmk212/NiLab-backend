@@ -20,7 +20,7 @@ function errorHandler(
             message: err.message,
             method: req.method,
             path: req.path,
-            params: req.route.path,
+            params: req.route?.path,
             body: req.body,
             query: req.query,
             stack: err.stack

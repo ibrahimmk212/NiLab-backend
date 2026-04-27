@@ -17,7 +17,7 @@ export interface Rider extends Document {
     city: string;
     state: string;
     // vehicle: string;
-    vehicleTypeId: mongoose.Types.ObjectId;
+    vehicleTypeId?: mongoose.Types.ObjectId;
     status: 'unverified' | 'verified' | 'suspended';
     available: boolean;
     gender: string;

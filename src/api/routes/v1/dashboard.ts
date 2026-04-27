@@ -16,11 +16,10 @@ dashboardRouter.get(
     DashboardController.vendorSalesReport
 );
 dashboardRouter.get('/rider', auth.isRider, DashboardController.riderDashboard);
-// dashboardRouter.get(
-//     '/sales',
-//     // auth.isAdmin,
-//     // auth.isVendor,
-//     DashboardController.salesReport
-// );
+dashboardRouter.get(
+    '/admin/sales',
+    auth.isAdmin,
+    DashboardController.salesReport
+);
 
 export default dashboardRouter;

@@ -7,6 +7,7 @@ import TransactionService from '../../services/TransactionService';
 import monnify from '../../libraries/monnify';
 import { currentTimestamp } from '../../../utils/helpers';
 import appConfig from '../../../config/appConfig';
+import VirtualAccountService from '../../services/VirtualAccountService';
 
 class VendorWalletController {
     get = asyncHandler(
@@ -175,6 +176,18 @@ class VendorWalletController {
                 message: 'Transactions completed',
                 success: true,
                 data: transaction
+            });
+        }
+    );
+
+    getVirtualAccount = asyncHandler(
+        async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+            const { userdata }: any = req;
+            const virtualAccount = await VirtualAccountService.getOrCreateVirtualAccount(userdata.id);
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Virtual account fetched successfully',
+                data: virtualAccount
             });
         }
     );

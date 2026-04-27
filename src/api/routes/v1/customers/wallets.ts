@@ -6,5 +6,6 @@ const customerWalletRouter: Router = Router();
 
 customerWalletRouter.get('/', WalletController.getMyWallet);
 customerWalletRouter.post('/fund', WalletController.fundWallet);
+customerWalletRouter.get('/virtual-account', WalletController.getVirtualAccount);
 
 export default customerWalletRouter;

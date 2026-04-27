@@ -13,6 +13,8 @@ import vendorCategoryRouter from './categories';
 import vendorNotificationRouter from './notifications';
 import VendorDashboardRouter from './dashboard';
 import vendorPayoutRouter from './payout';
+import vendorKycRouter from './kyc';
+import { upload } from '../../../services/FileService';
 
 const vendorsRouter: Router = Router();
 vendorsRouter.post('/login', VendorInfoController.login);
@@ -40,7 +42,7 @@ vendorsRouter.put(
     VendorInfoController.updateLocation
 );
 
-vendorsRouter.put('/banner', VendorInfoController.uploadBanner);
+vendorsRouter.put('/banner', upload.single('file'), VendorInfoController.uploadBanner);
 
 vendorsRouter.use('/products', vendorProductRouter);
 vendorsRouter.use('/orders', vendorOrderRouter);
@@ -52,5 +54,6 @@ vendorsRouter.use('/market-categories', customerMarketCategoryRouter);
 vendorsRouter.use('/categories', vendorCategoryRouter);
 vendorsRouter.use('/dashboard', VendorDashboardRouter);
 vendorsRouter.use('/payouts', vendorPayoutRouter);
+vendorsRouter.use('/kyc', vendorKycRouter);
 
 export default vendorsRouter;

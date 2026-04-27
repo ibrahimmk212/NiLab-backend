@@ -11,8 +11,7 @@ class KycService {
     ): Promise<Kyc> {
         const kyc = await KycRepository.createKyc({
             ...kycData,
-            user: userId,
-            role: 'rider'
+            user: userId
         });
         await UserRepository.updateUser(`${userId}`, {
             kycStatus: 'pending'

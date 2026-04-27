@@ -3,7 +3,10 @@ export const ROLE = {
     STAFF: 'staff',
     USER: 'user',
     VENDOR: 'vendor',
-    RIDER: 'rider'
+    RIDER: 'rider',
+    FINANCE: 'finance',
+    MANAGER: 'manager',
+    SUPPORT: 'support'
 };
 
 export const STATUS = {

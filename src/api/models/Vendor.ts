@@ -48,6 +48,7 @@ export interface Vendor extends Document {
     isAvailable: boolean;
     averageReadyTime: number | string;
     status: string;
+    kycStatus: 'not_submitted' | 'pending' | 'verified' | 'failed';
     user?: any; // Virtual population
 }
 
@@ -120,6 +121,12 @@ const vendorSchema = new Schema<Vendor>(
         // lat: { type: Number },
         // lng: { type: Number },
         status: { type: String, required: false, default: 'inactive' },
+        kycStatus: {
+            type: String,
+            required: false,
+            default: 'not_submitted',
+            enum: ['not_submitted', 'pending', 'verified', 'failed']
+        },
         identityType: { type: String, required: false },
         identityVerificationStatus: {
             type: String,

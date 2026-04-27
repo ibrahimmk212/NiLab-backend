@@ -10,15 +10,17 @@ class AdminCategoryController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const newCategory = await CategoryService.create(req.body);
+            const body = req.body;
+            body.vendor = null; // Admin categories are global
+            const newCategory = await CategoryService.create(body);
             if (!newCategory)
                 res.status(STATUS.BAD_REQUEST).send({
                     success: false,
-                    message: 'Failed to create Product'
+                    message: 'Failed to create Category'
                 });
             res.status(STATUS.CREATED).send({
                 success: true,
-                message: 'Product Created Successfully',
+                message: 'Category Created Successfully',
                 data: newCategory
             });
         }
@@ -29,7 +31,10 @@ class AdminCategoryController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const product = await CategoryService.getAll(req.query);
+            const product = await CategoryService.getAll({
+                ...req.query,
+                onlyGlobal: true
+            });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',
@@ -45,9 +50,18 @@ class AdminCategoryController {
         ): Promise<void> => {
             const { id } = req.params;
             const product = await CategoryService.find(id);
+            
+            if (product && product.vendor) {
+                res.status(STATUS.FORBIDDEN).send({
+                    success: false,
+                    message: 'This category belongs to a vendor and cannot be managed here'
+                });
+                return;
+            }
+
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'Categories fetched successfully',
+                message: 'Category fetched successfully',
                 data: product
             });
         }
@@ -61,10 +75,20 @@ class AdminCategoryController {
         ): Promise<void> => {
             const { id } = req.params;
             const { name, description } = req.body;
-            // const product = await CategoryService.find(id);
+            
+            const categoryToUpdate = await CategoryService.find(id);
+            if (!categoryToUpdate || categoryToUpdate.vendor) {
+                res.status(STATUS.FORBIDDEN).send({
+                    success: false,
+                    message: 'Cannot update vendor-owned categories'
+                });
+                return;
+            }
+
             const category = await CategoryService.update(id, {
                 name,
-                description
+                description,
+                vendor: null // Ensure it remains global
             });
             res.status(STATUS.OK).send({
                 success: true,

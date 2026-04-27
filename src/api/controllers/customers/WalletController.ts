@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextFunction, Request, Response } from 'express';
 import WalletService from '../../services/WalletService';
-import PaymentService from '../../services/PaymentService'; // Import PaymentService
+import PaymentService from '../../services/PaymentService';
+import VirtualAccountService from '../../services/VirtualAccountService';
 import CollectionRepository from '../../repositories/CollectionRepository';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import { STATUS } from '../../../constants';
@@ -68,6 +69,17 @@ class CustomerWalletController {
             });
         }
     );
+
+    getVirtualAccount = asyncHandler(async (req: Request | any, res: Response) => {
+        const { userdata } = req;
+        const virtualAccount = await VirtualAccountService.getOrCreateVirtualAccount(userdata.id);
+
+        res.status(STATUS.OK).json({
+            success: true,
+            message: 'Virtual account details fetched successfully',
+            data: virtualAccount
+        });
+    });
 }
 
 export default new CustomerWalletController();

@@ -232,11 +232,36 @@ class AuthService implements IAuthService {
             );
         // TODO check Vendors email address, if exists.
         // TODO check Vendors phone address, if exists.
-        return await UserRepository.createVendorUser({
+        const result = await UserRepository.createVendorUser({
             ...payload,
             email: savedData.email,
             password: payload.password
         });
+
+        if (result && result.user) {
+            // Notify Admins
+            try {
+                const adminResponse = await UserRepository.findAll({
+                    role: 'admin',
+                    limit: 100
+                });
+                const admins = adminResponse?.data || [];
+
+                for (const admin of admins) {
+                    await emails.adminNewVendorSignup(admin.email, {
+                        vendorName: payload.vendor?.name || `${payload.firstName} ${payload.lastName}`,
+                        vendorEmail: savedData.email,
+                        vendorPhone: payload.phoneNumber,
+                        marketCategory: existingMarketCategory.name,
+                        signupDate: new Date().toLocaleString()
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to notify admins of new vendor:', err);
+            }
+        }
+
+        return result;
     }
 
     async riderSignUp(payload: RiderSignUpType): Promise<any | null> {

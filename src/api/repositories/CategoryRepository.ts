@@ -56,7 +56,17 @@ class CategoryRepository {
             filter.status = 'active';
         }
 
-        if (options.vendor) filter.vendor = options.vendor;
+        // 2. Vendor/Global Filter
+        if (options.vendor) {
+            if (options.includeGlobal) {
+                filter.$or = [{ vendor: options.vendor }, { vendor: null }];
+            } else {
+                filter.vendor = options.vendor;
+            }
+        } else if (options.onlyGlobal) {
+            filter.vendor = null;
+        }
+
         if (options.status) filter.status = options.status;
         if (options.name) filter.name = { $regex: options.name, $options: 'i' };
         if (options.search) {

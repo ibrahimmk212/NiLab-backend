@@ -26,14 +26,26 @@ class PaymentService {
         try {
             const {
                 transactionReference,
-                paymentReference,
                 amountPaid,
                 paymentStatus,
                 settlementAmount,
                 paymentMethod,
                 customer,
-                metaData
+                metaData,
+                product
             } = payload;
+
+            // Handle virtual account reference if missing top-level paymentReference
+            let paymentReference = payload.paymentReference;
+            if (!paymentReference && product && product.reference) {
+                paymentReference = product.reference;
+            }
+
+            if (!paymentReference) {
+                console.error('Monnify Webhook: Missing paymentReference', payload);
+                await session.abortTransaction();
+                return;
+            }
 
             // 1. Idempotency Check
             const exists = await PaymentRepository.findByTransactionReference(
@@ -249,7 +261,13 @@ class PaymentService {
         collectionData: any,
         session: any
     ) {
-        const userId = payload.metaData?.userId;
+        let userId = payload.metaData?.userId;
+
+        // If it's a virtual account transfer, metadata might be missing
+        // Reference format: USER_WAL_[userId]
+        if (!userId && ref.startsWith('USER_WAL_')) {
+            userId = ref.replace('USER_WAL_', '');
+        }
         const amount = payload.amountPaid;
 
         if (userId) {
@@ -502,7 +520,7 @@ class PaymentService {
         const requestBody = {
             amount: payout.amount,
             reference: reference,
-            narration: `Payout for ${payout._id}`,
+            narration: `Terminus Payout - ${new Date().toLocaleDateString('en-GB')}`,
             destinationBankCode: payout.bankCode!, // Assumed present after validation
             destinationAccountNumber: payout.accountNumber,
             currency: (payout.currency || 'NGN') as 'NGN',

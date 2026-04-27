@@ -25,6 +25,12 @@ class DashboardRepository {
         const pendingPayouts = await PayoutModel.countDocuments({
             status: 'pending'
         });
+        const pendingApplications = await VendorModel.countDocuments({
+            identityVerificationStatus: 'pending'
+        });
+        const pendingKyc = await UserModel.countDocuments({
+            kycStatus: 'pending'
+        });
 
         const revenueStats = await OrderModel.aggregate([
             { $match: { status: 'completed' } },
@@ -60,6 +66,8 @@ class DashboardRepository {
             customers: customersCount,
             pendingComplaints,
             pendingPayouts,
+            pendingApplications,
+            pendingKyc,
             gmv,
             revenue
         };
