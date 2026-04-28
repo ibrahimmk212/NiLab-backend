@@ -44,9 +44,16 @@ export interface Identity {
     message: string;
 }
 
+export interface Bvn {
+    bvn: string;
+    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+    message: string;
+}
+
 export interface Kyc extends Document {
     address: Address;
     identity: Identity;
+    bvn: Bvn;
     passportUrl: string;
     nextOfKin: NextOfKin;
     guarantor: Guarantor;
@@ -82,6 +89,15 @@ const kycSchema = new Schema<Kyc>(
             },
             identityNumber: { type: String, required: false },
             identityDocument: { type: String, required: false },
+            status: {
+                type: String,
+                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
+                default: 'not_submitted'
+            },
+            message: { type: String, required: false }
+        },
+        bvn: {
+            bvn: { type: String, required: false },
             status: {
                 type: String,
                 enum: ['not_submitted', 'pending', 'verified', 'rejected'],

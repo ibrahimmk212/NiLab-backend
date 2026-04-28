@@ -24,6 +24,7 @@ import adminBannerRouter from './banners';
 import adminVehicleTypeRouter from './vehicleType';
 import adminStaffRouter from './staffs';
 import adminLogRouter from './logs';
+import adminDeliverySubscriptionRouter from './delivery-subscriptions';
 
 const adminsRouter: Router = Router();
 
@@ -53,5 +54,6 @@ adminsRouter.use('/logs', adminLogRouter);
 adminsRouter.post('/login', AdminUserController.login);
 adminsRouter.use('/dashboard', adminDashboardRouter);
 adminsRouter.use('/delivery', adminDeliveryRouter);
+adminsRouter.use('/delivery-subscriptions', adminDeliverySubscriptionRouter);
 
 export default adminsRouter;
