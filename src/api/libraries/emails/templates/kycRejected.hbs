@@ -1,0 +1,30 @@
+{{> header}}
+
+  <!-- Body Content -->
+  <tr>
+    <td class="body-content">
+      <h2>KYC Application Update</h2>
+      <p>Hello {{name}},</p>
+      <p>There was an issue processing your recent KYC verification attempt.</p>
+
+      <div class="alert-box">
+        <strong>Reason for Rejection:</strong><br>
+        {{reason}}
+      </div>
+
+      <p>We need you to update your profile and provide the correct information. You can do this by returning to the primary dashboard or settings section of your application and re-submitting your verification details.</p>
+
+      <!-- Call to Action -->
+      <table class="btn" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+          <td align="center">
+            <a href="https://terminus.com/login" class="btn-primary">Update Information</a>
+          </td>
+        </tr>
+      </table>
+
+      <p>If you have any questions or need further assistance, please contact our support team.</p>
+    </td>
+  </tr>
+
+{{> footer}}

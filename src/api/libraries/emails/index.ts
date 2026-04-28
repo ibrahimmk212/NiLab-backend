@@ -18,7 +18,8 @@ import {
     IPayoutRequest,
     IPayoutCompletion,
     IVendorKycSubmission,
-    IAdminNewVendorSignup
+    IAdminNewVendorSignup,
+    IKycRejected
 } from './types';
 import { getTemplate } from './templates';
 import { mailTransporter } from '../../../utils/mail/mailer';
@@ -192,6 +193,16 @@ class EmailTemplate {
         await sendEmail(
             email,
             'Terminus ALERT: New Vendor Registration',
+            htmlContent
+        );
+    };
+
+    kycRejected = async (email: string, data: IKycRejected) => {
+        const template = getTemplate('kycRejected');
+        const htmlContent = template(data);
+        await sendEmail(
+            email,
+            'Terminus: KYC Application Rejected',
             htmlContent
         );
     };

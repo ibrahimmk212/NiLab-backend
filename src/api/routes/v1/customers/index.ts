@@ -12,6 +12,7 @@ import customerPromotionRouter from './promotions';
 import customerMarketCategoryRouter from './marketCategory';
 import customerProductRouter from './products';
 import customerWalletRouter from './wallets';
+import customerKycRouter from './kyc';
 
 const customersRouter: Router = Router();
 
@@ -28,6 +29,7 @@ customersRouter.use('/wallets', customerWalletRouter);
 customersRouter.use('/favourites', customerFavouriteRouter);
 customersRouter.use('/favourites', customerFavouriteRouter);
 customersRouter.use('/market-categories', customerMarketCategoryRouter);
+customersRouter.use('/kyc', customerKycRouter);
 
 customersRouter
     .route('/profile')

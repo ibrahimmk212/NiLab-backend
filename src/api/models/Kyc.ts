@@ -157,15 +157,25 @@ const kycSchema = new Schema<Kyc>(
 kycSchema.pre('save', async function (next) {
     if (!this.isModified()) return next();
 
-    if (
-        this.address.status === 'verified' &&
-        this.identity.status === 'verified' &&
-        this.nextOfKin.status === 'verified' &&
-        this.guarantor.status === 'verified'
-    ) {
-        this.status = 'verified';
+    if (this.role === 'user') {
+        // MVP: Customers only absolutely require BVN verification
+        if (this.bvn?.status === 'verified') {
+            this.status = 'verified';
+        } else {
+            this.status = 'pending';
+        }
     } else {
-        this.status = 'pending';
+        // Strict Mode: Vendors and Riders need full exhaustive verification
+        if (
+            this.address?.status === 'verified' &&
+            this.identity?.status === 'verified' &&
+            this.nextOfKin?.status === 'verified' &&
+            this.guarantor?.status === 'verified'
+        ) {
+            this.status = 'verified';
+        } else {
+            this.status = 'pending';
+        }
     }
 
     if (this.isModified('address')) {

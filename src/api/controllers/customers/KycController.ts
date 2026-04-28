@@ -4,7 +4,6 @@ import { Types } from 'mongoose';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import { STATUS } from '../../../constants';
 import { currentTimestamp } from '../../../utils/helpers';
-// import { uploadFileToS3 } from '../../../utils/s3';
 
 class KycController {
     upload = asyncHandler(
@@ -14,12 +13,9 @@ class KycController {
 
             file.name = `${currentTimestamp()}_${file.name.replace(/ /g, '_')}`;
 
-            // const upload = await uploadFileToS3(file, 'kyc/');
-
             res.status(STATUS.CREATED).send({
                 success: true,
                 message: 'File Updated Successfully.'
-                // data: upload
             });
         }
     );
@@ -34,7 +30,7 @@ class KycController {
         if (!kyc) {
             kycData.user = userdata._id;
             kycData.status = 'pending';
-            kycData.role = 'rider';
+            kycData.role = 'user';
 
             if (passportUrl) kycData.passportUrl = passportUrl;
             if (address) {
@@ -74,9 +70,10 @@ class KycController {
                 data: newKyc
             });
         }
+        
         // Updating kyc data
         if (passportUrl) kycData.passportUrl = passportUrl;
-        if (address && kyc.address.status != 'verified') {
+        if (address && kyc.address?.status != 'verified') {
             address.status = 'pending';
             kycData.address = address;
             address.address = `${address.buildingNumber} ${address.street}, ${address.city}, ${address.state}.`;
@@ -94,19 +91,17 @@ class KycController {
             };
             kycData.status = 'pending';
         }
-        if (nextOfKin && kyc.nextOfKin.status != 'verified') {
+        if (nextOfKin && kyc.nextOfKin?.status != 'verified') {
             nextOfKin.status = 'pending';
             kycData.nextOfKin = nextOfKin;
             kycData.status = 'pending';
         }
-        if (guarantor && kyc.guarantor.status != 'verified') {
+        if (guarantor && kyc.guarantor?.status != 'verified') {
             guarantor.status = 'pending';
             kycData.guarantor = guarantor;
             kycData.status = 'pending';
         }
 
-        // kyc.depopulate();
-        // await kyc.save();
         const updatedKyc = await KycService.updateKyc(userdata._id, kycData);
 
         return res.status(STATUS.OK).json({

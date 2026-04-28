@@ -147,3 +147,8 @@ export interface IAdminNewVendorSignup {
     marketCategory: string;
     signupDate: string;
 }
+
+export interface IKycRejected {
+    name: string;
+    reason: string;
+}
