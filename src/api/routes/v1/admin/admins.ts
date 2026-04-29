@@ -4,7 +4,7 @@ import Auth from '../../../middlewares/auth';
 import AdminMainController from '../../../controllers/admin/AdminMainController';
 
 const adminRouter: Router = Router();
-adminRouter.use(Auth.isAdmin, Auth.isSuperAdmin);
+adminRouter.use(Auth.isAdmin);
 
 adminRouter.post('/', AdminMainController.create);
 adminRouter.get('/', AdminMainController.getAll);

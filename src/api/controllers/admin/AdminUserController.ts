@@ -6,6 +6,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import { LoginType } from '../../types/auth';
 import AuthService from '../../services/AuthService';
 import AdminService from '../../services/AdminService';
+import AuditService from '../../services/AuditService';
 
 class AdminUserController {
     async createUser(
@@ -19,6 +20,16 @@ class AdminUserController {
             res.status(200).send({
                 message: 'User created successfully',
                 data: user
+            });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'CREATE_USER',
+                resource: 'User',
+                resourceId: user.id,
+                details: { role: payload.role, email: payload.email },
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
             });
         } catch (error) {
             next(error);
@@ -98,6 +109,16 @@ class AdminUserController {
             res.status(200).send({
                 message: 'User updated successfully'
             });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'UPDATE_USER',
+                resource: 'User',
+                resourceId: userId,
+                details: payload,
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
+            });
         } catch (error) {
             next(error);
         }
@@ -118,6 +139,16 @@ class AdminUserController {
             res.status(200).send({
                 message: 'User banned successfully'
             });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'BAN_USER',
+                resource: 'User',
+                resourceId: userId,
+                details: { reason: payload.reasonForBan },
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
+            });
         } catch (error) {
             next(error);
         }
@@ -137,6 +168,15 @@ class AdminUserController {
             res.status(200).send({
                 message: 'User unbanned successfully'
             });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'UNBAN_USER',
+                resource: 'User',
+                resourceId: userId,
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
+            });
         } catch (error) {
             next(error);
         }
@@ -152,6 +192,15 @@ class AdminUserController {
             await UserService.deleteUser(userId);
             res.status(200).send({
                 message: 'User deleted successfully'
+            });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'DELETE_USER',
+                resource: 'User',
+                resourceId: userId,
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
             });
         } catch (error) {
             next(error);

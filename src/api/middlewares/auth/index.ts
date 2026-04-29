@@ -6,6 +6,7 @@ import { ROLE, STATUS } from '../../../constants';
 import VendorRepository from '../../repositories/VendorRepository';
 import RiderRepository from '../../repositories/RiderRepository';
 import AdminService from '../../services/AdminService';
+import AuditService from '../../services/AuditService';
 
 class Auth {
     async authenticate(
@@ -396,17 +397,40 @@ class Auth {
                 ...(staff?.permissions || [])
             ];
 
-            // 3. Check if any of the required permissions are present
-            // (Or all, depending on required logic. Usually "any" is sufficient for route gating)
-            const hasPermission = requiredPermissions.every((p) =>
-                userPermissions.includes(p)
-            );
+            // 3. Determine method-based suffix
+            const methodSuffixMap: any = {
+                GET: 'view',
+                POST: 'edit',
+                PUT: 'edit',
+                PATCH: 'edit',
+                DELETE: 'delete'
+            };
+            const suffix = methodSuffixMap[req.method] || 'view';
+
+            // 4. Check if any of the required permissions are present
+            // We check for 'permission:suffix' OR the blanket 'permission'
+            const hasPermission = requiredPermissions.every((p) => {
+                const granularPerm = `${p}:${suffix}`;
+                return userPermissions.includes(granularPerm) || userPermissions.includes(p);
+            });
 
             if (!hasPermission) {
+                // Log failed attempt
+                AuditService.log({
+                    adminId: req.userdata.id,
+                    action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+                    resource: req.originalUrl,
+                    status: 'failure',
+                    details: { requiredPermissions, method: req.method },
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent'],
+                    errorMessage: 'Insufficient privileges'
+                });
+
                 return res.status(STATUS.FORBIDDEN).json({
                     success: false,
                     message: 'Permission denied: Insufficient privileges',
-                    required: requiredPermissions
+                    required: requiredPermissions.map(p => `${p}:${suffix}`)
                 });
             }
 

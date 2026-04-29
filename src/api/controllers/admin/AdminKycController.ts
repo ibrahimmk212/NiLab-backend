@@ -6,6 +6,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import NotificationService from '../../services/NotificationService';
 import EmailTemplate from '../../libraries/emails';
 import UserService from '../../services/UserService';
+import AuditService from '../../services/AuditService';
 
 class AdminKycController {
     getKycs = asyncHandler(async (req: Request, res: Response) => {
@@ -79,235 +80,21 @@ class AdminKycController {
             }
         }
 
+        // Log Action
+        AuditService.log({
+            adminId: (req as any).userdata.id,
+            action: status === 'approved' ? 'APPROVE_KYC' : 'REJECT_KYC',
+            resource: 'Kyc',
+            resourceId: String(kyc._id),
+            details: { status, reason: message || '' },
+            ip: req.ip,
+            userAgent: req.headers['user-agent']
+        });
+
         return res.status(STATUS.OK).json({
             success: true,
             message: `KYC status updated to ${status}`,
             data: kyc
-        });
-    });
-
-    updateKycAddress = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
-        const { status, message } = req.body;
-
-        const kyc = await KycService.getKyc(kycId);
-        if (!kyc) {
-            return res.status(STATUS.NOT_FOUND).json({
-                success: false,
-                message: 'KYC not found'
-            });
-        }
-
-        const updatedKyc = await KycService.updateKyc(kyc.user._id, {
-            address: { ...kyc.address, status, message }
-        });
-
-        // Notify User if rejected
-        if (updatedKyc && status === 'rejected') {
-            await NotificationService.create({
-                userId: kyc.user._id || kyc.user,
-                title: 'KYC Document Rejected',
-                message: `Your Proof of Address was rejected. Reason: ${message}`,
-                status: 'unread'
-            });
-
-            try {
-                const userAccount = await UserService.getUserDetail(String(kyc.user._id || kyc.user));
-                if (userAccount) {
-                    await EmailTemplate.kycRejected(userAccount.email, {
-                        name: userAccount.firstName || 'User',
-                        reason: message || 'Address verification failed.'
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to send KYC rejection email', error);
-            }
-        }
-
-        return res.status(STATUS.OK).json({
-            success: true,
-            message: `KYC status updated to ${status}`,
-            data: updatedKyc
-        });
-    });
-
-    updateKycIdentity = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
-        const { status, message } = req.body;
-
-        const kyc = await KycService.getKyc(kycId);
-        if (!kyc) {
-            return res.status(STATUS.NOT_FOUND).json({
-                success: false,
-                message: 'KYC not found'
-            });
-        }
-
-        const updatedKyc = await KycService.updateKyc(kyc.user._id, {
-            identity: { ...kyc.identity, status, message }
-        });
-
-        // Notify User if rejected
-        if (updatedKyc && status === 'rejected') {
-            await NotificationService.create({
-                userId: kyc.user._id || kyc.user,
-                title: 'KYC Document Rejected',
-                message: `Your Identity Verification was rejected. Reason: ${message}`,
-                status: 'unread'
-            });
-
-            try {
-                const userAccount = await UserService.getUserDetail(String(kyc.user._id || kyc.user));
-                if (userAccount) {
-                    await EmailTemplate.kycRejected(userAccount.email, {
-                        name: userAccount.firstName || 'User',
-                        reason: message || 'Identity verification failed.'
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to send KYC rejection email', error);
-            }
-        }
-
-        return res.status(STATUS.OK).json({
-            success: true,
-            message: `KYC status updated to ${status}`,
-            data: updatedKyc
-        });
-    });
-
-    updateKycBvn = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
-        const { status, message } = req.body;
-
-        const kyc = await KycService.getKyc(kycId);
-        if (!kyc) {
-            return res.status(STATUS.NOT_FOUND).json({
-                success: false,
-                message: 'KYC not found'
-            });
-        }
-
-        const updatedKyc = await KycService.updateKyc(kyc.user._id, {
-            bvn: { ...kyc.bvn, status, message }
-        });
-
-        // Notify User if rejected
-        if (updatedKyc && status === 'rejected') {
-            await NotificationService.create({
-                userId: kyc.user._id || kyc.user,
-                title: 'KYC BVN Verification Failed',
-                message: `Your BVN verification failed. Reason: ${message}`,
-                status: 'unread'
-            });
-            
-            try {
-                const userAccount = await UserService.getUserDetail(String(kyc.user._id || kyc.user));
-                if (userAccount) {
-                    await EmailTemplate.kycRejected(userAccount.email, {
-                        name: userAccount.firstName || 'User',
-                        reason: message || 'BVN verification failed.'
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to send KYC rejection email', error);
-            }
-        }
-
-        return res.status(STATUS.OK).json({
-            success: true,
-            message: `BVN status updated to ${status}`,
-            data: updatedKyc
-        });
-    });
-
-    updateKycNextOfKin = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
-        const { status, message } = req.body;
-
-        const kyc = await KycService.getKyc(kycId);
-        if (!kyc) {
-            return res.status(STATUS.NOT_FOUND).json({
-                success: false,
-                message: 'KYC not found'
-            });
-        }
-
-        const updatedKyc = await KycService.updateKyc(kyc.user._id, {
-            nextOfKin: { ...kyc.nextOfKin, status, message }
-        });
-
-        // Notify User if rejected
-        if (updatedKyc && status === 'rejected') {
-            await NotificationService.create({
-                userId: kyc.user._id || kyc.user,
-                title: 'KYC Document Rejected',
-                message: `Your Next of Kin details were rejected. Reason: ${message}`,
-                status: 'unread'
-            });
-
-            try {
-                const userAccount = await UserService.getUserDetail(String(kyc.user._id || kyc.user));
-                if (userAccount) {
-                    await EmailTemplate.kycRejected(userAccount.email, {
-                        name: userAccount.firstName || 'User',
-                        reason: message || 'Next of Kin details verification failed.'
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to send KYC rejection email', error);
-            }
-        }
-
-        return res.status(STATUS.OK).json({
-            success: true,
-            message: `KYC status updated to ${status}`,
-            data: updatedKyc
-        });
-    });
-
-    updateKycGuarantor = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
-        const { status, message } = req.body;
-
-        const kyc = await KycService.getKyc(kycId);
-        if (!kyc) {
-            return res.status(STATUS.NOT_FOUND).json({
-                success: false,
-                message: 'KYC not found'
-            });
-        }
-
-        const updatedKyc = await KycService.updateKyc(kyc.user._id, {
-            guarantor: { ...kyc.guarantor, status, message }
-        });
-
-        // Notify User if rejected
-        if (updatedKyc && status === 'rejected') {
-            await NotificationService.create({
-                userId: kyc.user._id || kyc.user,
-                title: 'KYC Document Rejected',
-                message: `Your Guarantor details were rejected. Reason: ${message}`,
-                status: 'unread'
-            });
-
-            try {
-                const userAccount = await UserService.getUserDetail(String(kyc.user._id || kyc.user));
-                if (userAccount) {
-                    await EmailTemplate.kycRejected(userAccount.email, {
-                        name: userAccount.firstName || 'User',
-                        reason: message || 'Guarantor verification failed.'
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to send KYC rejection email', error);
-            }
-        }
-
-        return res.status(STATUS.OK).json({
-            success: true,
-            message: `KYC status updated to ${status}`,
-            data: updatedKyc
         });
     });
 }

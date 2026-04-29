@@ -37,8 +37,9 @@ class KycRepository {
         );
     }
 
-    async getKycByStatus(status: string): Promise<(Kyc & Document)[]> {
-        return await KycModel.find({ status }).populate('user');
+    async getKycByStatus(status?: string): Promise<(Kyc & Document)[]> {
+        const query = status && status !== 'all' ? { status } : {};
+        return await KycModel.find(query).populate('user').sort({ createdAt: -1 });
     }
 }
 

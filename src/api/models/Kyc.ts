@@ -10,16 +10,12 @@ export interface Address {
     postcode: string;
     buildingNumber: string;
     addressDocument: string;
-    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
-    message: string;
 }
 
 export interface NextOfKin {
     name: string;
     phone: string;
     address: string;
-    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
-    message: string;
 }
 
 export interface Guarantor {
@@ -27,8 +23,6 @@ export interface Guarantor {
     address: string;
     phone: string;
     identityDocument: string;
-    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
-    message: string;
 }
 
 export interface Identity {
@@ -40,14 +34,10 @@ export interface Identity {
         | 'other';
     identityNumber: string;
     identityDocument: string;
-    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
-    message: string;
 }
 
 export interface Bvn {
     bvn: string;
-    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
-    message: string;
 }
 
 export interface Kyc extends Document {
@@ -73,13 +63,7 @@ const kycSchema = new Schema<Kyc>(
             city: { type: String, required: false },
             state: { type: String, required: false },
             postcode: { type: String, required: false },
-            addressDocument: { type: String, required: false },
-            status: {
-                type: String,
-                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
-                default: 'not_submitted'
-            },
-            message: { type: String, required: false }
+            addressDocument: { type: String, required: false }
         },
         identity: {
             identityType: {
@@ -88,45 +72,21 @@ const kycSchema = new Schema<Kyc>(
                 required: false
             },
             identityNumber: { type: String, required: false },
-            identityDocument: { type: String, required: false },
-            status: {
-                type: String,
-                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
-                default: 'not_submitted'
-            },
-            message: { type: String, required: false }
+            identityDocument: { type: String, required: false }
         },
         bvn: {
-            bvn: { type: String, required: false },
-            status: {
-                type: String,
-                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
-                default: 'not_submitted'
-            },
-            message: { type: String, required: false }
+            bvn: { type: String, required: false }
         },
         nextOfKin: {
             name: { type: String, required: false },
             phone: { type: String, required: false },
-            address: { type: String, required: false },
-            status: {
-                type: String,
-                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
-                default: 'not_submitted'
-            },
-            message: { type: String, required: false }
+            address: { type: String, required: false }
         },
         guarantor: {
             name: { type: String, required: false },
             phone: { type: String, required: false },
             address: { type: String, required: false },
-            identityDocument: { type: String, required: false },
-            status: {
-                type: String,
-                enum: ['not_submitted', 'pending', 'verified', 'rejected'],
-                default: 'not_submitted'
-            },
-            message: { type: String, required: false }
+            identityDocument: { type: String, required: false }
         },
         user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         role: {
@@ -153,32 +113,11 @@ const kycSchema = new Schema<Kyc>(
     }
 );
 
-// Update KYC status and user's KYC status
+// Sync KYC status to user's kycStatus field for backward compatibility
 kycSchema.pre('save', async function (next) {
     if (!this.isModified()) return next();
 
-    if (this.role === 'user') {
-        // MVP: Customers only absolutely require BVN verification
-        if (this.bvn?.status === 'verified') {
-            this.status = 'verified';
-        } else {
-            this.status = 'pending';
-        }
-    } else {
-        // Strict Mode: Vendors and Riders need full exhaustive verification
-        if (
-            this.address?.status === 'verified' &&
-            this.identity?.status === 'verified' &&
-            this.nextOfKin?.status === 'verified' &&
-            this.guarantor?.status === 'verified'
-        ) {
-            this.status = 'verified';
-        } else {
-            this.status = 'pending';
-        }
-    }
-
-    if (this.isModified('address')) {
+    if (this.isModified('address') && this.address) {
         this.address.address = `${this.address.buildingNumber} ${this.address.street}, ${this.address.city}, ${this.address.state}.`;
     }
 

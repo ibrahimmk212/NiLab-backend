@@ -9,6 +9,7 @@ import ReviewModel from '../models/Review';
 
 import ComplaintModel from '../models/Complaint';
 import PayoutModel from '../models/Payout';
+import KycModel from '../models/Kyc';
 
 class DashboardRepository {
     // Admin dashboard summary
@@ -28,8 +29,8 @@ class DashboardRepository {
         const pendingApplications = await VendorModel.countDocuments({
             identityVerificationStatus: 'pending'
         });
-        const pendingKyc = await UserModel.countDocuments({
-            kycStatus: 'pending'
+        const pendingKyc = await KycModel.countDocuments({
+            status: 'pending'
         });
 
         const revenueStats = await OrderModel.aggregate([

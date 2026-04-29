@@ -6,10 +6,5 @@ const adminKycRouter = Router();
 adminKycRouter.get('/', AdminKycController.getKycs);
 adminKycRouter.get('/user/:id', AdminKycController.getKycDetails);
 adminKycRouter.put('/:id/status', AdminKycController.updateKycStatus);
-adminKycRouter.put('/:id/address', AdminKycController.updateKycAddress);
-adminKycRouter.put('/:id/identity', AdminKycController.updateKycIdentity);
-adminKycRouter.put('/:id/bvn', AdminKycController.updateKycBvn);
-adminKycRouter.put('/:id/nextofkin', AdminKycController.updateKycNextOfKin);
-adminKycRouter.put('/:id/guarantor', AdminKycController.updateKycGuarantor);
 
 export default adminKycRouter;

@@ -20,27 +20,34 @@ class VirtualAccountService {
 
         // 2. Fetch KYC for NIN/BVN
         const kyc = await KycRepository.getKycByUser(userObjId);
-        if (!kyc || !kyc.identity || kyc.identity.identityType !== 'nin') {
-            throw new Error('Please update your KYC with a valid NIN to generate a virtual account');
+        
+        const bvn = kyc?.bvn?.bvn;
+        const nin = kyc?.identity?.identityType === 'nin' ? kyc?.identity?.identityNumber : undefined;
+
+        if (!kyc || (!bvn && !nin)) {
+            throw new Error('Please update your KYC with a valid BVN or NIN to generate a virtual account');
         }
 
-        const nin = kyc.identity.identityNumber;
         const user = kyc.user as any; // Populated user
 
         // 3. Initiate Monnify Reservation
         const accessToken = await monnify.genToken();
         const accountReference = `USER_WAL_${userId}`;
         
-        const response = await monnify.reserveAccount({
+        const payload: any = {
             accountReference,
             accountName: `Terminus - ${user.firstName} ${user.lastName}`,
             currencyCode: 'NGN',
             contractCode: appConfig.monnify.contractCode,
             customerEmail: user.email,
             customerName: `${user.firstName} ${user.lastName}`,
-            getAllAvailableBanks: true,
-            nin: nin
-        }, accessToken);
+            getAllAvailableBanks: true
+        };
+
+        if (bvn) payload.bvn = bvn;
+        if (nin) payload.nin = nin;
+
+        const response = await monnify.reserveAccount(payload, accessToken);
 
         if (!response.requestSuccessful) {
             console.error('Monnify Reservation Failed:', response.responseMessage);

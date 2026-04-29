@@ -5,6 +5,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import { CreateAdminType, LoginType } from '../../types/auth';
 import AuthService from '../../services/AuthService';
 import AdminService from '../../services/AdminService';
+import AuditService from '../../services/AuditService';
 import dayjs from 'dayjs';
 import OrderService from '../../services/OrderService';
 
@@ -176,6 +177,16 @@ class AdminMainController {
                 message: 'Admin account created successfully',
                 data: { user, admin }
             });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'CREATE_PLATFORM_STAFF',
+                resource: 'Admin',
+                resourceId: admin.id,
+                details: { role: admin.role, email: admin.email },
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
+            });
         }
     );
 
@@ -213,6 +224,16 @@ class AdminMainController {
                 message: 'Admin updated successfully',
                 data: update
             });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'UPDATE_PLATFORM_STAFF',
+                resource: 'Admin',
+                resourceId: id,
+                details: body,
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
+            });
         }
     );
 
@@ -238,6 +259,16 @@ class AdminMainController {
                 success: true,
                 message: 'Admin updated successfully',
                 data: update
+            });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'UPDATE_PLATFORM_STAFF_STATUS',
+                resource: 'Admin',
+                resourceId: id,
+                details: { status },
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
             });
         }
     );

@@ -38,30 +38,25 @@ class KycController {
 
             if (passportUrl) kycData.passportUrl = passportUrl;
             if (address) {
-                address.status = 'pending';
                 address.address = `${address.buildingNumber} ${address.street}, ${address.city}, ${address.state}.`;
                 kycData.address = address;
                 kycData.status = 'pending';
             }
             if (identity) {
-                identity.status = 'pending';
                 kycData.identity = identity;
                 kycData.status = 'pending';
             }
             if (bvn) {
                 kycData.bvn = {
-                    bvn: typeof bvn === 'string' ? bvn : bvn.bvn,
-                    status: 'pending'
+                    bvn: typeof bvn === 'string' ? bvn : bvn.bvn
                 };
                 kycData.status = 'pending';
             }
             if (nextOfKin) {
-                nextOfKin.status = 'pending';
                 kycData.nextOfKin = nextOfKin;
                 kycData.status = 'pending';
             }
             if (guarantor) {
-                guarantor.status = 'pending';
                 kycData.guarantor = guarantor;
                 kycData.status = 'pending';
             }
@@ -76,31 +71,26 @@ class KycController {
         }
         // Updating kyc data
         if (passportUrl) kycData.passportUrl = passportUrl;
-        if (address && kyc.address.status != 'verified') {
-            address.status = 'pending';
+        if (address) {
             kycData.address = address;
             address.address = `${address.buildingNumber} ${address.street}, ${address.city}, ${address.state}.`;
             kycData.status = 'pending';
         }
-        if (identity && kyc.identity?.status != 'verified') {
-            identity.status = 'pending';
+        if (identity) {
             kycData.identity = identity;
             kycData.status = 'pending';
         }
-        if (bvn && kyc.bvn?.status != 'verified') {
+        if (bvn) {
             kycData.bvn = {
-                bvn: typeof bvn === 'string' ? bvn : bvn.bvn,
-                status: 'pending'
+                bvn: typeof bvn === 'string' ? bvn : bvn.bvn
             };
             kycData.status = 'pending';
         }
-        if (nextOfKin && kyc.nextOfKin.status != 'verified') {
-            nextOfKin.status = 'pending';
+        if (nextOfKin) {
             kycData.nextOfKin = nextOfKin;
             kycData.status = 'pending';
         }
-        if (guarantor && kyc.guarantor.status != 'verified') {
-            guarantor.status = 'pending';
+        if (guarantor) {
             kycData.guarantor = guarantor;
             kycData.status = 'pending';
         }
