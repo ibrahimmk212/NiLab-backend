@@ -10,6 +10,7 @@ adminRouter.post('/', AdminMainController.create);
 adminRouter.get('/', AdminMainController.getAll);
 adminRouter.get('/:id', AdminMainController.getSingle);
 adminRouter.put('/:id', AdminMainController.update);
+adminRouter.delete('/:id', Auth.checkPermissions('manage_admins'), AdminMainController.delete);
 adminRouter.put('/:id/status', AdminMainController.updateStatus);
 
 export default adminRouter;

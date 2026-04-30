@@ -49,7 +49,8 @@ export interface Kyc extends Document {
     guarantor: Guarantor;
     user: mongoose.Types.ObjectId;
     role: 'user' | 'vendor' | 'rider';
-    status: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+    status: 'not_submitted' | 'pending' | 'verified' | 'rejected' | 'approved';
+    bvnStatus: 'not_submitted' | 'pending' | 'verified' | 'failed';
     message: string;
 }
 
@@ -97,7 +98,13 @@ const kycSchema = new Schema<Kyc>(
         message: { type: String, required: false },
         status: {
             type: String,
-            enum: ['not_submitted', 'pending', 'verified', 'rejected'],
+            enum: ['not_submitted', 'pending', 'verified', 'rejected', 'approved'],
+            required: true,
+            default: 'not_submitted'
+        },
+        bvnStatus: {
+            type: String,
+            enum: ['not_submitted', 'pending', 'verified', 'failed'],
             required: true,
             default: 'not_submitted'
         }
@@ -122,9 +129,19 @@ kycSchema.pre('save', async function (next) {
     }
 
     const user = await UserService.getUserDetail(this.user.toString());
-    if (user && user.kycStatus !== this.status) {
-        user.kycStatus = this.status;
-        await user.save();
+    if (user) {
+        let needsSave = false;
+        if (user.kycStatus !== this.status) {
+            user.kycStatus = this.status;
+            needsSave = true;
+        }
+        if (user.bvnStatus !== this.bvnStatus) {
+            user.bvnStatus = this.bvnStatus;
+            needsSave = true;
+        }
+        if (needsSave) {
+            await user.save();
+        }
     }
 
     next();

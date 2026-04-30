@@ -60,13 +60,13 @@ adminsRouter.use('/delivery', auth.checkPermissions('manage_riders'), adminDeliv
 adminsRouter.use('/delivery-subscriptions', auth.checkPermissions('manage_riders'), adminDeliverySubscriptionRouter);
 
 // --- Protected Routes: manage_settings ---
-adminsRouter.use('/admins', auth.checkPermissions('manage_settings'), adminRouter);
-adminsRouter.use('/categories', auth.checkPermissions('manage_settings'), adminCategoryRouter);
-adminsRouter.use('/configurations', auth.checkPermissions('manage_settings'), configurationRouter);
-adminsRouter.use('/banners', auth.checkPermissions('manage_settings'), adminBannerRouter);
-adminsRouter.use('/logs', auth.checkPermissions('manage_settings'), adminLogRouter);
-adminsRouter.use('/staffs', auth.checkPermissions('manage_settings'), adminStaffRouter);
-adminsRouter.use('/collections', auth.checkPermissions('manage_settings'), collectionRouter);
-adminsRouter.use('/promotions', auth.checkPermissions('manage_settings'), adminPromotionRouter);
+adminsRouter.use('/admins', auth.checkPermissions('manage_admins'), adminRouter);
+adminsRouter.use('/categories', auth.checkPermissions('manage_categories'), adminCategoryRouter);
+adminsRouter.use('/configurations', auth.checkPermissions('manage_configurations'), configurationRouter);
+adminsRouter.use('/banners', auth.checkPermissions('manage_banners'), adminBannerRouter);
+adminsRouter.use('/logs', auth.checkPermissions('manage_logs'), adminLogRouter);
+adminsRouter.use('/staffs', auth.checkPermissions('manage_staffs'), adminStaffRouter);
+adminsRouter.use('/collections', auth.checkPermissions('manage_collections'), collectionRouter);
+adminsRouter.use('/promotions', auth.checkPermissions('manage_promotions'), adminPromotionRouter);
 
 export default adminsRouter;

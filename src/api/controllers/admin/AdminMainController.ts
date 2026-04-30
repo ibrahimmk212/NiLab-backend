@@ -8,82 +8,61 @@ import AdminService from '../../services/AdminService';
 import AuditService from '../../services/AuditService';
 import dayjs from 'dayjs';
 import OrderService from '../../services/OrderService';
+import DashboardRepository from '../../repositories/DashboardRepository';
 
 class AdminMainController {
-    dashboard = asyncHandler(
+    stats = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const { admin }: any = req;
-            let { startDate, endDate }: any = req.query;
-
-            startDate = dayjs(startDate).toDate();
-            endDate = dayjs(endDate).add(1, 'day').toDate();
-
-            // const startDate = new Date('2024-01-01');
-            // const endDate = new Date('2024-03-31');
-            const analytics: any = {};
-            // const {
-            //     salesRevenue,
-            //     salesMargin,
-            //     ordersMargin,
-            //     salesReport,
-            //     productsSoldByCategory,
-            //     topSellingProducts
-            // } = await OrderService.adminAnalytics(startDate, endDate);
-
-            // analytics.statisticData = {
-            //     revenue: {
-            //         value: salesRevenue.amount,
-            //         growShrink: salesMargin
-            //     },
-            //     orders: {
-            //         value: salesRevenue.count,
-            //         growShrink: ordersMargin
-            //     }
-            // };
-            // analytics.salesReportData = {
-            //     series: [
-            //         {
-            //             name: 'Food Orders',
-            //             data: salesReport.map(
-            //                 (order: any) => order.dailyRevenue
-            //             )
-            //         }
-            //     ],
-            //     categories: salesReport.map((order: any) => order._id)
-            // };
-
-            // analytics.salesByCategoriesData = {
-            //     labels: productsSoldByCategory.map((data: any) => data._id),
-            //     data: productsSoldByCategory.map((data: any) => data.count)
-            // };
-
-            // analytics.topProductsData = topSellingProducts.map((data: any) => {
-            //     return {
-            //         id: data._id,
-            //         name: data.productName,
-            //         img: data.thumbnail,
-            //         amount: data.totalPrice,
-            //         sold: data.totalQuantity
-            //     };
-            // });
-
-            const orders = await OrderService.getAll(req.query);
-            // [];
-            // analytics.latestOrderData = orders?.slice(0, 5);
-
+            const stats = await DashboardRepository.getAdminSummary();
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'User fetched successfully',
-                data:
-                    // {
-                    //     salesRevenue,
-                    //     salesMargin,
-                    //     ordersMargin,
-                    //     salesReport,
-                    //     productsSoldByCategory,
-                    //     topSellingProducts,
-                    analytics
-                // }
+                data: stats
+            });
+        }
+    );
+
+    charts = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const { period }: any = req.query;
+            const revenue = await DashboardRepository.getAdminAnalytics(period);
+            const orderStatusRaw = await DashboardRepository.getAdminOrderMetrics();
+            
+            res.status(STATUS.OK).send({
+                success: true,
+                data: {
+                    revenue,
+                    orderStatus: orderStatusRaw[0] || {}
+                }
+            });
+        }
+    );
+
+    topVendors = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const vendors = await DashboardRepository.getTopVendors(5);
+            res.status(STATUS.OK).send({
+                success: true,
+                data: vendors
+            });
+        }
+    );
+
+    vendorApplications = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const apps = await DashboardRepository.getVendorApplications(5);
+            res.status(STATUS.OK).send({
+                success: true,
+                data: apps
+            });
+        }
+    );
+
+    recentOrders = asyncHandler(
+        async (req: Request, res: Response): Promise<void> => {
+            const orders = await DashboardRepository.getAdminRecentOrders(5);
+            res.status(STATUS.OK).send({
+                success: true,
+                data: orders
             });
         }
     );
@@ -267,6 +246,36 @@ class AdminMainController {
                 resource: 'Admin',
                 resourceId: id,
                 details: { status },
+                ip: req.ip,
+                userAgent: req.headers['user-agent']
+            });
+        }
+    );
+    delete = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { id } = req.params;
+            
+            const admin = await AdminService.getById(id);
+            if (!admin) throw new Error('Admin not found');
+
+            const success = await AdminService.delete(id);
+            if (!success) throw new Error('Could not delete admin');
+
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Admin deleted successfully'
+            });
+
+            AuditService.log({
+                adminId: (req as any).userdata.id,
+                action: 'DELETE_PLATFORM_STAFF',
+                resource: 'Admin',
+                resourceId: id,
+                details: { email: admin.email, name: admin.name },
                 ip: req.ip,
                 userAgent: req.headers['user-agent']
             });

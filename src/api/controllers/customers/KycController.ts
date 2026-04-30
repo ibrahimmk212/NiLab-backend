@@ -46,7 +46,7 @@ class KycController {
                 kycData.bvn = {
                     bvn: typeof bvn === 'string' ? bvn : bvn.bvn
                 };
-                kycData.status = 'pending';
+                kycData.bvnStatus = 'pending';
             }
             if (nextOfKin) {
                 kycData.nextOfKin = nextOfKin;
@@ -81,7 +81,7 @@ class KycController {
             kycData.bvn = {
                 bvn: typeof bvn === 'string' ? bvn : bvn.bvn
             };
-            kycData.status = 'pending';
+            kycData.bvnStatus = 'pending';
         }
         if (nextOfKin) {
             kycData.nextOfKin = nextOfKin;

@@ -11,6 +11,7 @@ export type UpdateUserType = {
     role?: string;
     firstName: string;
     lastName: string;
+    bvnStatus?: string;
 };
 
 export type BanUserType = {

@@ -33,7 +33,19 @@ class KycRepository {
         return await KycModel.findByIdAndUpdate(
             kycId,
             { status, message },
-            { new: true }
+            { new: true, runValidators: true }
+        );
+    }
+
+    async updateBvnStatus(
+        kycId: Types.ObjectId,
+        bvnStatus: string,
+        message?: string
+    ): Promise<(Kyc & Document) | null> {
+        return await KycModel.findByIdAndUpdate(
+            kycId,
+            { bvnStatus, message },
+            { new: true, runValidators: true }
         );
     }
 

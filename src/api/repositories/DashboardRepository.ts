@@ -12,6 +12,76 @@ import PayoutModel from '../models/Payout';
 import KycModel from '../models/Kyc';
 
 class DashboardRepository {
+    async getAdminAnalytics(period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'monthly') {
+        let groupBy: any = {};
+        switch (period) {
+            case 'daily':
+                groupBy = { 
+                    year: { $year: '$createdAt' },
+                    month: { $month: '$createdAt' },
+                    day: { $dayOfMonth: '$createdAt' }
+                };
+                break;
+            case 'weekly':
+                groupBy = { 
+                    year: { $year: '$createdAt' },
+                    week: { $week: '$createdAt' }
+                };
+                break;
+            case 'monthly':
+                groupBy = { 
+                    year: { $year: '$createdAt' },
+                    month: { $month: '$createdAt' }
+                };
+                break;
+            case 'yearly':
+                groupBy = { 
+                    year: { $year: '$createdAt' }
+                };
+                break;
+        }
+
+        const stats = await OrderModel.aggregate([
+            { $match: { status: 'completed' } },
+            {
+                $group: {
+                    _id: groupBy,
+                    gmv: { $sum: '$amount' },
+                    revenue: {
+                        $sum: {
+                            $add: [
+                                { $multiply: ['$amount', { $divide: ['$commission', 100] }] },
+                                { $ifNull: ['$serviceFee', 0] }
+                            ]
+                        }
+                    },
+                    orders: { $sum: 1 }
+                }
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.week': 1 } }
+        ]);
+
+        const labels: string[] = [];
+        const gmvData: number[] = [];
+        const revenueData: number[] = [];
+        const ordersData: number[] = [];
+
+        stats.forEach((item) => {
+            let label = '';
+            if (period === 'daily') label = `${item._id.day}/${item._id.month}`;
+            else if (period === 'weekly') label = `W${item._id.week}`;
+            else if (period === 'monthly') label = new Date(0, item._id.month - 1).toLocaleString('default', { month: 'short' });
+            else label = `${item._id.year}`;
+
+            labels.push(label);
+            gmvData.push(item.gmv);
+            revenueData.push(item.revenue);
+            ordersData.push(item.orders);
+        });
+
+        return { labels, gmv: gmvData, revenue: revenueData, orders: ordersData };
+    }
+
     // Admin dashboard summary
     async getAdminSummary() {
         const productsCount = await ProductModel.countDocuments();

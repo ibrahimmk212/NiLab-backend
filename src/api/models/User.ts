@@ -30,7 +30,13 @@ export interface User extends Document {
     pin: string;
     phoneNumber: string;
     addresses: Address[];
-    kycStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected';
+    kycStatus:
+        | 'not_submitted'
+        | 'pending'
+        | 'verified'
+        | 'rejected'
+        | 'approved';
+    bvnStatus: 'not_submitted' | 'pending' | 'verified' | 'failed';
     resetPasswordToken: string;
     resetPasswordExpire: string;
     status: 'active' | 'inactive' | 'suspended';
@@ -59,7 +65,16 @@ const userSchema = new Schema<User>(
         },
         role: {
             type: String,
-            enum: ['admin', 'user', 'vendor', 'rider', 'staff', 'finance', 'manager', 'support'],
+            enum: [
+                'admin',
+                'user',
+                'vendor',
+                'rider',
+                'staff',
+                'finance',
+                'manager',
+                'support'
+            ],
             required: [true, 'Role is required'],
             default: 'user'
         },
@@ -88,7 +103,19 @@ const userSchema = new Schema<User>(
         ],
         kycStatus: {
             type: String,
-            enum: ['not_submitted', 'pending', 'verified', 'rejected'],
+            enum: [
+                'not_submitted',
+                'pending',
+                'verified',
+                'rejected',
+                'approved'
+            ],
+            required: true,
+            default: 'not_submitted'
+        },
+        bvnStatus: {
+            type: String,
+            enum: ['not_submitted', 'pending', 'verified', 'failed'],
             required: true,
             default: 'not_submitted'
         },

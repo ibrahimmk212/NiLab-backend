@@ -12,7 +12,8 @@ class DashboardController {
     }
 
     async getCharts(req: Request, res: Response) {
-        const data = await DashboardService.getAdminCharts();
+        const { period } = req.query;
+        const data = await DashboardService.getAdminCharts(period);
         return res.json({
             success: true,
             message: 'Admin charts fetched successfully',

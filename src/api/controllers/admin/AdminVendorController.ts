@@ -161,12 +161,17 @@ class AdminVendorController {
             if (!vendor) {
                 throw Error('Vendor not found');
             }
-            // if (
-            //     body.status === 'active'
-            //     //  && !vendor.location.coordinates
-            // ) {
-            // throw Error('Location data is missing');
-            // }
+
+            // Handle lat/lng transformation to GeoJSON if provided
+            if (body.lat !== undefined && body.lng !== undefined) {
+                body.location = {
+                    type: 'Point',
+                    coordinates: [Number(body.lng), Number(body.lat)]
+                };
+                delete body.lat;
+                delete body.lng;
+            }
+
             const update = await VendorService.update(id, body);
             if (!update) {
                 throw Error(' Could not update vendor');

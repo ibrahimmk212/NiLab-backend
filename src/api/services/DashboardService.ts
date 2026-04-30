@@ -39,18 +39,19 @@ class DashboardService {
         return await DashboardRepository.getAdminSummary();
     }
 
-    async getAdminCharts() {
-        const [revenueHistory, orderMetrics, topVendors] = await Promise.all([
-            DashboardRepository.getAdminRevenueHistory(),
+    async getAdminCharts(period?: any) {
+        const [analytics, orderMetrics, topVendors] = await Promise.all([
+            DashboardRepository.getAdminAnalytics(period),
             DashboardRepository.getAdminOrderMetrics(),
             DashboardRepository.getTopVendors()
         ]);
 
-        // Map YYYY-MM-DD to "Mon", "Tue" etc
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const formattedRevenue = revenueHistory.map((item: any) => ({
-            day: days[new Date(item._id).getDay()],
-            amount: item.revenue
+        // Transform repository data into chart-friendly format: [{ day: 'label', amount: value, gmv: value, orders: value }]
+        const formattedRevenue = analytics.labels.map((label, index) => ({
+            day: label,
+            amount: analytics.revenue[index],
+            gmv: analytics.gmv[index],
+            orders: analytics.orders[index]
         }));
 
         return {

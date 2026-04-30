@@ -7,8 +7,8 @@ interface IAdminService {
     getAll(): Promise<any[]>;
     getByUserId(userId: string): Promise<any>;
     getById(id: string): Promise<any>;
-    update(Id: string, data: Partial<Admin>): Promise<boolean>;
-    // delete(userId: string): Promise<boolean>;
+    update(Id: string, data: Partial<Admin>): Promise<any>;
+    delete(id: string): Promise<any>;
 }
 
 class AdminService implements IAdminService {
@@ -29,7 +29,10 @@ class AdminService implements IAdminService {
         return AdminRepository.getAll();
     }
     async update(id: string, data: Partial<Admin>): Promise<any> {
-        return AdminRepository.updateAdmin(id, data);
+        return await AdminRepository.updateAdmin(id, data);
+    }
+    async delete(id: string): Promise<any> {
+        return await AdminRepository.deleteAdmin(id);
     }
 }
 export default new AdminService();

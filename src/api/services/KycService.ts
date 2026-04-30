@@ -36,16 +36,24 @@ class KycService {
 
     async updateKycStatus(
         kycId: Types.ObjectId,
-        status: 'pending' | 'not_submitted' | 'verified' | 'rejected',
+        status: 'pending' | 'not_submitted' | 'verified' | 'rejected' | 'approved',
         message?: string
     ): Promise<Kyc | null> {
         const kyc: any = await KycRepository.getKycById(kycId);
         if (!kyc) throw new Error('KYC not found!');
-        // update kycstatus on user record
-        await UserRepository.updateUser(kyc.user.id, {
-            kycStatus: status
-        });
+        
         return await KycRepository.updateKycStatus(kycId, status, message);
+    }
+
+    async updateBvnStatus(
+        kycId: Types.ObjectId,
+        bvnStatus: 'pending' | 'not_submitted' | 'verified' | 'failed',
+        message?: string
+    ): Promise<Kyc | null> {
+        const kyc: any = await KycRepository.getKycById(kycId);
+        if (!kyc) throw new Error('KYC not found!');
+
+        return await KycRepository.updateBvnStatus(kycId, bvnStatus, message);
     }
 
     async getKycByStatus(status: string): Promise<Kyc[]> {

@@ -97,6 +97,56 @@ class AdminKycController {
             data: kyc
         });
     });
+
+    updateBvnStatus = asyncHandler(async (req: Request, res: Response) => {
+        const kycId = new Types.ObjectId(req.params.id);
+        const { bvnStatus, message } = req.body;
+        const kyc = await KycService.updateBvnStatus(kycId, bvnStatus, message);
+        if (!kyc) {
+            return res.status(STATUS.NOT_FOUND).json({
+                success: false,
+                message: 'KYC not found'
+            });
+        }
+
+        // Notify User
+        if (kyc && kyc.user) {
+            const notificationTitle =
+                bvnStatus === 'verified'
+                    ? 'BVN Verified'
+                    : 'BVN Verification Update';
+            const notificationMessage =
+                bvnStatus === 'verified'
+                    ? 'Your BVN has been successfully verified.'
+                    : `Your BVN verification status has been updated to ${bvnStatus}. ${
+                          message || ''
+                      }`;
+
+            await NotificationService.create({
+                userId: kyc.user._id || kyc.user,
+                title: notificationTitle,
+                message: notificationMessage,
+                status: 'unread'
+            });
+        }
+
+        // Log Action
+        AuditService.log({
+            adminId: (req as any).userdata.id,
+            action: bvnStatus === 'verified' ? 'VERIFY_BVN' : 'REJECT_BVN',
+            resource: 'Kyc',
+            resourceId: String(kyc._id),
+            details: { bvnStatus, reason: message || '' },
+            ip: req.ip,
+            userAgent: req.headers['user-agent']
+        });
+
+        return res.status(STATUS.OK).json({
+            success: true,
+            message: `BVN status updated to ${bvnStatus}`,
+            data: kyc
+        });
+    });
 }
 
 export default new AdminKycController();
