@@ -6,7 +6,8 @@ export const ROLE = {
     RIDER: 'rider',
     FINANCE: 'finance',
     MANAGER: 'manager',
-    SUPPORT: 'support'
+    SUPPORT: 'support',
+    SUPERADMIN: 'superadmin'
 };
 
 export const STATUS = {

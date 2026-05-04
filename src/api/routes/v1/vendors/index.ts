@@ -44,16 +44,16 @@ vendorsRouter.put(
 
 vendorsRouter.put('/banner', upload.single('file'), VendorInfoController.uploadBanner);
 
-vendorsRouter.use('/products', vendorProductRouter);
-vendorsRouter.use('/orders', vendorOrderRouter);
-vendorsRouter.use('/staffs', vendorStaffRouter);
-vendorsRouter.use('/wallet', vendorWalletRouter);
-vendorsRouter.use('/transactions', vendorTransactionRouter);
+vendorsRouter.use('/products', auth.checkPermissions('manage_inventory'), vendorProductRouter);
+vendorsRouter.use('/orders', auth.checkPermissions('manage_orders'), vendorOrderRouter);
+vendorsRouter.use('/staffs', auth.checkPermissions('manage_staff'), vendorStaffRouter);
+vendorsRouter.use('/wallet', auth.checkPermissions('manage_finance'), vendorWalletRouter);
+vendorsRouter.use('/transactions', auth.checkPermissions('manage_finance'), vendorTransactionRouter);
 vendorsRouter.use('/notifications', vendorNotificationRouter);
 vendorsRouter.use('/market-categories', customerMarketCategoryRouter);
-vendorsRouter.use('/categories', vendorCategoryRouter);
-vendorsRouter.use('/dashboard', VendorDashboardRouter);
-vendorsRouter.use('/payouts', vendorPayoutRouter);
+vendorsRouter.use('/categories', auth.checkPermissions('manage_inventory'), vendorCategoryRouter);
+vendorsRouter.use('/dashboard', auth.checkPermissions('view_analytics'), VendorDashboardRouter);
+vendorsRouter.use('/payouts', auth.checkPermissions('manage_finance'), vendorPayoutRouter);
 vendorsRouter.use('/kyc', vendorKycRouter);
 
 export default vendorsRouter;

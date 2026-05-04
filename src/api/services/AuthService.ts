@@ -188,13 +188,18 @@ class AuthService implements IAuthService {
         }
 
         console.log(user);
-        const isValid = await user.matchPassword(currentPassword);
-
-        if (!isValid) {
-            throw new Error('check your current password again.');
+        if (currentPassword) {
+            const isValid = await user.matchPassword(currentPassword);
+            if (!isValid) {
+                throw new Error('check your current password again.');
+            }
+        } else if (!user.mustChangePassword) {
+            // If currentPassword is not provided, it's only allowed if mustChangePassword is true
+            throw new Error('Current password is required to change password.');
         }
 
         user.password = newPassword;
+        user.mustChangePassword = false;
 
         await user.save({ validateBeforeSave: true });
 

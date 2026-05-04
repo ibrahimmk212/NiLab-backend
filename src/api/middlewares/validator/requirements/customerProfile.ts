@@ -18,7 +18,7 @@ const customerProfileRequirement = {
         body('lastName').isString().optional({ nullable: true })
     ],
     updatePassword: [
-        body('currentPassword').isString().isLength({ min: 5 }),
+        body('currentPassword').isString().optional({ nullable: true }),
         body('newPassword').isString().isLength({ min: 5 })
     ],
 

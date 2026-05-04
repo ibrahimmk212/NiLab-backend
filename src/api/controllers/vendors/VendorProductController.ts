@@ -90,7 +90,7 @@ class VendorProductController {
             });
         }
     );
-        getAllCategories = asyncHandler(
+    getAllCategories = asyncHandler(
         async (req: any, res: Response): Promise<void> => {
             const categories = await CategoryService.getAll({
                 vendor: req.vendor.id,
@@ -98,8 +98,9 @@ class VendorProductController {
                 ...req.query
             });
             res.status(STATUS.OK).send({
+                success: true,
                 message: 'Categories fetched successfully',
-                data: categories
+                ...categories
             });
         }
     );

@@ -13,12 +13,12 @@ import MarketCategoryService from '../../services/MarketCategoryService';
 import { v2 as cloudinaryV2 } from 'cloudinary';
 import { Readable } from 'stream';
 import VendorRepository from '../../repositories/VendorRepository';
+import StaffRepository from '../../repositories/StaffRepository';
 
 class VendorInfoController {
     currentUser = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            // const user = await UserService.findUserById(req.userdata.id);
-            const { userdata, vendor }: any = req;
+            const { userdata, vendor, staff }: any = req;
 
             const wallet = await WalletService.getMyWallet({
                 role: 'vendor',
@@ -26,13 +26,20 @@ class VendorInfoController {
             });
 
             const marketCategory = await MarketCategoryService.find(
-                vendor?.marketCategoryId.toString()
+                vendor?.marketCategoryId?.toString()
             );
+
+            // Enhance user data with permissions and accountType for staff
+            const enrichedUser = {
+                ...userdata.toJSON(),
+                permissions: staff?.permissions || [],
+                accountType: userdata.role
+            };
 
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'User fetched successfully',
-                data: { user: userdata, vendor, marketCategory, wallet }
+                data: { user: enrichedUser, vendor, marketCategory, wallet }
             });
         }
     );
@@ -41,12 +48,35 @@ class VendorInfoController {
         const payload: LoginType = req.body;
         const { token, user } = await AuthService.login(payload);
 
-        const vendor = await VendorService.getByUserId(user.id);
+        let vendor: any;
+        let permissions: string[] = [];
+
+        if (user.role === 'vendor') {
+            vendor = await VendorService.getByUserId(user.id);
+        } else if (user.role === 'staff' || user.role === 'manager') {
+            const staff = await StaffRepository.findStaffByKey('user', user.id);
+            if (!staff) {
+                throw new Error('Staff record not found for this user');
+            }
+            vendor = staff.vendor;
+            permissions = staff.permissions || [];
+        } else {
+            throw new Error('Unauthorized role for vendor portal');
+        }
+
+            // Attach permissions to user object for frontend consistency
+            const userWithPerms = {
+                ...user.toJSON(),
+                permissions,
+                accountType: user.role,
+                mustChangePassword: user.mustChangePassword
+            };
+
         res.status(STATUS.OK).send({
             message: 'Logged in successfully',
             success: true,
-            data: user,
-            user: user,
+            data: userWithPerms,
+            user: userWithPerms,
             vendor: vendor,
             active: vendor.status === 'active',
             token: token

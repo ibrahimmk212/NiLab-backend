@@ -145,7 +145,7 @@ class Auth {
         next: NextFunction
     ): Promise<any> {
         const admin = req.admin;
-        if (!admin || admin.role !== 'superadmin') {
+        if (!admin || (admin.role !== 'superadmin' && admin.role !== 'super_admin')) {
             return res.status(STATUS.FORBIDDEN).json({
                 success: false,
                 message: 'Access denied: Superadmin privileges required'
@@ -386,9 +386,10 @@ class Auth {
             const admin = req.admin;
             const staff = req.staff;
 
-            // 1. Superadmin fallback
+            // 1. Superadmin & Vendor Owner fallback
             const isSystemAdmin = req.userdata?.email === 'admin@nilab.com';
-            if (isSystemAdmin || (admin && admin.role === 'superadmin')) {
+            const isVendorOwner = req.userdata?.role === ROLE.VENDOR;
+            if (isSystemAdmin || isVendorOwner || (admin && (admin.role === 'superadmin' || admin.role === 'super_admin'))) {
                 return next();
             }
 

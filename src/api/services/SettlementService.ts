@@ -220,7 +220,7 @@ class SettlementService {
             // We need to import NotificationService carefully to avoid circular deps if any.
             // But Services -> Services is common. NotificationService doesn't import SettlementService.
             // Check imports at top of file first.
-            await this.notifyUserCancellation(customerId, order.code, reason);
+            await this.notifyCancellation(customerId, order.code, reason, order.vendor);
 
             await session.commitTransaction();
         } catch (error) {
@@ -366,18 +366,32 @@ class SettlementService {
             session
         );
     }
-    async notifyUserCancellation(
+    async notifyCancellation(
         userId: string,
         orderCode: string,
-        reason: string
+        reason: string,
+        vendor?: any
     ) {
         try {
+            // Notify Customer
             await NotificationService.create({
                 userId,
                 title: 'Order Canceled',
                 message: `Order ${orderCode} was canceled. Refund processed. Reason: ${reason}`,
                 status: 'unread'
             });
+
+            // Notify Vendor
+            if (vendor) {
+                await NotificationService.create({
+                    userId: vendor.userId || vendor,
+                    vendorId: vendor._id || vendor,
+                    role: 'vendor',
+                    title: 'Order Canceled',
+                    message: `Order ${orderCode} has been canceled. Reason: ${reason}`,
+                    status: 'unread'
+                });
+            }
         } catch (error) {
             console.error('Failed to notify cancellation:', error);
         }

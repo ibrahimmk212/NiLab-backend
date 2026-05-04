@@ -36,21 +36,21 @@ export interface Identity {
     identityDocument: string;
 }
 
-export interface Bvn {
-    bvn: string;
+export interface Nin {
+    nin: string;
 }
 
 export interface Kyc extends Document {
     address: Address;
     identity: Identity;
-    bvn: Bvn;
+    nin: Nin;
     passportUrl: string;
     nextOfKin: NextOfKin;
     guarantor: Guarantor;
     user: mongoose.Types.ObjectId;
     role: 'user' | 'vendor' | 'rider';
     status: 'not_submitted' | 'pending' | 'verified' | 'rejected' | 'approved';
-    bvnStatus: 'not_submitted' | 'pending' | 'verified' | 'failed';
+    ninStatus: 'not_submitted' | 'pending' | 'verified' | 'failed';
     message: string;
 }
 
@@ -75,8 +75,8 @@ const kycSchema = new Schema<Kyc>(
             identityNumber: { type: String, required: false },
             identityDocument: { type: String, required: false }
         },
-        bvn: {
-            bvn: { type: String, required: false }
+        nin: {
+            nin: { type: String, required: false }
         },
         nextOfKin: {
             name: { type: String, required: false },
@@ -102,7 +102,7 @@ const kycSchema = new Schema<Kyc>(
             required: true,
             default: 'not_submitted'
         },
-        bvnStatus: {
+        ninStatus: {
             type: String,
             enum: ['not_submitted', 'pending', 'verified', 'failed'],
             required: true,
@@ -135,8 +135,8 @@ kycSchema.pre('save', async function (next) {
             user.kycStatus = this.status;
             needsSave = true;
         }
-        if (user.bvnStatus !== this.bvnStatus) {
-            user.bvnStatus = this.bvnStatus;
+        if (user.ninStatus !== this.ninStatus) {
+            user.ninStatus = this.ninStatus;
             needsSave = true;
         }
         if (needsSave) {

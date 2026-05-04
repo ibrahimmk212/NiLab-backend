@@ -45,15 +45,15 @@ class KycService {
         return await KycRepository.updateKycStatus(kycId, status, message);
     }
 
-    async updateBvnStatus(
+    async updateNinStatus(
         kycId: Types.ObjectId,
-        bvnStatus: 'pending' | 'not_submitted' | 'verified' | 'failed',
+        ninStatus: 'pending' | 'not_submitted' | 'verified' | 'failed',
         message?: string
     ): Promise<Kyc | null> {
         const kyc: any = await KycRepository.getKycById(kycId);
         if (!kyc) throw new Error('KYC not found!');
 
-        return await KycRepository.updateBvnStatus(kycId, bvnStatus, message);
+        return await KycRepository.updateNinStatus(kycId, ninStatus, message);
     }
 
     async getKycByStatus(status: string): Promise<Kyc[]> {

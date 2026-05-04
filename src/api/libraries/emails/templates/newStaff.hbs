@@ -1,32 +1,27 @@
 <html>
     <head>
-        <title>Welcome to Our Team</title>
+        <title>Welcome to the Terminus Drive Team</title>
     </head>
     <body style='font-family: Arial, sans-serif; color: #333;'>
-        <div
-            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
-        >
-            <header style='text-align: center;'>
-                <h1 style='color: #007bff;'>Welcome to the Terminus Drive Team!</h1>
-            </header>
+        <div style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'>
+            {{> header}}
             <section>
                 <p>Dear {{staffName}},</p>
-                <p>You are now part of our esteemed team at
-                    {{vendorName}}. Here are your account details:</p>
-                <p><strong>Email:</strong> {{email}}</p>
-                <p><strong>Temporary Password:</strong>
-                    {{temporaryPassword}}</p>
-                <p>Please change your temporary password upon your first login.</p>
-                <a
-                    href='{{loginUrl}}'
-                    style='display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'
-                >Log In</a>
-                <p>We're excited to have you on board and look forward to
-                    achieving great things together!</p>
+                <p>You have been successfully added to the team at <strong>{{vendorName}}</strong> on Terminus Drive.</p>
+                <p>Below are your initial login credentials:</p>
+                <p style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                    <strong>Email:</strong> {{email}}<br>
+                    <strong>Temporary Password:</strong> {{temporaryPassword}}
+                </p>
+                <p>For security reasons, you will be required to change this password upon your first login.</p>
+                <div style="text-align: center; margin: 25px 0;">
+                    <a href='{{loginUrl}}' style='display: inline-block; background-color: #f59e0b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>
+                        Access Dashboard
+                    </a>
+                </div>
+                <p>We're excited to have you on board! If you encounter any issues, please contact your store manager or our support team.</p>
             </section>
-            <footer style='text-align: center; margin-top: 20px;'>
-                <p style='color: #aaa;'>&copy; 2026 Terminus Drive Limited</p>
-            </footer>
+            {{> footer}}
         </div>
     </body>
 </html>

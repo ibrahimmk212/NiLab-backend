@@ -9,9 +9,11 @@ class VendorDashboardController {
     getVendorDashboardData = asyncHandler(async (req: any, res: Response) => {
         // req.vendor.id should be provided by your auth middleware
         const vendorId = req.vendor.id;
+        const { period } = req.query;
 
         const dashboardData = await dashboardService.fetchVendorDashboard(
-            vendorId
+            vendorId,
+            period as string
         );
 
         return res.status(200).json({

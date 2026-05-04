@@ -13,7 +13,8 @@ const AppConfig = {
         jwtExpire: process.env.JWT_EXPIRE || '1d',
         maxFileSize: parseInt(<string>process.env.MAX_FILE_UPLOAD, 10),
         defaultNearbyDistance:
-            parseInt(<string>process.env.DEFAULT_NEARBY_DISTANCE) || 1000
+            parseInt(<string>process.env.DEFAULT_NEARBY_DISTANCE) || 1000,
+        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
     },
     // aws: {
     //     awsKey: process.env.AWS_ACCESS_KEY_ID,

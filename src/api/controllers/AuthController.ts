@@ -21,6 +21,7 @@ import PromotionService from '../services/PromotionService';
 import dayjs from 'dayjs';
 import NotificationService from '../services/NotificationService';
 import VehicleTypeService from '../services/VehicleTypeService';
+import StaffRepository from '../repositories/StaffRepository';
 
 class AuthController {
     login = asyncHandler(async (req: Request, res: Response): Promise<any> => {
@@ -72,6 +73,40 @@ class AuthController {
                 user: user,
                 vendor: vendor,
                 active: vendor.status === 'active',
+                token: token
+            });
+        } else if (user.role === 'staff' || user.role === 'manager') {
+            const staff = await StaffRepository.findStaffByKey('user', user.id);
+            if (!staff) {
+                return res.status(STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Staff record not found'
+                });
+            }
+
+            const vendor = staff.vendor;
+
+            if (payload.deviceToken) user.deviceToken = payload.deviceToken;
+            await user.save();
+
+            notificationDetail.vendorId = vendor.id;
+            NotificationService.create(notificationDetail);
+
+            // Enrich user data with permissions and accountType for frontend
+            const userWithPerms = {
+                ...user.toJSON(),
+                permissions: staff.permissions || [],
+                accountType: user.role,
+                mustChangePassword: user.mustChangePassword
+            };
+
+            return res.status(STATUS.OK).send({
+                message: 'Logged in successfully',
+                success: true,
+                data: userWithPerms,
+                user: userWithPerms,
+                vendor: vendor,
+                active: (vendor as any).status === 'active',
                 token: token
             });
         } else if (user.role == 'user') {

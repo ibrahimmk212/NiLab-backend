@@ -22,7 +22,7 @@ class KycController {
 
     createKyc = asyncHandler(async (req: Request, res: Response) => {
         const { userdata }: any = req;
-        const { passportUrl, address, identity, bvn, nextOfKin, guarantor } =
+        const { passportUrl, address, identity, nin, nextOfKin, guarantor } =
             req.body;
 
         const kyc = await KycService.getKyc(userdata.id);
@@ -42,11 +42,11 @@ class KycController {
                 kycData.identity = identity;
                 kycData.status = 'pending';
             }
-            if (bvn) {
-                kycData.bvn = {
-                    bvn: typeof bvn === 'string' ? bvn : bvn.bvn
+            if (nin) {
+                kycData.nin = {
+                    nin: typeof nin === 'string' ? nin : nin.nin
                 };
-                kycData.bvnStatus = 'pending';
+                kycData.ninStatus = 'pending';
             }
             if (nextOfKin) {
                 kycData.nextOfKin = nextOfKin;
@@ -77,11 +77,11 @@ class KycController {
             kycData.identity = identity;
             kycData.status = 'pending';
         }
-        if (bvn) {
-            kycData.bvn = {
-                bvn: typeof bvn === 'string' ? bvn : bvn.bvn
+        if (nin) {
+            kycData.nin = {
+                nin: typeof nin === 'string' ? nin : nin.nin
             };
-            kycData.bvnStatus = 'pending';
+            kycData.ninStatus = 'pending';
         }
         if (nextOfKin) {
             kycData.nextOfKin = nextOfKin;

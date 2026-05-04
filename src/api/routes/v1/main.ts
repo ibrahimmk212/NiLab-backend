@@ -48,7 +48,11 @@ mainRouter
     .put(Validate(Requirements.resetPassword), AuthController.resetPassword);
 mainRouter
     .route('/update-password')
-    .put(Validate(Requirements.updatePassword), AuthController.updatePassword);
+    .put(
+        Auth.authenticate,
+        Validate(Requirements.updatePassword),
+        AuthController.updatePassword
+    );
 mainRouter.route('/create-admin').get(AuthController.createAdmin);
 
 mainRouter

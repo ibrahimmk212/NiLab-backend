@@ -7,18 +7,17 @@ import VendorModel from '../models/Vendor';
 export class VendorDashboardRepository {
     async getVendorMetrics(
         vendorId: mongoose.Types.ObjectId,
-        todayStart: Date
+        startDate: Date
     ) {
         return OrderModel.aggregate([
-            { $match: { vendor: vendorId, createdAt: { $gte: todayStart } } },
+            { $match: { vendor: vendorId, createdAt: { $gte: startDate } } },
             {
                 $group: {
                     _id: null,
-                    todayNetSales: {
+                    periodNetSales: {
                         $sum: {
                             $cond: [
                                 { $ne: ['$status', 'canceled'] },
-                                // Amount - (Amount * Commission / 100)
                                 {
                                     $subtract: [
                                         '$amount',
@@ -44,7 +43,7 @@ export class VendorDashboardRepository {
                             $cond: [
                                 {
                                     $in: [
-                                        '$status', // note the quotes around $status
+                                        '$status',
                                         [
                                             'pending',
                                             'preparing',
@@ -70,21 +69,20 @@ export class VendorDashboardRepository {
             .populate('user', 'firstName lastName');
     }
 
-    async getWeeklyRevenue(vendorId: mongoose.Types.ObjectId) {
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    async getRevenueAnalytics(vendorId: mongoose.Types.ObjectId, startDate: Date, format: string) {
         return OrderModel.aggregate([
             {
                 $match: {
                     vendor: vendorId,
                     status: 'delivered',
-                    createdAt: { $gte: sevenDaysAgo }
+                    createdAt: { $gte: startDate }
                 }
             },
             {
                 $group: {
                     _id: {
                         $dateToString: {
-                            format: '%Y-%m-%d',
+                            format: format, // '%Y-%m-%d', '%H:00', '%Y-%m'
                             date: '$createdAt'
                         }
                     },

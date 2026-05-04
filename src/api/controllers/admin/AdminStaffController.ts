@@ -84,6 +84,25 @@ class AdminStaffController {
         }
     );
 
+    update = asyncHandler(
+        async (
+            req: Request | any,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { id } = req.params;
+            const { body } = req;
+
+            const updatedStaff = await StaffService.updateStaff(id, body);
+
+            res.status(STATUS.OK).json({
+                success: true,
+                message: 'Staff updated successfully',
+                data: updatedStaff
+            });
+        }
+    );
+
     delete = asyncHandler(
         async (
             req: Request | any,

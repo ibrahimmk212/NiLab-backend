@@ -428,6 +428,8 @@ class OrderService {
                         userId:
                             populatedOrder.vendor.userId ||
                             populatedOrder.vendor, // Check Vendor model for user link
+                        vendorId: populatedOrder.vendor._id || populatedOrder.vendor,
+                        role: 'vendor',
                         title: 'Order Delivered',
                         message: `Order ${populatedOrder.code} has been successfully delivered.`,
                         status: 'unread'

@@ -36,11 +36,14 @@ export interface User extends Document {
         | 'verified'
         | 'rejected'
         | 'approved';
-    bvnStatus: 'not_submitted' | 'pending' | 'verified' | 'failed';
+    ninStatus: 'not_submitted' | 'pending' | 'verified' | 'failed';
     resetPasswordToken: string;
     resetPasswordExpire: string;
     status: 'active' | 'inactive' | 'suspended';
     isBanned: boolean;
+    mustChangePassword: boolean;
+    accountType?: string;
+    vendorId?: string;
 
     deviceToken: string;
 
@@ -113,7 +116,7 @@ const userSchema = new Schema<User>(
             required: true,
             default: 'not_submitted'
         },
-        bvnStatus: {
+        ninStatus: {
             type: String,
             enum: ['not_submitted', 'pending', 'verified', 'failed'],
             required: true,
@@ -126,6 +129,7 @@ const userSchema = new Schema<User>(
             default: 'active'
         },
         isBanned: { type: Boolean, required: true, default: false },
+        mustChangePassword: { type: Boolean, default: false },
         resetPasswordToken: String,
         resetPasswordExpire: Date
     },

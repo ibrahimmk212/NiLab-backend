@@ -52,6 +52,8 @@ class PayoutService {
             // User Notification
             await NotificationService.create({
                 userId: user._id,
+                role: user.accountType === 'vendor' ? 'vendor' : 'user',
+                vendorId: user.vendorId,
                 title: 'Payout Request Submitted',
                 message: `Your payout request for ${payload.amount} has been received.`,
                 status: 'unread'
@@ -149,6 +151,8 @@ class PayoutService {
                 // User Notification
                 await NotificationService.create({
                     userId: user._id,
+                    role: user.accountType === 'vendor' ? 'vendor' : 'user',
+                    vendorId: user.vendorId,
                     title: 'Payout Successful',
                     message: `Your payout of ${payout.amount} has been processed successfully.`,
                     status: 'unread'
@@ -165,7 +169,22 @@ class PayoutService {
     }
 
     async rejectPayout(payoutId: string, reason: string): Promise<any | null> {
-        return await PayoutRepository.rejectPayout(payoutId, reason);
+        const payout: any = await PayoutRepository.rejectPayout(payoutId, reason);
+
+        // Send Notification
+        const user = await UserRepository.findUserById(payout.userId);
+        if (user) {
+            await NotificationService.create({
+                userId: user._id,
+                role: user.accountType === 'vendor' ? 'vendor' : 'user',
+                vendorId: user.vendorId,
+                title: 'Payout Request Rejected',
+                message: `Your payout request for ${payout.amount} was rejected. Reason: ${reason}`,
+                status: 'unread'
+            });
+        }
+
+        return payout;
     }
 
     async updatePayout(

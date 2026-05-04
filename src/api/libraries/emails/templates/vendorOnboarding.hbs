@@ -3,31 +3,24 @@
         <title>Welcome to Terminus Drive</title>
     </head>
     <body style='font-family: Arial, sans-serif; color: #333;'>
-        <div
-            style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'
-        >
-            <header style='text-align: center;'>
-                <h1 style='color: #f59e0b;'>Welcome Aboard!</h1>
-            </header>
+        <div style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'>
+            {{> header}}
             <section>
                 <p>Dear {{vendorName}},</p>
-                <p>Welcome to Terminus Drive! Your restaurant is now a valued
-                    part of our community. Here are your account details:</p>
-                <p><strong>Email:</strong> {{email}}</p>
-                <p><strong>Temporary Password:</strong>
-                    {{temporaryPassword}}</p>
-                <p>We strongly advise that you log in and change your temporary
-                    password at your earliest convenience.</p>
-                {{!-- <a
-                    href='{{loginUrl}}'
-                    style='display: inline-block; background-color: #f59e0b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'
-                >Log In</a> --}}
-                <p>If you have any questions, feel free to reach out to our
-                    support team.</p>
+                <p>Welcome to Terminus Drive! Your store is now a valued part of our commerce network. Below are your account credentials to get you started:</p>
+                <p style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                    <strong>Login Email:</strong> {{email}}<br>
+                    <strong>Temporary Password:</strong> {{temporaryPassword}}
+                </p>
+                <p>We strongly advise that you log in and update your password immediately for security.</p>
+                <div style="text-align: center; margin: 25px 0;">
+                    <a href='{{loginUrl}}' style='display: inline-block; background-color: #f59e0b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>
+                        Go to Merchant Portal
+                    </a>
+                </div>
+                <p>Our support team is always available if you have any questions during your setup process.</p>
             </section>
-            <footer style='text-align: center; margin-top: 20px;'>
-                <p style='color: #aaa;'>&copy; 2026 Terminus Drive Limited</p>
-            </footer>
+            {{> footer}}
         </div>
     </body>
 </html>

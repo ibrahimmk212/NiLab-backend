@@ -98,10 +98,10 @@ class AdminKycController {
         });
     });
 
-    updateBvnStatus = asyncHandler(async (req: Request, res: Response) => {
+    updateNinStatus = asyncHandler(async (req: Request, res: Response) => {
         const kycId = new Types.ObjectId(req.params.id);
-        const { bvnStatus, message } = req.body;
-        const kyc = await KycService.updateBvnStatus(kycId, bvnStatus, message);
+        const { ninStatus, message } = req.body;
+        const kyc = await KycService.updateNinStatus(kycId, ninStatus, message);
         if (!kyc) {
             return res.status(STATUS.NOT_FOUND).json({
                 success: false,
@@ -112,13 +112,13 @@ class AdminKycController {
         // Notify User
         if (kyc && kyc.user) {
             const notificationTitle =
-                bvnStatus === 'verified'
-                    ? 'BVN Verified'
-                    : 'BVN Verification Update';
+                ninStatus === 'verified'
+                    ? 'NIN Verified'
+                    : 'NIN Verification Update';
             const notificationMessage =
-                bvnStatus === 'verified'
-                    ? 'Your BVN has been successfully verified.'
-                    : `Your BVN verification status has been updated to ${bvnStatus}. ${
+                ninStatus === 'verified'
+                    ? 'Your NIN has been successfully verified.'
+                    : `Your NIN verification status has been updated to ${ninStatus}. ${
                           message || ''
                       }`;
 
@@ -133,17 +133,17 @@ class AdminKycController {
         // Log Action
         AuditService.log({
             adminId: (req as any).userdata.id,
-            action: bvnStatus === 'verified' ? 'VERIFY_BVN' : 'REJECT_BVN',
+            action: ninStatus === 'verified' ? 'VERIFY_NIN' : 'REJECT_NIN',
             resource: 'Kyc',
             resourceId: String(kyc._id),
-            details: { bvnStatus, reason: message || '' },
+            details: { ninStatus, reason: message || '' },
             ip: req.ip,
             userAgent: req.headers['user-agent']
         });
 
         return res.status(STATUS.OK).json({
             success: true,
-            message: `BVN status updated to ${bvnStatus}`,
+            message: `NIN status updated to ${ninStatus}`,
             data: kyc
         });
     });
