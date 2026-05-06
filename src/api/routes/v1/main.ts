@@ -46,13 +46,15 @@ mainRouter
 mainRouter
     .route('/reset-password')
     .put(Validate(Requirements.resetPassword), AuthController.resetPassword);
+
 mainRouter
     .route('/update-password')
     .put(
-        Auth.authenticate,
         Validate(Requirements.updatePassword),
+        Auth.authenticate,
         AuthController.updatePassword
     );
+
 mainRouter.route('/create-admin').get(AuthController.createAdmin);
 
 mainRouter

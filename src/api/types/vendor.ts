@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 export type CreateVendorType = {
     name: string;
     address?: string;
+    location?: object;
+    zipcode?: string;
     description?: string;
     userId: mongoose.Types.ObjectId;
     email?: string;
@@ -16,6 +18,8 @@ export type CreateVendorType = {
 export type UpdateVendorType = {
     name: string;
     address?: string;
+    location?: object;
+    zipcode?: string;
     description?: string;
     email?: string;
     phoneNumber?: string;
