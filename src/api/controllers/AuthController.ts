@@ -267,6 +267,7 @@ class AuthController {
 
     updatePassword = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
+            console.log('[AuthController] Entry - req.userdata:', (req as any).userdata?.email, (req as any).userdata?.id);
             const pin: string = req.body.pin;
             const { userdata }: any = req;
 

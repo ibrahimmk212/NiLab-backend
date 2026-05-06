@@ -43,6 +43,7 @@ class Auth {
                 });
             }
             // TODO check if account is active
+            console.log('[AuthMiddleware] Setting req.userdata:', userdata.email, userdata.id);
             req.userdata = userdata;
 
             next();
