@@ -44,9 +44,19 @@ class KycService {
         
         const updatedKyc = await KycRepository.updateKycStatus(kycId, status, message);
         if (updatedKyc && updatedKyc.user) {
-            await UserRepository.updateUser(String(updatedKyc.user._id || updatedKyc.user), {
-                kycStatus: status
-            });
+            const userUpdate: any = { kycStatus: status };
+            
+            // For MVP: Approving KYC status also means approving ninStatus
+            if (status === 'approved') {
+                userUpdate.ninStatus = 'verified';
+                // Sync the NIN status in the Kyc document as well
+                await KycRepository.updateNinStatus(kycId, 'verified', 'Automatically verified via KYC approval');
+            } else if (status === 'rejected') {
+                userUpdate.ninStatus = 'failed';
+                await KycRepository.updateNinStatus(kycId, 'failed', 'Automatically rejected via KYC rejection');
+            }
+
+            await UserRepository.updateUser(String(updatedKyc.user._id || updatedKyc.user), userUpdate);
         }
         return updatedKyc;
     }
