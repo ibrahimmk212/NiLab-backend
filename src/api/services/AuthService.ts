@@ -13,6 +13,7 @@ import bcrypt from 'bcrypt';
 import emails from '../libraries/emails';
 import { generateRandomNumbers } from '../../utils/helpers';
 import MarketCategoryRepository from '../repositories/MarketCategoryRepository';
+import VendorRepository from '../repositories/VendorRepository';
 
 interface IAuthService {
     login(payload: LoginType): Promise<{ token: string; user: User }>;
@@ -235,8 +236,16 @@ class AuthService implements IAuthService {
                     ? 'Phone already exists'
                     : 'Email already exists'
             );
-        // TODO check Vendors email address, if exists.
-        // TODO check Vendors phone address, if exists.
+        // Check if a business with this email or phone already exists
+        const existingVendorEmail = await VendorRepository.findByKeyLight('email', payload.vendor?.email as string);
+        if (existingVendorEmail) {
+            throw Error('A vendor with this business email already exists');
+        }
+
+        const existingVendorPhone = await VendorRepository.findByKeyLight('phoneNumber', payload.vendor?.phone as string);
+        if (existingVendorPhone) {
+            throw Error('A vendor with this business phone number already exists');
+        }
         const result = await UserRepository.createVendorUser({
             ...payload,
             email: savedData.email,

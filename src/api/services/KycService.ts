@@ -42,7 +42,13 @@ class KycService {
         const kyc: any = await KycRepository.getKycById(kycId);
         if (!kyc) throw new Error('KYC not found!');
         
-        return await KycRepository.updateKycStatus(kycId, status, message);
+        const updatedKyc = await KycRepository.updateKycStatus(kycId, status, message);
+        if (updatedKyc && updatedKyc.user) {
+            await UserRepository.updateUser(String(updatedKyc.user._id || updatedKyc.user), {
+                kycStatus: status
+            });
+        }
+        return updatedKyc;
     }
 
     async updateNinStatus(
@@ -53,7 +59,13 @@ class KycService {
         const kyc: any = await KycRepository.getKycById(kycId);
         if (!kyc) throw new Error('KYC not found!');
 
-        return await KycRepository.updateNinStatus(kycId, ninStatus, message);
+        const updatedKyc = await KycRepository.updateNinStatus(kycId, ninStatus, message);
+        if (updatedKyc && updatedKyc.user) {
+            await UserRepository.updateUser(String(updatedKyc.user._id || updatedKyc.user), {
+                ninStatus: ninStatus
+            });
+        }
+        return updatedKyc;
     }
 
     async getKycByStatus(status: string): Promise<Kyc[]> {

@@ -7,6 +7,7 @@ import NotificationService from '../../services/NotificationService';
 import EmailTemplate from '../../libraries/emails';
 import UserService from '../../services/UserService';
 import AuditService from '../../services/AuditService';
+import LogService from '../../services/LogService';
 
 class AdminKycController {
     getKycs = asyncHandler(async (req: Request, res: Response) => {
@@ -91,6 +92,14 @@ class AdminKycController {
             userAgent: req.headers['user-agent']
         });
 
+        // ✅ Also Record in System Log (for AuditLogList UI)
+        await LogService.recordAction(
+            (req as any).userdata.id,
+            `${status === 'approved' ? 'Approved' : 'Rejected'} KYC for user: ${
+                (kyc.user as any)?.firstName || kyc.user
+            }`
+        );
+
         return res.status(STATUS.OK).json({
             success: true,
             message: `KYC status updated to ${status}`,
@@ -140,6 +149,14 @@ class AdminKycController {
             ip: req.ip,
             userAgent: req.headers['user-agent']
         });
+
+        // ✅ Also Record in System Log (for AuditLogList UI)
+        await LogService.recordAction(
+            (req as any).userdata.id,
+            `${ninStatus === 'verified' ? 'Verified' : 'Rejected'} NIN for user: ${
+                (kyc.user as any)?.firstName || kyc.user
+            }`
+        );
 
         return res.status(STATUS.OK).json({
             success: true,

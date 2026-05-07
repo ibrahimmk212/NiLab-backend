@@ -9,6 +9,7 @@ import AuditService from '../../services/AuditService';
 import dayjs from 'dayjs';
 import OrderService from '../../services/OrderService';
 import DashboardRepository from '../../repositories/DashboardRepository';
+import emails from '../../libraries/emails';
 
 class AdminMainController {
     stats = asyncHandler(
@@ -148,8 +149,17 @@ class AdminMainController {
                 throw Error('Admin not created');
             }
 
-            // TODO: send tempPassword to admin's email
-            console.log('Temp password for', user.email, ':', tempPassword);
+            // Send temporary password to admin's email
+            try {
+                await emails.staffWelcome(user.email, {
+                    staffName: user.firstName,
+                    email: user.email,
+                    temporaryPassword: tempPassword,
+                    loginUrl: `${process.env.FRONTEND_URL}/admin/login`
+                });
+            } catch (err) {
+                console.error('Failed to send onboarding email to admin:', err);
+            }
 
             res.status(STATUS.OK).send({
                 success: true,

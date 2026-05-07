@@ -35,11 +35,13 @@ class VehicleTypeController {
     );
 
     createVehicleType = asyncHandler(async (req: Request, res: Response) => {
-        const { name, feePerKm, icon } = req.body;
+        const { name, feePerKm, icon, slug, active } = req.body;
         const vehicleType = await VehicleTypeService.createVehicleType({
             name,
             feePerKm,
-            icon
+            icon,
+            slug,
+            active
         });
         res.status(STATUS.OK).json({
             success: true,
@@ -51,11 +53,13 @@ class VehicleTypeController {
     updateVehicleType = asyncHandler(
         async (req: Request, res: Response, next: NextFunction) => {
             const { id } = req.params;
-            const { name, feePerKm, icon } = req.body;
+            const { name, feePerKm, icon, slug, active } = req.body;
             const vehicleType = await VehicleTypeService.updateVehicleType(id, {
                 name,
                 feePerKm,
-                icon
+                icon,
+                slug,
+                active
             });
             if (!vehicleType) {
                 return next(new Error('Vehicle type not found'));

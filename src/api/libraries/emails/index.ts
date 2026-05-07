@@ -20,7 +20,8 @@ import {
     IVendorKycSubmission,
     IAdminNewVendorSignup,
     IKycRejected,
-    IVendorNewStaff
+    IVendorNewStaff,
+    IBroadcastEmail
 } from './types';
 import { getTemplate } from './templates';
 import { mailTransporter } from '../../../utils/mail/mailer';
@@ -212,6 +213,12 @@ class EmailTemplate {
         const template = getTemplate('newStaff');
         const htmlContent = template(data);
         await sendEmail(email, 'Welcome to Terminus - Staff Invitation', htmlContent);
+    };
+
+    broadcast = async (email: string, data: IBroadcastEmail) => {
+        const template = getTemplate('broadcast');
+        const htmlContent = template(data);
+        await sendEmail(email, data.title, htmlContent);
     };
 }
 

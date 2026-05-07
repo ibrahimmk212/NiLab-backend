@@ -294,7 +294,7 @@ class PayoutRepository {
 
     // Find a payout by ID
     async findById(vendorId: string): Promise<Payout | null> {
-        const payout = await PayoutModel.findById({ _id: vendorId }).populate([
+        const payout = await PayoutModel.findById(vendorId).populate([
             { path: 'user' }
         ]);
 

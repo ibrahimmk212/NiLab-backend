@@ -448,6 +448,37 @@ class OrderService {
         }
     }
 
+    async assignRider(orderId: string, riderId: string) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const order: any = await OrderRepository.findOrderById(orderId);
+            if (!order) throw new Error('Order not found');
+
+            // 1. Update Order
+            order.rider = new mongoose.Types.ObjectId(riderId);
+            order.deliveryAccepted = true; // Mark as accepted since admin is forcing it
+            await order.save({ session });
+
+            // 2. Update Delivery if exists
+            const delivery = await DeliveryRepository.getDeliveryByOrder(orderId);
+            if (delivery) {
+                delivery.rider = new mongoose.Types.ObjectId(riderId);
+                delivery.status = 'accepted';
+                await delivery.save({ session });
+            }
+
+            await session.commitTransaction();
+            return order;
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            session.endSession();
+        }
+    }
+
     /**
      * Standard status update wrapper
      */

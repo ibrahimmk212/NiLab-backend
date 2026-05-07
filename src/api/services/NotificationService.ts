@@ -5,6 +5,7 @@ import UserRepository from '../repositories/UserRepository';
 import RiderService from './RiderService';
 import SocketService from './SocketService';
 import { sendPushNotification } from '../libraries/firebase';
+import EmailTemplate from '../libraries/emails';
 
 interface INotificationService {
     create(payload: any): Promise<any>;
@@ -12,8 +13,8 @@ interface INotificationService {
     get(Id: string): Promise<any>;
     update(Id: string, data: any): Promise<boolean>;
     delete(userId: string): Promise<boolean>;
-    markAllAsRead(userId: string): Promise<any>;
-    deleteAll(userId: string): Promise<any>;
+    markAllAsRead(userId: string, vendorId?: string): Promise<any>;
+    deleteAll(userId: string, vendorId?: string): Promise<any>;
 }
 
 class NotificationService implements INotificationService {
@@ -42,12 +43,19 @@ class NotificationService implements INotificationService {
                 notification
             );
         } else if (payload.role === 'vendor') {
-            const scc = SocketService.emitToVendor(
-                payload.vendorId,
+            if (payload.vendorId) {
+                SocketService.emitToVendor(
+                    payload.vendorId,
+                    'vendor_notification',
+                    notification
+                );
+            }
+            // Always also emit to user room as a fallback/secondary
+            SocketService.emitToUser(
+                payload.userId,
                 'vendor_notification',
                 notification
             );
-            console.log('Socket Notification Sent:', notification, scc);
         } else {
             SocketService.emitToUser(
                 payload.userId,
@@ -96,12 +104,12 @@ class NotificationService implements INotificationService {
         return await NotificationRepository.deleteNotification(notificationId);
     }
 
-    async markAllAsRead(userId: string): Promise<any> {
-        return await NotificationRepository.markAllAsRead(userId);
+    async markAllAsRead(userId: string, vendorId?: string): Promise<any> {
+        return await NotificationRepository.markAllAsRead(userId, vendorId);
     }
 
-    async deleteAll(userId: string): Promise<any> {
-        return await NotificationRepository.deleteAll(userId);
+    async deleteAll(userId: string, vendorId?: string): Promise<any> {
+        return await NotificationRepository.deleteAll(userId, vendorId);
     }
 
     async notifyAdmins(title: string, message: string): Promise<void> {
@@ -304,6 +312,61 @@ class NotificationService implements INotificationService {
         } catch (error) {
             console.error('Failed to notify all admins', error);
         }
+    }
+
+    async sendBroadcast(payload: {
+        target: 'all' | 'vendors' | 'riders' | 'customers' | 'admins';
+        title: string;
+        message: string;
+        channels: ('push' | 'email' | 'in_app')[];
+    }) {
+        const { target, title, message, channels } = payload;
+
+        let users: any[] = [];
+
+        if (target === 'all') {
+            const res = await UserRepository.findAll({ limit: 50000 });
+            users = res.data || [];
+        } else if (target === 'vendors') {
+            const { default: VendorRepository } = await import('../repositories/VendorRepository');
+            const res = await VendorRepository.findVendorsByOption({}, 10000);
+            users = res.vendors.map((v: any) => v.user);
+        } else if (target === 'riders') {
+            const riders = await RiderService.findAllRiders({ limit: 10000 });
+            users = riders.data.map((r: any) => r.userId);
+        } else if (target === 'customers') {
+            const res = await UserRepository.findAll({ role: 'customer', limit: 10000 });
+            users = res.data || [];
+        } else if (target === 'admins') {
+            const res = await UserRepository.findAll({ role: 'admin', limit: 1000 });
+            users = res.data || [];
+        }
+
+        for (const user of users) {
+            const userId = typeof user === 'object' ? user._id : user;
+            const email = typeof user === 'object' ? user.email : null;
+            const deviceToken = typeof user === 'object' ? user.deviceToken : null;
+
+            if (channels.includes('in_app')) {
+                await this.create({ userId, title, message, status: 'unread' });
+            }
+
+            if (channels.includes('push') && deviceToken) {
+                sendPushNotification(deviceToken, title, message).catch(console.error);
+            }
+
+            if (channels.includes('email') && email) {
+                // We'll use a simple wrapper for broadcast emails
+                this.sendGenericEmail(email, title, message).catch(console.error);
+            }
+        }
+    }
+
+    private async sendGenericEmail(email: string, title: string, message: string) {
+        await EmailTemplate.broadcast(email, {
+            title,
+            message
+        });
     }
 }
 export default new NotificationService();

@@ -107,34 +107,49 @@ class NotificationController {
 
     create = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
-            const { target, title, message, ...rest } = req.body;
+            const { target, title, message, channels, ...rest } = req.body;
 
-            // Handle Bulk Targets
-            if (target === 'all_vendors') {
-                await NotificationService.notifyAllVendors(title, message);
-            } else if (target === 'all_riders') {
-                await NotificationService.notifyAllRiders(title, message);
-            } else if (target === 'all_customers') {
-                await NotificationService.notifyAllCustomers(title, message);
-            } else if (target === 'all_admins') {
-                await NotificationService.notifyAllAdmins(title, message);
-            } else {
-                // Individual Creation
-                const created = await NotificationService.create(req.body);
-                if (!created) {
-                    throw Error('failed to create a notification');
+            // Handle Broadcast Targets
+            if (['all', 'all_vendors', 'all_riders', 'all_customers', 'all_admins'].includes(target)) {
+                const broadcastTarget = target === 'all' ? 'all' : target.replace('all_', '');
+                
+                // If channels are provided, use the new sendBroadcast method
+                if (channels && Array.isArray(channels) && channels.length > 0) {
+                    await NotificationService.sendBroadcast({
+                        target: broadcastTarget as any,
+                        title,
+                        message,
+                        channels
+                    });
+                } else {
+                    // Legacy behavior for backward compatibility
+                    if (target === 'all_vendors') {
+                        await NotificationService.notifyAllVendors(title, message);
+                    } else if (target === 'all_riders') {
+                        await NotificationService.notifyAllRiders(title, message);
+                    } else if (target === 'all_customers') {
+                        await NotificationService.notifyAllCustomers(title, message);
+                    } else if (target === 'all_admins') {
+                        await NotificationService.notifyAllAdmins(title, message);
+                    }
                 }
+                
                 res.status(STATUS.OK).send({
                     success: true,
-                    message: 'Notification Created Successfully',
-                    data: created
+                    message: `Broadcast message triggered for ${target}`
                 });
                 return;
             }
 
+            // Individual Creation
+            const created = await NotificationService.create(req.body);
+            if (!created) {
+                throw Error('failed to create a notification');
+            }
             res.status(STATUS.OK).send({
                 success: true,
-                message: `Bulk Notification triggered for ${target}`
+                message: 'Notification Created Successfully',
+                data: created
             });
         }
     );

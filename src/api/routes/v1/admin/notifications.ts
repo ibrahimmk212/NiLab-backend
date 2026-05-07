@@ -11,6 +11,11 @@ customerNotificationRouter.put(
 );
 
 customerNotificationRouter.delete(
+    '/',
+    NotificationController.deleteAll
+);
+
+customerNotificationRouter.delete(
     '/delete-all',
     NotificationController.deleteAll
 );

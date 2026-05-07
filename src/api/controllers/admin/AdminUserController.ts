@@ -7,6 +7,7 @@ import { LoginType } from '../../types/auth';
 import AuthService from '../../services/AuthService';
 import AdminService from '../../services/AdminService';
 import AuditService from '../../services/AuditService';
+import LogService from '../../services/LogService';
 
 class AdminUserController {
     async createUser(
@@ -31,6 +32,12 @@ class AdminUserController {
                 ip: req.ip,
                 userAgent: req.headers['user-agent']
             });
+
+            // ✅ Record in System Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Created new ${payload.role}: ${payload.email}`
+            );
         } catch (error) {
             next(error);
         }
@@ -119,6 +126,12 @@ class AdminUserController {
                 ip: req.ip,
                 userAgent: req.headers['user-agent']
             });
+
+            // ✅ Record in System Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Updated user details for ID: ${userId}`
+            );
         } catch (error) {
             next(error);
         }
@@ -149,6 +162,12 @@ class AdminUserController {
                 ip: req.ip,
                 userAgent: req.headers['user-agent']
             });
+
+            // ✅ Record in System Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Banned user ID: ${userId}. Reason: ${payload.reasonForBan}`
+            );
         } catch (error) {
             next(error);
         }
@@ -177,6 +196,12 @@ class AdminUserController {
                 ip: req.ip,
                 userAgent: req.headers['user-agent']
             });
+
+            // ✅ Record in System Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Unbanned user ID: ${userId}`
+            );
         } catch (error) {
             next(error);
         }
@@ -202,6 +227,12 @@ class AdminUserController {
                 ip: req.ip,
                 userAgent: req.headers['user-agent']
             });
+
+            // ✅ Record in System Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Deleted user account ID: ${userId}`
+            );
         } catch (error) {
             next(error);
         }

@@ -9,7 +9,9 @@ class NotificationController {
         async (req: any, res: Response): Promise<void> => {
             const Notifications = await NotificationService.getAll({
                 ...req.query,
-                vendorId: req.vendor.id
+                vendorId: req.vendor.id,
+                userId: req.userdata.id,
+                orFilter: true
             });
             res.status(STATUS.OK).send({
                 success: true,
@@ -27,7 +29,7 @@ class NotificationController {
                 notificationId
             );
 
-            if (notification.vendorId.toString() !== req.vendor.id) {
+            if (notification.vendorId?.toString() !== req.vendor.id && notification.userId?.toString() !== req.user.id) {
                 throw Error('Unauthorized');
             }
 
@@ -48,7 +50,7 @@ class NotificationController {
                 throw Error('Failed to update status');
             }
 
-            if (notification.toString() !== req.vendor.id) {
+            if (notification.vendorId?.toString() !== req.vendor.id && notification.userId?.toString() !== req.user.id) {
                 throw Error('Unauthorized');
             }
 
@@ -74,7 +76,7 @@ class NotificationController {
                 throw Error('Failed to update status');
             }
 
-            if (notification.vendorId.toString() !== req.vendor.id) {
+            if (notification.vendorId?.toString() !== req.vendor.id && notification.userId?.toString() !== req.user.id) {
                 throw Error('Unauthorized');
             }
 
@@ -115,7 +117,7 @@ class NotificationController {
 
     markAllAsRead = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
-            await NotificationService.markAllAsRead(req.vendor.id);
+            await NotificationService.markAllAsRead(req.userdata.id, req.vendor.id);
 
             res.status(STATUS.OK).send({
                 success: true,
@@ -126,7 +128,7 @@ class NotificationController {
 
     deleteAll = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
-            await NotificationService.deleteAll(req.vendor.id);
+            await NotificationService.deleteAll(req.userdata.id, req.vendor.id);
 
             res.status(STATUS.OK).send({
                 success: true,

@@ -2,6 +2,7 @@
 import { NextFunction, Response } from 'express';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import PayoutService from '../../services/PayoutService';
+import LogService from '../../services/LogService';
 
 class AdminPayoutController {
     getPayout = asyncHandler(
@@ -69,6 +70,12 @@ class AdminPayoutController {
                     message: 'Payout completed successfully',
                     data: payout
                 });
+
+                // ✅ Audit Log
+                await LogService.recordAction(
+                    req.userdata.id,
+                    `Approved payout request of ₦${payout.amount} for user ID: ${payout.userId}`
+                );
             } catch (error) {
                 next(error);
             }
@@ -83,9 +90,15 @@ class AdminPayoutController {
                     req.body.reason
                 );
                 res.status(200).send({
-                    message: 'Payout completed successfully',
+                    message: 'Payout rejected successfully',
                     data: payout
                 });
+
+                // ✅ Audit Log
+                await LogService.recordAction(
+                    req.userdata.id,
+                    `Rejected payout request of ₦${payout.amount}. Reason: ${req.body.reason}`
+                );
             } catch (error) {
                 next(error);
             }

@@ -6,6 +6,7 @@ import VendorService from './../../services/VendorService';
 import { generateRandomNumbers } from '../../../utils/helpers';
 import emails from '../../libraries/emails';
 import WalletService from '../../services/WalletService';
+import LogService from '../../services/LogService';
 
 class AdminVendorController {
     create = asyncHandler(
@@ -38,7 +39,6 @@ class AdminVendorController {
                 throw Error('Manager Could not create account');
             }
 
-            // TODO send temp password to email
 
             const newVendor = await VendorService.create({
                 name: payload.name,
@@ -69,6 +69,12 @@ class AdminVendorController {
                 message: 'Vendor created successfully',
                 data: newVendor
             });
+
+            // ✅ Audit Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Created vendor: ${newVendor.name}`
+            );
         }
     );
     getAll = asyncHandler(
@@ -181,6 +187,12 @@ class AdminVendorController {
                 message: 'Vendor updated successfully',
                 data: update
             });
+
+            // ✅ Audit Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Updated vendor details: ${update.name}`
+            );
         }
     );
 }

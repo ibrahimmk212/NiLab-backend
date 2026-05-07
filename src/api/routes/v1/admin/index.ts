@@ -26,14 +26,13 @@ import adminVehicleTypeRouter from './vehicleType';
 import adminStaffRouter from './staffs';
 import adminLogRouter from './logs';
 import adminDeliverySubscriptionRouter from './delivery-subscriptions';
+import adminComplaintRoutes from './complaint';
 
 const adminsRouter: Router = Router();
 
 // --- Generalized Routes (Open to all authenticated admins) ---
 adminsRouter.get('/', AdminMainController.currentUser);
 adminsRouter.post('/login', AdminUserController.login);
-adminsRouter.use('/users', usersRouter);
-adminsRouter.use('/customers', adminCustomersRouter);
 adminsRouter.use('/dashboard', adminDashboardRouter);
 adminsRouter.use('/notifications', adminNotificationRouter);
 
@@ -58,6 +57,13 @@ adminsRouter.use('/dispatches', auth.checkPermissions('manage_riders'), adminDis
 adminsRouter.use('/vehicle-types', auth.checkPermissions('manage_riders'), adminVehicleTypeRouter);
 adminsRouter.use('/delivery', auth.checkPermissions('manage_riders'), adminDeliveryRouter);
 adminsRouter.use('/delivery-subscriptions', auth.checkPermissions('manage_riders'), adminDeliverySubscriptionRouter);
+
+// --- Protected Routes: manage_users ---
+adminsRouter.use('/users', auth.checkPermissions('manage_users'), usersRouter);
+adminsRouter.use('/customers', auth.checkPermissions('manage_users'), adminCustomersRouter);
+
+// --- Protected Routes: manage_support ---
+adminsRouter.use('/complaints', auth.checkPermissions('manage_support'), adminComplaintRoutes);
 
 // --- Protected Routes: manage_settings ---
 adminsRouter.use('/admins', auth.checkPermissions('manage_admins'), adminRouter);

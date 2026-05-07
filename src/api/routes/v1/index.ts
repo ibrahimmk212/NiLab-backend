@@ -13,7 +13,6 @@ import fileRouter from './file';
 import dashboardRouter from './dashboard';
 import webhookRouter from './webhooks';
 import customerComplaintRoutes from './customers/complaint';
-import adminComplaintRoutes from './admin/complaint';
 import publicBannerRouter from './public/banners';
 import bankAccountRouter from './bank-accounts';
 
@@ -38,10 +37,9 @@ router.use(
 
 // New complaint routes
 router.use('/customers/complaints', customerComplaintRoutes);
-router.use('/admin/complaints', adminComplaintRoutes);
 
 router.use(
-    '/vendor',
+    ['/vendor', '/vendors'],
     auth.authenticate,
     auth.checkRoles(ROLE.VENDOR, ROLE.STAFF),
     vendorsRouter

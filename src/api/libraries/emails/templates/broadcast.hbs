@@ -1,0 +1,21 @@
+<html>
+    <head>
+        <title>{{title}}</title>
+    </head>
+    <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
+        <div style='max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 8px;'>
+            {{> header}}
+            <section style="padding: 20px 0;">
+                <h2 style="color: #2d3748; margin-top: 0;">{{title}}</h2>
+                <p>Hello,</p>
+                <div style="background-color: #f7fafc; padding: 15px; border-radius: 5px; border-left: 4px solid #f59e0b;">
+                    {{message}}
+                </div>
+                <p style="margin-top: 20px;">
+                    Thank you for being a part of the Terminus community.
+                </p>
+            </section>
+            {{> footer}}
+        </div>
+    </body>
+</html>

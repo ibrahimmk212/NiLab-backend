@@ -23,12 +23,17 @@ vendorNotificationRouter.delete(
 );
 
 vendorNotificationRouter.put(
-    '/read-all/update',
+    '/read-all',
     NotificationController.markAllAsRead
 );
 
 vendorNotificationRouter.delete(
-    '/data/delete-all',
+    '/',
+    NotificationController.deleteAll
+);
+
+vendorNotificationRouter.delete(
+    '/delete-all',
     NotificationController.deleteAll
 );
 

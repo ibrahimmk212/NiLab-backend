@@ -32,14 +32,21 @@ class NotificationRepository {
 
         const filter: Record<string, any> = {};
 
-        if (options.vendorId) {
-            filter.vendorId = options.vendorId;
-        }
-        if (options.riderId) {
-            filter.riderId = options.riderId;
-        }
-        if (options.userId) {
-            filter.userId = options.userId;
+        if (options.orFilter && options.userId && options.vendorId) {
+            filter.$or = [
+                { userId: options.userId },
+                { vendorId: options.vendorId }
+            ];
+        } else {
+            if (options.vendorId) {
+                filter.vendorId = options.vendorId;
+            }
+            if (options.riderId) {
+                filter.riderId = options.riderId;
+            }
+            if (options.userId) {
+                filter.userId = options.userId;
+            }
         }
         if (options.status) {
             filter.status = options.status;
@@ -90,15 +97,26 @@ class NotificationRepository {
         });
     }
 
-    async markAllAsRead(userId: string): Promise<any> {
-        return await NotificationModel.updateMany(
-            { userId: userId, status: 'unread' },
-            { $set: { status: 'read' } }
-        );
+    async markAllAsRead(userId: string, vendorId?: string): Promise<any> {
+        const query: any = { status: 'unread' };
+        if (userId && vendorId) {
+            query.$or = [{ userId }, { vendorId }];
+        } else {
+            query.userId = userId;
+        }
+        return await NotificationModel.updateMany(query, {
+            $set: { status: 'read' }
+        });
     }
 
-    async deleteAll(userId: string): Promise<any> {
-        return await NotificationModel.deleteMany({ userId: userId });
+    async deleteAll(userId: string, vendorId?: string): Promise<any> {
+        const query: any = {};
+        if (userId && vendorId) {
+            query.$or = [{ userId }, { vendorId }];
+        } else {
+            query.userId = userId;
+        }
+        return await NotificationModel.deleteMany(query);
     }
 
     // Additional notification-specific methods...

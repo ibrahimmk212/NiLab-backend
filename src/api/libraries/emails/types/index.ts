@@ -152,3 +152,8 @@ export interface IKycRejected {
     name: string;
     reason: string;
 }
+
+export interface IBroadcastEmail {
+    title: string;
+    message: string;
+}

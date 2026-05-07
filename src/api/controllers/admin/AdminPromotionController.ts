@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import PromotionService from '../../services/PromotionService';
+import LogService from '../../services/LogService';
 import { generatePromotionCode } from '../../../utils/helpers';
 
 class PromotionController {
@@ -32,14 +33,22 @@ class PromotionController {
     createPromotion = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
             const payload = req.body;
-            const code = generatePromotionCode();
-            payload.code = code;
+            // Only generate code if one isn't provided
+            if (!payload.code) {
+                payload.code = generatePromotionCode();
+            }
             const promotion = await PromotionService.createPromotion(payload);
 
             res.status(STATUS.OK).json({
                 success: true,
                 data: promotion
             });
+
+            // ✅ Audit Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Created new promotion: ${promotion.code} (${promotion.title})`
+            );
         }
     );
 
@@ -66,9 +75,10 @@ class PromotionController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { isActive } = req.body;
-            const promotion = await PromotionService.getPromotionById(
-                req.params.promotionId
+            const payload = req.body;
+            const promotion = await PromotionService.updatePromotion(
+                req.params.promotionId,
+                payload
             );
 
             if (!promotion) {
@@ -79,6 +89,12 @@ class PromotionController {
                 success: true,
                 data: promotion
             });
+
+            // ✅ Audit Log
+            await LogService.recordAction(
+                (req as any).userdata.id,
+                `Updated promotion details: ${promotion.code}`
+            );
         }
     );
 
