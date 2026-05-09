@@ -6,3 +6,7 @@ logs
 coverage
 secret
 src/api/libraries/firebase/secret/firebase-secret.json
+
+# Firebase Service Accounts
+*-firebase-adminsdk-*.json
+terminus-app-*.json

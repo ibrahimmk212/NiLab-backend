@@ -1,13 +1,24 @@
 import * as admin from 'firebase-admin';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Load JSON from secret file path
 let serviceAccount: any;
-if (process.env.FIREBASE_SECRET) {
+
+// 1. Try to load from local JSON file first (easiest for development)
+const filePath = path.join(process.cwd(), 'terminus-app-5f523-firebase-adminsdk-fbsvc-3012e5c879.json');
+if (fs.existsSync(filePath)) {
+    serviceAccount = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+} else if (process.env.FIREBASE_SECRET) {
     try {
-        // Handle potential escaped newlines in production env vars
-        const secret = process.env.FIREBASE_SECRET.replace(/\\n/g, '\n');
-        serviceAccount = JSON.parse(secret);
-        
+        serviceAccount = JSON.parse(process.env.FIREBASE_SECRET);
+    } catch (error) {
+        console.error('❌ Failed to parse FIREBASE_SECRET:', (error as any).message);
+    }
+}
+
+if (serviceAccount) {
+    try {
         if (admin.apps.length === 0) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount)
