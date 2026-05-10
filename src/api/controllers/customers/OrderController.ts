@@ -89,6 +89,8 @@ class OrderController {
             user: userdata.id
         });
 
+        console.log('Order preview: ', preview);
+
         res.status(STATUS.OK).json({
             success: true,
             message: 'Order preview successful',
