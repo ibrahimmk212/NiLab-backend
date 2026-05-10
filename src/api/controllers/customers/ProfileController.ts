@@ -69,6 +69,12 @@ class ProfileController {
 
             const payload: Address = req.body;
 
+            // Swap [Lat, Long] from mobile app to [Long, Lat] for MongoDB
+            if (payload.coordinates && payload.coordinates.length === 2) {
+                const [lat, lng] = payload.coordinates;
+                payload.coordinates = [lng, lat];
+            }
+
             const user = await UserService.addNewAddress(userdata?.id, payload);
 
             res.status(STATUS.OK).send({
@@ -86,8 +92,13 @@ class ProfileController {
         ): Promise<void> => {
             const { userdata }: any = req;
 
-            const { addressId } = req.params;
             const payload: Address = req.body;
+
+            // Swap [Lat, Long] from mobile app to [Long, Lat] for MongoDB
+            if (payload.coordinates && payload.coordinates.length === 2) {
+                const [lat, lng] = payload.coordinates;
+                payload.coordinates = [lng, lat];
+            }
 
             const user = await UserService.updateAddress(
                 userdata?.id,

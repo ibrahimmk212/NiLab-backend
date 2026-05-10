@@ -242,9 +242,16 @@ class VendorInfoController {
         ): Promise<void> => {
             const { vendor, body, params } = req;
 
+            const payload = { ...body };
+            // Swap [Lat, Long] from mobile app to [Long, Lat] for MongoDB
+            if (payload.coordinates && payload.coordinates.length === 2) {
+                const [lat, lng] = payload.coordinates;
+                payload.coordinates = [lng, lat];
+            }
+
             // if vendor.status==inactive, set to active
             const update = await VendorService.updateLocation(vendor.id, {
-                ...body,
+                ...payload,
                 status:
                     vendor.status == 'inactive' || vendor.status == 'pending'
                         ? 'active'

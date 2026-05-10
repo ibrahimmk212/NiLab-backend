@@ -207,8 +207,15 @@ class UserRepository {
 
             const userId = user._id;
 
+            const vendorData = { ...userData.vendor };
+            // Swap [Lat, Long] from mobile app to [Long, Lat] for MongoDB
+            if (vendorData.location?.coordinates && vendorData.location.coordinates.length === 2) {
+                const [lat, lng] = vendorData.location.coordinates;
+                vendorData.location.coordinates = [lng, lat];
+            }
+
             // Create Vendor
-            vendor = await VendorModel.create({ ...userData.vendor, userId });
+            vendor = await VendorModel.create({ ...vendorData, userId });
             if (!vendor) throw new Error('Failed to create vendor');
 
             const vendorId = vendor._id;
