@@ -207,7 +207,7 @@ class UserRepository {
 
             const userId = user._id;
 
-            const vendorData = { ...userData.vendor };
+            const vendorData: any = { ...userData.vendor };
             // Swap [Lat, Long] from mobile app to [Long, Lat] for MongoDB
             if (vendorData.location?.coordinates && vendorData.location.coordinates.length === 2) {
                 const [lat, lng] = vendorData.location.coordinates;
