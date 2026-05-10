@@ -111,7 +111,33 @@ class VendorService implements IVendorService {
             throw new Error('Vendor not found');
         }
 
-        return VendorRepository.updateLocation(vendorId, payload);
+        // 1. Update Vendor Location
+        const updatedVendor = await VendorRepository.updateLocation(vendorId, payload);
+        
+        if (updatedVendor && updatedVendor.userId) {
+            const { default: UserRepository } = await import('../repositories/UserRepository');
+            
+            // 2. Sync with User Address (Enforce single address for Vendor)
+            const locationData = payload;
+            const syncedAddress = {
+                address: locationData.formattedAddress || locationData.address,
+                street: locationData.street,
+                city: locationData.city,
+                state: locationData.state,
+                postcode: locationData.zipcode || locationData.postcode,
+                buildingNumber: locationData.buildingNumber,
+                coordinates: locationData.coordinates, // [lng, lat]
+                label: 'Shop/Home',
+                isDefault: true
+            };
+
+            // Update user addresses array to contain ONLY this address
+            await UserRepository.updateUser(updatedVendor.userId.toString(), {
+                addresses: [syncedAddress] as any
+            });
+        }
+
+        return updatedVendor;
     }
 }
 

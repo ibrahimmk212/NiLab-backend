@@ -213,6 +213,24 @@ class UserRepository {
 
             const vendorId = vendor._id;
 
+            // Sync User Address with Vendor Location at creation
+            if (vendor.location) {
+                const syncedAddress = {
+                    address: vendor.location.formattedAddress || vendor.address,
+                    street: vendor.location.street,
+                    city: vendor.location.city,
+                    state: vendor.location.state,
+                    postcode: vendor.location.zipcode,
+                    buildingNumber: vendor.location.buildingNumber,
+                    coordinates: vendor.location.coordinates,
+                    label: 'Shop/Home',
+                    isDefault: true
+                };
+                await UserModel.findByIdAndUpdate(userId, {
+                    $set: { addresses: [syncedAddress] }
+                });
+            }
+
             // Create Wallet
             wallet = await WalletModel.create({
                 role: 'vendor',

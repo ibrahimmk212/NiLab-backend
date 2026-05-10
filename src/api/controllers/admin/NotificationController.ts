@@ -107,32 +107,35 @@ class NotificationController {
 
     create = asyncHandler(
         async (req: Request | any, res: Response): Promise<void> => {
-            const { target, title, message, channels, ...rest } = req.body;
+            const { target, title, message, channels, identifier, userId, ...rest } = req.body;
 
-            // Handle Broadcast Targets
-            if (['all', 'all_vendors', 'all_riders', 'all_customers', 'all_admins'].includes(target)) {
+            // 1. Resolve Specific User by Email/Phone if identifier is provided
+            let resolvedUserId = userId;
+            let targetUser: any = null;
+            if ((!target || target === 'specific_user') && identifier && !userId) {
+                const { default: UserRepository } = await import('../../repositories/UserRepository');
+                targetUser = await UserRepository.findUserByEmailOrPhone(identifier, identifier);
+                if (targetUser) {
+                    resolvedUserId = targetUser._id;
+                } else {
+                    res.status(STATUS.NOT_FOUND).json({
+                        success: false,
+                        message: 'User not found with that email or phone number'
+                    });
+                    return;
+                }
+            }
+
+            // 2. Handle Broadcast Targets
+            if (target && ['all', 'all_vendors', 'all_riders', 'all_customers', 'all_admins'].includes(target)) {
                 const broadcastTarget = target === 'all' ? 'all' : target.replace('all_', '');
                 
-                // If channels are provided, use the new sendBroadcast method
-                if (channels && Array.isArray(channels) && channels.length > 0) {
-                    await NotificationService.sendBroadcast({
-                        target: broadcastTarget as any,
-                        title,
-                        message,
-                        channels
-                    });
-                } else {
-                    // Legacy behavior for backward compatibility
-                    if (target === 'all_vendors') {
-                        await NotificationService.notifyAllVendors(title, message);
-                    } else if (target === 'all_riders') {
-                        await NotificationService.notifyAllRiders(title, message);
-                    } else if (target === 'all_customers') {
-                        await NotificationService.notifyAllCustomers(title, message);
-                    } else if (target === 'all_admins') {
-                        await NotificationService.notifyAllAdmins(title, message);
-                    }
-                }
+                await NotificationService.sendBroadcast({
+                    target: broadcastTarget as any,
+                    title,
+                    message,
+                    channels: channels || ['in_app', 'push']
+                });
                 
                 res.status(STATUS.OK).send({
                     success: true,
@@ -141,14 +144,30 @@ class NotificationController {
                 return;
             }
 
-            // Individual Creation
-            const created = await NotificationService.create(req.body);
+            // 3. Individual Creation
+            if (!resolvedUserId) {
+                res.status(STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Target group or Specific User Identifier is required'
+                });
+                return;
+            }
+
+            const created = await NotificationService.create({
+                ...rest,
+                userId: resolvedUserId,
+                title,
+                message,
+                channels: channels || ['in_app', 'push']
+            });
+
             if (!created) {
                 throw Error('failed to create a notification');
             }
+
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'Notification Created Successfully',
+                message: targetUser ? `Notification sent to ${targetUser.firstName} ${targetUser.lastName}` : 'Notification Sent Successfully',
                 data: created
             });
         }

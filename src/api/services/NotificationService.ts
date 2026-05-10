@@ -19,52 +19,56 @@ interface INotificationService {
 
 class NotificationService implements INotificationService {
     async create(payload: any): Promise<any> {
-        // 1. Create In-App Notification
-        const notification = await NotificationRepository.createNotification(
-            payload
-        );
+        const { channels = ['in_app', 'push'], title, message, userId, ...rest } = payload;
 
-        // 2. Send Push Notification (asynchronously)
-        this.sendPush(payload.userId, payload.title, payload.message).catch(
-            (err) => console.error('Push Notification Failed:', err)
-        );
+        // 1. Create In-App Notification (only if in_app channel selected)
+        let notification = null;
+        if (channels.includes('in_app')) {
+            notification = await NotificationRepository.createNotification({
+                ...rest,
+                userId,
+                title,
+                message
+            });
+        }
 
-        // 3. Send Socket Notification
-        if (payload.role === 'admin') {
-            SocketService.emitToAdmin(
-                payload.userId,
-                'admin_notification',
-                notification
-            );
-        } else if (payload.role === 'rider') {
-            SocketService.emitToRider(
-                payload.riderId,
-                'rider_notification',
-                notification
-            );
-        } else if (payload.role === 'vendor') {
-            if (payload.vendorId) {
-                SocketService.emitToVendor(
-                    payload.vendorId,
-                    'vendor_notification',
-                    notification
-                );
-            }
-            // Always also emit to user room as a fallback/secondary
-            SocketService.emitToUser(
-                payload.userId,
-                'vendor_notification',
-                notification
-            );
-        } else {
-            SocketService.emitToUser(
-                payload.userId,
-                'customer_notification',
-                notification
+        // 2. Send Push Notification
+        if (channels.includes('push')) {
+            this.sendPush(userId, title, message).catch(
+                (err) => console.error('Push Notification Failed:', err)
             );
         }
 
-        return notification;
+        // 3. Send Email Notification
+        if (channels.includes('email')) {
+            try {
+                const user = await UserRepository.findUserById(userId);
+                if (user && user.email) {
+                    this.sendGenericEmail(user.email, title, message).catch(console.error);
+                }
+            } catch (error) {
+                console.error('Failed to send individual notification email', error);
+            }
+        }
+
+        // 4. Send Socket Notification (for real-time updates)
+        if (notification) {
+            const role = payload.role || 'customer';
+            if (role === 'admin') {
+                SocketService.emitToAdmin(userId, 'admin_notification', notification);
+            } else if (role === 'rider') {
+                SocketService.emitToRider(payload.riderId, 'rider_notification', notification);
+            } else if (role === 'vendor') {
+                if (payload.vendorId) {
+                    SocketService.emitToVendor(payload.vendorId, 'vendor_notification', notification);
+                }
+                SocketService.emitToUser(userId, 'vendor_notification', notification);
+            } else {
+                SocketService.emitToUser(userId, 'customer_notification', notification);
+            }
+        }
+
+        return notification || { success: true };
     }
 
     private async sendPush(userId: string, title: string, message: string) {
