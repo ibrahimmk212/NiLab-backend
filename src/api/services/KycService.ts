@@ -16,6 +16,21 @@ class KycService {
         await UserRepository.updateUser(`${userId}`, {
             kycStatus: 'pending'
         });
+
+        // Sync Vendor record
+        try {
+            const { default: VendorRepository } = await import('../repositories/VendorRepository');
+            const vendor = await VendorRepository.findByKey('userId', userId.toString());
+            if (vendor) {
+                await VendorRepository.update(vendor._id.toString(), {
+                    kycStatus: 'pending',
+                    identityVerificationStatus: 'pending'
+                });
+            }
+        } catch (err) {
+            console.error('Failed to sync KYC status to vendor', err);
+        }
+
         return kyc;
     }
 
@@ -56,7 +71,25 @@ class KycService {
                 await KycRepository.updateNinStatus(kycId, 'failed', 'Automatically rejected via KYC rejection');
             }
 
-            await UserRepository.updateUser(String(updatedKyc.user._id || updatedKyc.user), userUpdate);
+            const userIdStr = String(updatedKyc.user._id || updatedKyc.user);
+            await UserRepository.updateUser(userIdStr, userUpdate);
+
+            // Sync Vendor record
+            try {
+                const { default: VendorRepository } = await import('../repositories/VendorRepository');
+                const vendor = await VendorRepository.findByKey('userId', userIdStr);
+                if (vendor) {
+                    const vendorKycStatus = status === 'approved' ? 'verified' : status === 'rejected' ? 'failed' : status;
+                    await VendorRepository.update(vendor._id.toString(), {
+                        kycStatus: vendorKycStatus as any,
+                        identityVerificationStatus: vendorKycStatus as any,
+                        // If approved, we might want to auto-activate if they have a location
+                        status: status === 'approved' && vendor.location?.coordinates?.length === 2 ? 'active' : vendor.status
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to sync KYC status to vendor', err);
+            }
         }
         return updatedKyc;
     }

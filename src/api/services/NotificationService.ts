@@ -337,7 +337,7 @@ class NotificationService implements INotificationService {
             users = res.vendors.map((v: any) => v.user);
         } else if (target === 'riders') {
             const riders = await RiderService.findAllRiders({ limit: 10000 });
-            users = riders.data.map((r: any) => r.userId);
+            users = riders.data.map((r: any) => r.user);
         } else if (target === 'customers') {
             const res = await UserRepository.findAll({ role: 'customer', limit: 10000 });
             users = res.data || [];

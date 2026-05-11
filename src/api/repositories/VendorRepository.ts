@@ -37,7 +37,10 @@ class VendorRepository {
     async findById(vendorId: string): Promise<Vendor | null> {
         return await VendorModel.findById({ _id: vendorId }).populate([
             { path: 'products' },
-            { path: 'user' },
+            { 
+                path: 'user',
+                populate: { path: 'kyc' }
+            },
             { path: 'categories' },
             { path: 'marketCategory' }
         ]);
@@ -46,7 +49,10 @@ class VendorRepository {
         return await VendorModel.findOne({ [key]: value }).populate([
             { path: 'products' },
             { path: 'categories' },
-            { path: 'user' },
+            { 
+                path: 'user',
+                populate: { path: 'kyc' }
+            },
             { path: 'marketCategory' }
         ]);
     }
@@ -67,7 +73,7 @@ class VendorRepository {
         const vendors = await VendorModel.find(options)
             .skip(startIndex)
             .limit(limit)
-            .populate({ path: 'products' });
+            .populate([{ path: 'products' }, { path: 'user' }]);
 
         // Pagination results
         const pagination: any = {};

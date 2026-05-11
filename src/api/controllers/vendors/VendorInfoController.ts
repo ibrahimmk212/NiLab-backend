@@ -249,13 +249,12 @@ class VendorInfoController {
                 payload.coordinates = [lng, lat];
             }
 
-            // if vendor.status==inactive, set to active
+            // Only set to active if KYC is also verified, otherwise keep it at the current status
+            const shouldBeActive = (vendor.status === 'inactive' || vendor.status === 'pending') && vendor.kycStatus === 'verified';
+            
             const update = await VendorService.updateLocation(vendor.id, {
                 ...payload,
-                status:
-                    vendor.status == 'inactive' || vendor.status == 'pending'
-                        ? 'active'
-                        : vendor.status
+                status: shouldBeActive ? 'active' : vendor.status
             });
             res.status(STATUS.OK).json({
                 success: true,

@@ -115,7 +115,7 @@ export class VendorDashboardRepository {
 
     async getVendorProfile(vendorId: mongoose.Types.ObjectId) {
         return VendorModel.findById(vendorId).select(
-            'walletBalance averageReadyTime name isAvailable'
+            'walletBalance averageReadyTime name isAvailable kycStatus ratings'
         );
     }
 

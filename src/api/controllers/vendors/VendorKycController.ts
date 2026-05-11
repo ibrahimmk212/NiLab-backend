@@ -15,37 +15,52 @@ class VendorKycController {
             const file = req?.file;
             if (!file) throw Error('File Not selected');
 
-            const stream = cloudinaryV2.uploader.upload_stream(
-                {
-                    resource_type: 'auto',
-                    public_id: `vendor_kyc_${userdata.id}_${Date.now()}`
-                },
-                (error, result) => {
-                    if (error) {
-                        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
-                            success: false,
-                            message: 'File upload failed',
-                            error: error.message
-                        });
-                    }
-
-                    if (result) {
-                        return res.status(STATUS.CREATED).send({
-                            success: true,
-                            message: 'File Uploaded Successfully.',
-                            data: { 
-                                url: result.secure_url,
-                                publicId: result.public_id
+            try {
+                const uploadToCloudinary = () => {
+                    return new Promise((resolve, reject) => {
+                        const stream = cloudinaryV2.uploader.upload_stream(
+                            {
+                                resource_type: 'auto',
+                                folder: 'vendor_kyc',
+                                access_mode: 'public',
+                                public_id: `kyc_${userdata?._id || userdata?.id}_${Date.now()}`
+                            },
+                            (error, result) => {
+                                if (error) return reject(error);
+                                resolve(result);
                             }
-                        });
-                    }
-                }
-            );
+                        );
 
-            const bufferStream = new Readable();
-            bufferStream.push(file.buffer);
-            bufferStream.push(null);
-            bufferStream.pipe(stream);
+                        const bufferStream = new Readable();
+                        bufferStream.push(file.buffer);
+                        bufferStream.push(null);
+                        bufferStream.pipe(stream);
+                    });
+                };
+
+                const result: any = await uploadToCloudinary();
+                console.log('Cloudinary Upload Success:', {
+                    resource_type: result.resource_type,
+                    format: result.format,
+                    secure_url: result.secure_url
+                });
+
+                res.status(STATUS.CREATED).send({
+                    success: true,
+                    message: 'File Uploaded Successfully.',
+                    data: {
+                        url: result.secure_url,
+                        publicId: result.public_id
+                    }
+                });
+            } catch (error: any) {
+                console.error('Cloudinary Upload Error:', error);
+                res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+                    success: false,
+                    message: 'File upload failed',
+                    error: error.message || 'Unknown error during upload'
+                });
+            }
         }
     );
 
@@ -63,14 +78,19 @@ class VendorKycController {
         if (passportUrl) kycData.passportUrl = passportUrl;
         
         if (address) {
-            address.status = 'pending';
-            address.address = `${address.buildingNumber || ''} ${address.street || ''}, ${address.city || ''}, ${address.state || ''}.`;
-            kycData.address = address;
+            kycData.address = {
+                address: `${address.buildingNumber || ''} ${address.street || ''}, ${address.city || ''}, ${address.state || ''}.`,
+                buildingNumber: address.buildingNumber,
+                street: address.street,
+                city: address.city,
+                state: address.state,
+                postcode: address.postcode,
+                addressDocument: address.documentUrl || address.addressDocument,
+                status: 'pending'
+            };
         }
 
         if (identity) {
-            identity.status = 'pending';
-            // Mapping frontend names to database names
             kycData.identity = {
                 identityType: identity.identityType || identity.documentType,
                 identityNumber: identity.identityNumber || identity.documentNumber,
@@ -81,8 +101,6 @@ class VendorKycController {
 
         // Business documents are specific to vendors
         if (businessDocs) {
-            businessDocs.status = 'pending';
-            // Mapping frontend names to guarantor field (used for business docs in schema)
             kycData.guarantor = {
                 name: businessDocs.name,
                 phone: businessDocs.phone,

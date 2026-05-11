@@ -28,6 +28,7 @@ export interface Guarantor {
 export interface Identity {
     identityType:
         | 'nin'
+        | 'NIN'
         | 'voters-card'
         | 'driver-licence'
         | 'e-passport'
@@ -69,7 +70,7 @@ const kycSchema = new Schema<Kyc>(
         identity: {
             identityType: {
                 type: String,
-                enum: ['nin', 'voters-card', 'e-passport', 'other'],
+                enum: ['nin', 'NIN', 'voters-card', 'driver-licence', 'e-passport', 'other'],
                 required: false
             },
             identityNumber: { type: String, required: false },

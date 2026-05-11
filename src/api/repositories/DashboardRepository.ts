@@ -160,8 +160,8 @@ class DashboardRepository {
             vendor: vendorId,
             status: 'pending'
         });
-        const storeRating = await VendorModel.findById(vendorId).select(
-            'ratings'
+        const vendor = await VendorModel.findById(vendorId).select(
+            'ratings kycStatus name isAvailable averageReadyTime'
         );
 
         const revenue = await OrderModel.aggregate([
@@ -170,11 +170,21 @@ class DashboardRepository {
         ]);
 
         return {
-            products: productsCount,
-            orders: ordersCount,
-            completedOrders: completedOrdersCount,
-            pendingOrders: pendingOrdersCount,
-            storeRating: storeRating?.ratings || 0,
+            metrics: {
+                productsCount,
+                ordersCount,
+                completedOrders: completedOrdersCount,
+                pendingOrders: pendingOrdersCount,
+                activeOrders: pendingOrdersCount // used in some places as active
+            },
+            vendor: {
+                id: vendor?._id,
+                name: vendor?.name || 'Vendor',
+                ratings: vendor?.ratings || 0,
+                kycStatus: vendor?.kycStatus || 'not_submitted',
+                isAvailable: vendor?.isAvailable || false,
+                averageReadyTime: vendor?.averageReadyTime || 0
+            },
             revenue: revenue[0]?.total || 0
         };
     }

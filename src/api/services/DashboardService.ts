@@ -94,7 +94,30 @@ class DashboardService {
     }
 
     async getVendorDashboard(vendorId: string) {
-        return await DashboardRepository.getVendorSummary(vendorId);
+        const [summary, recentOrders, revenueHistory, lowStock] = await Promise.all([
+            DashboardRepository.getVendorSummary(vendorId),
+            DashboardRepository.getVendorRecentOrders(vendorId, 5),
+            DashboardRepository.getVendorSalesAnalytics(vendorId, 'daily'),
+            DashboardRepository.getVendorLowStockProducts(vendorId, 5)
+        ]);
+
+        // Map revenue history to chart format
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const formattedRevenue = revenueHistory.labels.map((label: string, index: number) => ({
+            day: label,
+            amount: revenueHistory.sales[index] || 0
+        }));
+
+        return {
+            ...summary,
+            metrics: {
+                ...summary.metrics,
+                periodNetSales: summary.revenue
+            },
+            recentOrders,
+            revenueHistory: formattedRevenue,
+            lowStock
+        };
     }
 
     async getVendorSalesAnalytics(

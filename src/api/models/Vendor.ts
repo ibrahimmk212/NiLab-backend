@@ -125,7 +125,7 @@ const vendorSchema = new Schema<Vendor>(
             type: String,
             required: false,
             default: 'not_submitted',
-            enum: ['not_submitted', 'pending', 'verified', 'failed']
+            enum: ['not_submitted', 'pending', 'verified', 'failed', 'approved', 'rejected']
         },
         identityType: { type: String, required: false },
         identityVerificationStatus: {
