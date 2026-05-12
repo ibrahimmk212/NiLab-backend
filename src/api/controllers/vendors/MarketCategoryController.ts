@@ -10,9 +10,10 @@ class VendorMarketCategoryController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const marketCategory = await MarketCategoryService.findAll(
-                req.query
-            );
+            const marketCategory = await MarketCategoryService.findAll({
+                ...req.query,
+                active: true
+            });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',

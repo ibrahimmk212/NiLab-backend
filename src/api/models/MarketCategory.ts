@@ -6,6 +6,7 @@ export interface MarketCategory extends Document {
     slug?: string;
     description: string;
     thumbnail?: string;
+    active: boolean;
 }
 
 const MarketCategorySchema = new Schema<MarketCategory>(
@@ -13,7 +14,8 @@ const MarketCategorySchema = new Schema<MarketCategory>(
         name: { type: String, required: true },
         slug: { type: String, required: false },
         description: { type: String, required: true },
-        thumbnail: { type: String, required: false }
+        thumbnail: { type: String, required: false },
+        active: { type: Boolean, default: true }
     },
     {
         timestamps: true,

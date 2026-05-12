@@ -17,8 +17,15 @@ const productRequirement = {
     ],
     createCategory: [
         body('name').isString(),
-        body('description').isString().optional({ nullable: true })
-        // body('vendor').isString(),
+        body('description').isString().optional({ nullable: true }),
+        body('active').isBoolean().optional({ nullable: true })
+    ],
+    updateCategory: [
+        param('id').isString(),
+        body('name').isString().optional({ nullable: true }),
+        body('description').isString().optional({ nullable: true }),
+        body('active').isBoolean().optional({ nullable: true }),
+        body('thumbnail').isString().optional({ nullable: true })
     ],
     getSingle: [param('id').isInt()],
     update: [

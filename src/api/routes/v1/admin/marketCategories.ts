@@ -11,7 +11,7 @@ adminMarketCategoryRouter.post(
 );
 adminMarketCategoryRouter.put(
     '/:id',
-    // Validate(productRequirement.),
+    Validate(productRequirement.updateCategory),
     AdminMarketCategoryController.update
 );
 adminMarketCategoryRouter.get('/', AdminMarketCategoryController.getAll);

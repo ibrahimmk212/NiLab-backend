@@ -25,6 +25,9 @@ class MarketCategoryRepository {
         if (options.status) {
             filter.status = options.status;
         }
+        if (options.active !== undefined) {
+            filter.active = options.active === 'true' || options.active === true;
+        }
         if (options.search) {
             filter.$text = { $search: options.search };
         }

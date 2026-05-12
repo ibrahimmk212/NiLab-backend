@@ -6,7 +6,10 @@ import MarketCategoryService from '../../services/MarketCategoryService';
 class CustomerMarketCategoryController {
     getAll = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
-            const product = await MarketCategoryService.findAll(req.query);
+            const product = await MarketCategoryService.findAll({
+                ...req.query,
+                active: true
+            });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',
@@ -18,9 +21,17 @@ class CustomerMarketCategoryController {
         async (req: Request, res: Response): Promise<void> => {
             const { id } = req.params;
             const product = await MarketCategoryService.find(id);
+            if (!product || product.active === false) {
+                res.status(STATUS.NOT_FOUND).send({
+                    success: false,
+                    message: 'Category not found',
+                    data: null
+                });
+                return;
+            }
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'Categories fetched successfully',
+                message: 'Category fetched successfully',
                 data: product
             });
         }
