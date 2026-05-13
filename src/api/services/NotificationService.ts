@@ -4,7 +4,7 @@ import ProductModel, { Notification } from '../models/Notification';
 import UserRepository from '../repositories/UserRepository';
 import RiderService from './RiderService';
 import SocketService from './SocketService';
-import { sendPushNotification } from '../libraries/firebase';
+import { sendPushNotification, sendTopicNotification, subscribeToTopic } from '../libraries/firebase';
 import EmailTemplate from '../libraries/emails';
 
 interface INotificationService {
@@ -326,42 +326,55 @@ class NotificationService implements INotificationService {
     }) {
         const { target, title, message, channels } = payload;
 
-        let users: any[] = [];
-
-        if (target === 'all') {
-            const res = await UserRepository.findAll({ limit: 50000 });
-            users = res.data || [];
-        } else if (target === 'vendors') {
-            const { default: VendorRepository } = await import('../repositories/VendorRepository');
-            const res = await VendorRepository.findVendorsByOption({}, 10000);
-            users = res.vendors.map((v: any) => v.user);
-        } else if (target === 'riders') {
-            const riders = await RiderService.findAllRiders({ limit: 10000 });
-            users = riders.data.map((r: any) => r.user);
-        } else if (target === 'customers') {
-            const res = await UserRepository.findAll({ role: 'customer', limit: 10000 });
-            users = res.data || [];
-        } else if (target === 'admins') {
-            const res = await UserRepository.findAll({ role: 'admin', limit: 1000 });
-            users = res.data || [];
+        // 1. Send Push Notification via Topic (The "At Once" way)
+        if (channels.includes('push')) {
+            const topic = target === 'all' ? 'all_users' : target;
+            sendTopicNotification(topic, title, message).catch(console.error);
         }
 
-        for (const user of users) {
-            const userId = typeof user === 'object' ? user._id : user;
-            const email = typeof user === 'object' ? user.email : null;
-            const deviceToken = typeof user === 'object' ? user.deviceToken : null;
-
-            if (channels.includes('in_app')) {
-                await this.create({ userId, title, message, status: 'unread' });
+        // 2. Fetch users for In-App and Email (Still needed for these channels)
+        let users: any[] = [];
+        if (channels.includes('in_app') || channels.includes('email')) {
+            if (target === 'all') {
+                const res = await UserRepository.findAll({ limit: 50000 });
+                users = res.data || [];
+            } else if (target === 'vendors') {
+                const { default: VendorRepository } = await import('../repositories/VendorRepository');
+                const res = await VendorRepository.findVendorsByOption({}, 10000);
+                users = res.vendors.map((v: any) => v.user);
+            } else if (target === 'riders') {
+                const riders = await RiderService.findAllRiders({ limit: 10000 });
+                users = riders.data.map((r: any) => r.user);
+            } else if (target === 'customers') {
+                const res = await UserRepository.findAll({ role: 'customer', limit: 10000 });
+                users = res.data || [];
+            } else if (target === 'admins') {
+                const res = await UserRepository.findAll({ role: 'admin', limit: 1000 });
+                users = res.data || [];
             }
+        }
 
-            if (channels.includes('push') && deviceToken) {
-                sendPushNotification(deviceToken, title, message).catch(console.error);
-            }
+        // 3. Batch Create In-App Notifications
+        if (channels.includes('in_app') && users.length > 0) {
+            const notifications = users.map((user) => ({
+                userId: typeof user === 'object' ? user._id : user,
+                title,
+                message,
+                status: 'unread'
+            }));
+            await NotificationRepository.createMany(notifications);
+            
+            // Emit socket to all (optional, but good for real-time)
+            SocketService.emitToAll('broadcast_notification', { title, message });
+        }
 
-            if (channels.includes('email') && email) {
-                // We'll use a simple wrapper for broadcast emails
-                this.sendGenericEmail(email, title, message).catch(console.error);
+        // 4. Send Emails (Still requires looping, but can be moved to a background job/queue)
+        if (channels.includes('email') && users.length > 0) {
+            for (const user of users) {
+                const email = typeof user === 'object' ? user.email : null;
+                if (email) {
+                    this.sendGenericEmail(email, title, message).catch(console.error);
+                }
             }
         }
     }
@@ -371,6 +384,19 @@ class NotificationService implements INotificationService {
             title,
             message
         });
+    }
+
+    async subscribeToUserTopics(deviceToken: string, role: string) {
+        if (!deviceToken) return;
+        
+        // Only Customers and Riders use the mobile app
+        if (role === 'user') {
+            await subscribeToTopic(deviceToken, 'all_users');
+            await subscribeToTopic(deviceToken, 'customers');
+        } else if (role === 'rider') {
+            await subscribeToTopic(deviceToken, 'all_users');
+            await subscribeToTopic(deviceToken, 'riders');
+        }
     }
 }
 export default new NotificationService();

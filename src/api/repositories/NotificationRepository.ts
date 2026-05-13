@@ -7,6 +7,10 @@ class NotificationRepository {
         return await notification.save();
     }
 
+    async createMany(data: any[]): Promise<any> {
+        return await NotificationModel.insertMany(data);
+    }
+
     async findNotificationById(
         notificationId: string
     ): Promise<Notification | null> {

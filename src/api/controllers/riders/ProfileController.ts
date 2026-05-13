@@ -9,6 +9,7 @@ import WalletService from '../../services/WalletService';
 import emails from '../../libraries/emails';
 import ConfigurationService from '../../services/ConfigurationService';
 import VehicleTypeService from '../../../api/services/VehicleTypeService';
+import NotificationService from '../../services/NotificationService';
 
 class ProfileController {
     currentUser = asyncHandler(
@@ -40,7 +41,10 @@ class ProfileController {
             owner: rider.id
         });
 
-        if (payload.deviceToken) user.deviceToken = payload.deviceToken;
+        if (payload.deviceToken) {
+            user.deviceToken = payload.deviceToken;
+            NotificationService.subscribeToUserTopics(payload.deviceToken, user.role).catch(console.error);
+        }
         await user.save();
 
         // notification

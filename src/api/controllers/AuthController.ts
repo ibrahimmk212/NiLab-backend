@@ -43,7 +43,10 @@ class AuthController {
                 });
             }
 
-            if (payload.deviceToken) user.deviceToken = payload.deviceToken;
+            if (payload.deviceToken) {
+                user.deviceToken = payload.deviceToken;
+                NotificationService.subscribeToUserTopics(payload.deviceToken, user.role).catch(console.error);
+            }
             await user.save();
 
             NotificationService.create(notificationDetail);
@@ -60,7 +63,10 @@ class AuthController {
         } else if (user.role === 'vendor') {
             const vendor = await VendorService.getByUserId(user.id);
 
-            if (payload.deviceToken) user.deviceToken = payload.deviceToken;
+            if (payload.deviceToken) {
+                user.deviceToken = payload.deviceToken;
+                NotificationService.subscribeToUserTopics(payload.deviceToken, user.role).catch(console.error);
+            }
             await user.save();
 
             notificationDetail.vendorId = vendor.id;
@@ -86,7 +92,10 @@ class AuthController {
 
             const vendor = staff.vendor;
 
-            if (payload.deviceToken) user.deviceToken = payload.deviceToken;
+            if (payload.deviceToken) {
+                user.deviceToken = payload.deviceToken;
+                NotificationService.subscribeToUserTopics(payload.deviceToken, user.role).catch(console.error);
+            }
             await user.save();
 
             notificationDetail.vendorId = vendor.id;
@@ -110,7 +119,10 @@ class AuthController {
                 token: token
             });
         } else if (user.role == 'user') {
-            if (payload.deviceToken) user.deviceToken = payload.deviceToken;
+            if (payload.deviceToken) {
+                user.deviceToken = payload.deviceToken;
+                NotificationService.subscribeToUserTopics(payload.deviceToken, user.role).catch(console.error);
+            }
             await user.save();
             notificationDetail.userId = user.id;
 

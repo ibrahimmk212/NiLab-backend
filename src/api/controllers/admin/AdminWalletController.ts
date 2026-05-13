@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import WalletService from '../../services/WalletService';
 import VirtualAccountService from '../../services/VirtualAccountService';
+import LogService from '../../services/LogService';
 import appConfig from '../../../config/appConfig';
 import WalletModel from '../../models/Wallet';
 
@@ -86,6 +87,13 @@ class AdminWalletController {
                     role,
                     remark
                 });
+
+                // ✅ Audit Log
+                await LogService.recordAction(
+                    (req as any).userdata.id,
+                    `Funded ${role} (${owner}) wallet with ₦${amount}. Remark: ${remark}`
+                );
+
                 res.status(200).send(wallet);
             } catch (error) {
                 next(error);
@@ -107,6 +115,13 @@ class AdminWalletController {
                     role,
                     remark
                 });
+
+                // ✅ Audit Log
+                await LogService.recordAction(
+                    (req as any).userdata.id,
+                    `Deducted ₦${amount} from ${role} (${owner}) wallet. Remark: ${remark}`
+                );
+
                 res.status(200).send(wallet);
             } catch (error) {
                 next(error);
