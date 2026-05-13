@@ -365,7 +365,7 @@ class NotificationService implements INotificationService {
             await NotificationRepository.createMany(notifications);
             
             // Emit socket to all (optional, but good for real-time)
-            SocketService.emitToAll('broadcast_notification', { title, message });
+            SocketService.broadcast('broadcast_notification', { title, message });
         }
 
         // 4. Send Emails (Still requires looping, but can be moved to a background job/queue)
