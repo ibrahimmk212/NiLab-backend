@@ -8,6 +8,7 @@ import OrderModel, { Order } from '../models/Order';
 import PlatformRevenueService from './PlatformRevenueService';
 import VendorRepository from '../repositories/VendorRepository';
 import NotificationService from './NotificationService';
+import ProductModel from '../models/Product';
 
 class SettlementService {
     private roundToTwo(num: number): number {
@@ -197,6 +198,18 @@ class SettlementService {
             order.remark = reason || 'Order rejected by vendor';
             order.cancelledAt = new Date();
             await order.save({ session });
+
+            // ✅ AUTOMATIC RESTOCKING
+            if (order.products && order.products.length > 0) {
+                const restockPromises = order.products.map((item: any) =>
+                    ProductModel.findByIdAndUpdate(
+                        item.product,
+                        { $inc: { stock: item.quantity } },
+                        { session }
+                    )
+                );
+                await Promise.all(restockPromises);
+            }
 
             // 4. Create Audit Log (Transaction)
             await TransactionRepository.createTransaction(

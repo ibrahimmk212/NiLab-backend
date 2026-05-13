@@ -16,6 +16,7 @@ export interface Product extends Document {
     isDeleted: boolean;
     prepTime?: number;
     deletedAt?: Date | null;
+    salesCount: number;
 }
 
 const productSchema = new Schema<Product>(
@@ -43,7 +44,8 @@ const productSchema = new Schema<Product>(
         },
         isDeleted: { type: Boolean, default: false, index: true },
         prepTime: { type: Number, default: 0 },
-        deletedAt: { type: Date, default: null }
+        deletedAt: { type: Date, default: null },
+        salesCount: { type: Number, default: 0, index: true }
     },
     {
         timestamps: true,

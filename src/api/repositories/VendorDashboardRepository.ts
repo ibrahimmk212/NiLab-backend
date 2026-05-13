@@ -105,12 +105,22 @@ export class VendorDashboardRepository {
         ]);
     }
 
-    async getLowStockItems(vendorId: mongoose.Types.ObjectId, threshold = 10) {
+    async getLowStockItems(vendorId: mongoose.Types.ObjectId, threshold = 5) {
         return ProductModel.find({
             vendor: vendorId,
             stock: { $lt: threshold },
-            isDeleted: { $ne: true } // 🔥 Added: Don't show deleted items
-        }).limit(2);
+            isDeleted: { $ne: true }
+        }).limit(5);
+    }
+
+    async getTopSellingProducts(vendorId: mongoose.Types.ObjectId, limit = 5) {
+        return ProductModel.find({
+            vendor: vendorId,
+            isDeleted: { $ne: true }
+        })
+            .sort({ salesCount: -1 })
+            .limit(limit)
+            .select('name price salesCount image');
     }
 
     async getVendorProfile(vendorId: mongoose.Types.ObjectId) {

@@ -39,7 +39,8 @@ export class VendorDashboardService {
             lowStock,
             vendor,
             productsCount,
-            activeComplaints
+            activeComplaints,
+            topProducts
         ]: any = await Promise.all([
             repo.getVendorMetrics(vendorId, startDate),
             repo.getRecentOrders(vendorId),
@@ -47,7 +48,8 @@ export class VendorDashboardService {
             repo.getLowStockItems(vendorId),
             repo.getVendorProfile(vendorId),
             repo.getVendorTotalProducts(vendorId),
-            repo.getVendorComplaintsCount(vendorId)
+            repo.getVendorComplaintsCount(vendorId),
+            repo.getTopSellingProducts(vendorId)
         ]);
 
         // Map revenue history labels
@@ -77,7 +79,8 @@ export class VendorDashboardService {
             },
             recentOrders,
             revenueHistory: formattedRevenue,
-            lowStock
+            lowStock,
+            topProducts
         };
     }
 

@@ -8,7 +8,8 @@ import { Readable } from 'stream';
 cloudinaryV2.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',
     api_key: process.env.CLOUDINARY_API_KEY || '',
-    api_secret: process.env.CLOUDINARY_API_SECRET || ''
+    api_secret: process.env.CLOUDINARY_API_SECRET || '',
+    timeout: 60000 // 60 seconds
 });
 
 const FilesController = {
@@ -79,7 +80,8 @@ const FilesController = {
             }
 
             const file = req.file;
-
+            console.log('Attempting Cloudinary upload. Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME, 'API Key Length:', process.env.CLOUDINARY_API_KEY?.length);
+            
             // Upload the single file to Cloudinary
             const stream = cloudinaryV2.uploader.upload_stream(
                 {
@@ -88,11 +90,12 @@ const FilesController = {
                 },
                 (error, result) => {
                     if (error) {
-                        console.error('Cloudinary upload error:', error);
+                        console.error('Cloudinary upload error full details:', JSON.stringify(error, null, 2));
                         res.status(500).json({
                             success: false,
                             message: 'File upload failed',
-                            error: error.message
+                            error: error.message || 'Unknown Cloudinary Error',
+                            details: error
                         });
                         return;
                     }

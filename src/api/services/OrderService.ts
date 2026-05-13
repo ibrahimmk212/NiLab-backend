@@ -84,6 +84,28 @@ class OrderService {
                 session
             );
 
+            // ✅ AUTOMATIC STOCK REDUCTION
+            const stockUpdatePromises = order.products.map((item: any) =>
+                ProductModel.findByIdAndUpdate(
+                    item.product,
+                    { $inc: { stock: -item.quantity } },
+                    { session, new: true } // Return updated product to check stock
+                ).then(async (updatedProduct) => {
+                    if (updatedProduct && updatedProduct.stock < 5) {
+                        // Notify Vendor about low stock
+                        await NotificationService.create({
+                            userId: pricing.vendor.userId,
+                            vendorId: pricing.vendor._id,
+                            role: 'vendor',
+                            title: 'Low Stock Alert',
+                            message: `Product "${updatedProduct.name}" is running low on stock (${updatedProduct.stock} left).`,
+                            status: 'unread'
+                        });
+                    }
+                })
+            );
+            await Promise.all(stockUpdatePromises);
+
             // 6. IMMEDIATE WALLET PAYMENT
             if (data.paymentType === 'wallet') {
                 // 1. Check & Debit the user's available balance
@@ -260,6 +282,11 @@ class OrderService {
             );
             if (!dbP) throw new Error(`Product not found: ${p.product}`);
 
+            // ✅ STOCK CHECK
+            if (dbP.stock < p.quantity) {
+                throw new Error(`Insufficient stock for ${dbP.name}. Available: ${dbP.stock}`);
+            }
+
             const lineTotal = dbP.price * p.quantity;
             subtotal += lineTotal;
 
@@ -366,6 +393,18 @@ class OrderService {
                 },
                 session
             );
+
+            // 2.5 INCREMENT PRODUCT SALES COUNT
+            if (order.products && order.products.length > 0) {
+                const updatePromises = order.products.map((item) =>
+                    ProductModel.findByIdAndUpdate(
+                        item.product,
+                        { $inc: { salesCount: item.quantity } },
+                        { session }
+                    )
+                );
+                await Promise.all(updatePromises);
+            }
 
             // 3. DELIVERY UPDATE
             const delivery = await DeliveryRepository.getDeliveryByOrder(

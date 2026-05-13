@@ -6,7 +6,8 @@ import { v2 as cloudinaryV2 } from 'cloudinary';
 cloudinaryV2.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    timeout: 60000 // 60 seconds
 });
 
 // Set up storage configuration to upload directly to Cloudinary

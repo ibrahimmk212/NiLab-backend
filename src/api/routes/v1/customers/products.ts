@@ -6,6 +6,7 @@ import ProductController from '../../../controllers/customers/ProductController'
 const customerProductRouter: Router = Router({ mergeParams: true });
 
 customerProductRouter.get('/', ProductController.getProducts);
+customerProductRouter.get('/popular', ProductController.getPopularProducts);
 
 customerProductRouter.get('/:productId', ProductController.getProductById);
 
