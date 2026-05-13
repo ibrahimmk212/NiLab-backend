@@ -31,14 +31,14 @@ class AdminCategoryController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const product = await CategoryService.getAll({
+            const result = await CategoryService.getAll({
                 ...req.query,
                 onlyGlobal: true
             });
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Categories fetched successfully',
-                data: product
+                ...result
             });
         }
     );
