@@ -115,6 +115,37 @@ class ProductController {
             });
         }
     );
+
+    getPopularProducts = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const limit = req.query.limit
+                ? parseInt(req.query.limit as string, 10)
+                : 10;
+            const page = req.query.page
+                ? parseInt(req.query.page as string, 10)
+                : 1;
+
+            const products = await ProductService.getAll(
+                {
+                    limit,
+                    page,
+                    sortBy: 'salesCount',
+                    sortOrder: 'desc',
+                    available: true
+                },
+                'user'
+            );
+            res.status(STATUS.OK).send({
+                success: true,
+                message: 'Popular products fetched successfully',
+                ...products
+            });
+        }
+    );
 }
 
 export default new ProductController();

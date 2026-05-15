@@ -6,6 +6,7 @@ import ProductModel from '../../../models/Product';
 
 const productRouter: Router = Router();
 productRouter.get('/', ProductController.getAll);
+productRouter.get('/popular', ProductController.getPopularProducts);
 productRouter.get('/categories', ProductController.getAllCategories);
 productRouter.get('/:id', ProductController.getSingle);
 export default productRouter;
