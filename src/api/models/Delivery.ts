@@ -46,6 +46,8 @@ export interface Delivery extends Document {
     deliveryImage?: string;
     customerSignature?: string;
     deliveryNotes?: string;
+    slaBreachAlerted?: boolean;
+    etaWarningAlerted?: boolean;
 }
 
 const deliverySchema = new Schema(
@@ -95,7 +97,9 @@ const deliverySchema = new Schema(
         actualDeliveryTime: { type: Date },
         deliveryImage: { type: String },
         customerSignature: { type: String },
-        deliveryNotes: { type: String }
+        deliveryNotes: { type: String },
+        slaBreachAlerted: { type: Boolean, default: false },
+        etaWarningAlerted: { type: Boolean, default: false }
     },
     { timestamps: true }
 );

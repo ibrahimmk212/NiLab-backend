@@ -20,7 +20,11 @@ class AdminKycController {
     });
 
     getKycDetails = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
+        const idParam = req.params.id?.trim();
+        if (!Types.ObjectId.isValid(idParam)) {
+            return res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid user ID format' });
+        }
+        const kycId = new Types.ObjectId(idParam);
         const kyc = await KycService.getKyc(kycId);
         if (!kyc) {
             return res.status(STATUS.NOT_FOUND).json({
@@ -35,7 +39,11 @@ class AdminKycController {
     });
 
     updateKycStatus = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
+        const idParam = req.params.id?.trim();
+        if (!Types.ObjectId.isValid(idParam)) {
+            return res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid KYC ID format' });
+        }
+        const kycId = new Types.ObjectId(idParam);
         const { status, message } = req.body;
         const kyc = await KycService.updateKycStatus(kycId, status, message);
         if (!kyc) {
@@ -108,7 +116,11 @@ class AdminKycController {
     });
 
     updateNinStatus = asyncHandler(async (req: Request, res: Response) => {
-        const kycId = new Types.ObjectId(req.params.id);
+        const idParam = req.params.id?.trim();
+        if (!Types.ObjectId.isValid(idParam)) {
+            return res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid KYC ID format' });
+        }
+        const kycId = new Types.ObjectId(idParam);
         const { ninStatus, message } = req.body;
         const kyc = await KycService.updateNinStatus(kycId, ninStatus, message);
         if (!kyc) {

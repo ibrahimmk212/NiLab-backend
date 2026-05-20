@@ -85,6 +85,7 @@ class KycController {
                 nin: typeof nin === 'string' ? nin : nin.nin
             };
             kycData.ninStatus = 'pending';
+            kycData.status = 'pending';
         }
         if (nextOfKin) {
             kycData.nextOfKin = nextOfKin;

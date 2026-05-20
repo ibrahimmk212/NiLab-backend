@@ -66,7 +66,7 @@ class VendorKycController {
 
     createKyc = asyncHandler(async (req: Request, res: Response) => {
         const { userdata }: any = req;
-        const { passportUrl, address, identity, businessDocs } = req.body;
+        const { passportUrl, address, identity, businessDocs, nextOfKin, nin } = req.body;
 
         const kyc = await KycService.getKyc(userdata.id);
         const kycData: any = {
@@ -96,6 +96,20 @@ class VendorKycController {
                 identityNumber: identity.identityNumber || identity.documentNumber,
                 identityDocument: identity.identityDocument || identity.documentUrl,
                 status: 'pending'
+            };
+        }
+
+        if (nextOfKin) {
+            kycData.nextOfKin = {
+                name: nextOfKin.name,
+                phone: nextOfKin.phone,
+                address: nextOfKin.address
+            };
+        }
+
+        if (nin) {
+            kycData.nin = {
+                nin: nin.nin
             };
         }
 

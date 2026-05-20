@@ -17,6 +17,7 @@ export type CreateOrderType = {
     couponId?: string;
     vat: number;
     addressId?: mongoose.Types.ObjectId;
+    vendorNote?: string;
 };
 
 export type CreatePackageOrderType = {
@@ -24,6 +25,7 @@ export type CreatePackageOrderType = {
     package: {
         description: string;
         image: string;
+        packageType?: string;
     };
     pickup: OrderAddress;
     destination: OrderAddress;

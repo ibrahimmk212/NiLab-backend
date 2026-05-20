@@ -3,6 +3,7 @@ import OrderService from '../../services/OrderService';
 import LogService from '../../services/LogService';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
+import RiderLocationModel from '../../models/RiderLocation';
 
 class AdminOrderController {
     getAll = asyncHandler(
@@ -180,6 +181,42 @@ class AdminOrderController {
                 success: true,
                 message: 'Orders deleted successfully',
                 data: deleted
+            });
+        }
+    );
+
+    getRiderLocation = asyncHandler(
+        async (
+            req: Request,
+            res: Response,
+            next: NextFunction
+        ): Promise<void> => {
+            const { id } = req.params;
+            const order = await OrderService.getOrderById(id);
+            if (!order) {
+                res.status(STATUS.NOT_FOUND).send({
+                    success: false,
+                    message: 'Order not found'
+                });
+                return;
+            }
+            if (!order.rider) {
+                res.status(STATUS.OK).send({
+                    success: false,
+                    message: 'No rider assigned to this order'
+                });
+                return;
+            }
+            const latestLocation = await RiderLocationModel.findOne({
+                $or: [
+                    { order: order._id },
+                    { rider: (order.rider as any)._id || order.rider }
+                ]
+            }).sort({ timestamp: -1 });
+
+            res.status(STATUS.OK).send({
+                success: true,
+                data: latestLocation
             });
         }
     );

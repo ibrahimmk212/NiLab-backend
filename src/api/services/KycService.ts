@@ -90,6 +90,20 @@ class KycService {
             } catch (err) {
                 console.error('Failed to sync KYC status to vendor', err);
             }
+
+            // Sync Rider record
+            try {
+                const { default: RiderRepository } = await import('../repositories/RiderRepository');
+                const rider = await RiderRepository.findByKey('userId', userIdStr);
+                if (rider) {
+                    const riderStatus = status === 'approved' ? 'verified' : status === 'rejected' ? 'unverified' : rider.status;
+                    await RiderRepository.updateRider(rider._id.toString(), {
+                        status: riderStatus as any
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to sync KYC status to rider', err);
+            }
         }
         return updatedKyc;
     }

@@ -54,17 +54,22 @@ class NotificationService implements INotificationService {
         // 4. Send Socket Notification (for real-time updates)
         if (notification) {
             const role = payload.role || 'customer';
+            const socketPayload = {
+                ...(notification.toJSON ? notification.toJSON() : notification),
+                orderId: payload.orderId,
+                orderCode: payload.orderCode
+            };
             if (role === 'admin') {
-                SocketService.emitToAdmin(userId, 'admin_notification', notification);
+                SocketService.emitToAdmin(userId, 'admin_notification', socketPayload);
             } else if (role === 'rider') {
-                SocketService.emitToRider(payload.riderId, 'rider_notification', notification);
+                SocketService.emitToRider(payload.riderId, 'rider_notification', socketPayload);
             } else if (role === 'vendor') {
                 if (payload.vendorId) {
-                    SocketService.emitToVendor(payload.vendorId, 'vendor_notification', notification);
+                    SocketService.emitToVendor(payload.vendorId, 'vendor_notification', socketPayload);
                 }
-                SocketService.emitToUser(userId, 'vendor_notification', notification);
+                SocketService.emitToUser(userId, 'vendor_notification', socketPayload);
             } else {
-                SocketService.emitToUser(userId, 'customer_notification', notification);
+                SocketService.emitToUser(userId, 'customer_notification', socketPayload);
             }
         }
 
@@ -328,7 +333,11 @@ class NotificationService implements INotificationService {
 
         // 1. Send Push Notification via Topic (The "At Once" way)
         if (channels.includes('push')) {
-            const topic = target === 'all' ? 'all_users' : target;
+            let topic: string = target;
+            if (target === 'all') topic = 'all';
+            else if (target === 'customers') topic = 'customer';
+            else if (target === 'riders') topic = 'rider';
+            
             sendTopicNotification(topic, title, message).catch(console.error);
         }
 
@@ -391,11 +400,11 @@ class NotificationService implements INotificationService {
         
         // Only Customers and Riders use the mobile app
         if (role === 'user') {
-            await subscribeToTopic(deviceToken, 'all_users');
-            await subscribeToTopic(deviceToken, 'customers');
+            await subscribeToTopic(deviceToken, 'all');
+            await subscribeToTopic(deviceToken, 'customer');
         } else if (role === 'rider') {
-            await subscribeToTopic(deviceToken, 'all_users');
-            await subscribeToTopic(deviceToken, 'riders');
+            await subscribeToTopic(deviceToken, 'all');
+            await subscribeToTopic(deviceToken, 'rider');
         }
     }
 }

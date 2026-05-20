@@ -18,17 +18,23 @@ class VirtualAccountService {
             return wallet.virtualAccount;
         }
 
-        // 2. Fetch KYC for NIN
+        // 2. Fetch KYC for NIN (optional)
         const kyc = await KycRepository.getKycByUser(userObjId);
         
-        const nin = kyc?.nin?.nin;
-        const identityNin = kyc?.identity?.identityType === 'nin' ? kyc?.identity?.identityNumber : undefined;
+        const userNin = kyc?.nin?.nin || (kyc?.identity?.identityType === 'nin' ? kyc?.identity?.identityNumber : undefined);
+        const nin = appConfig.monnify.directorNin || userNin;
 
-        if (!kyc || (!nin && !identityNin)) {
-            throw new Error('Please update your KYC with a valid NIN to generate a virtual account');
+        let user: any = null;
+        if (kyc && kyc.user) {
+            user = kyc.user;
+        } else {
+            const UserRepository = (await import('../repositories/UserRepository')).default;
+            user = await UserRepository.findUserById(userId);
         }
 
-        const user = kyc.user as any; // Populated user
+        if (!user) {
+            throw new Error('User details not found to generate virtual account');
+        }
 
         // 3. Initiate Monnify Reservation
         const accessToken = await monnify.genToken();
@@ -44,7 +50,9 @@ class VirtualAccountService {
             getAllAvailableBanks: true
         };
 
-        if (nin || identityNin) payload.nin = nin || identityNin;
+        if (nin) {
+            payload.nin = nin;
+        }
 
         const response = await monnify.reserveAccount(payload, accessToken);
 

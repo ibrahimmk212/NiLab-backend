@@ -13,6 +13,7 @@ adminOrderRouter.get(
 );
 adminOrderRouter.get('/vendor/:id', AdminOrderController.getByVendor);
 adminOrderRouter.get('/:id', AdminOrderController.getSingle);
+adminOrderRouter.get('/:id/rider-location', AdminOrderController.getRiderLocation);
 adminOrderRouter.put('/:id/status', Validate(orderRequirement.updateStatus), AdminOrderController.updateStatus);
 adminOrderRouter.put('/:id/assign-rider', AdminOrderController.assignRider);
 adminOrderRouter.put('/:id', AdminOrderController.updateStatus);

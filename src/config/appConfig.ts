@@ -33,6 +33,7 @@ const AppConfig = {
         contractCode: process.env.CONTRACT_CODE as string,
         walletAccountNumber: process.env.WALLET_NUMBER as string,
         sourceAccountNumber: process.env.MONNIFY_SOURCE_ACCOUNT as string, // TODO add to env
+        directorNin: process.env.DIRECTOR_NIN as string,
         redirectUrl: 'https://dashboard.terminusdrive.com/checkout/success'
     },
     mailer: {

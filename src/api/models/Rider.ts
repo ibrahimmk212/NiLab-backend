@@ -22,6 +22,7 @@ export interface Rider extends Document {
     available: boolean;
     gender: string;
     bankAccount?: BankAccount;
+    lastAssignedAt?: Date;
 }
 
 const riderSchema = new Schema<Rider>(
@@ -51,6 +52,10 @@ const riderSchema = new Schema<Rider>(
             accountNumber: String,
             bankName: String,
             bankCode: String
+        },
+        lastAssignedAt: {
+            type: Date,
+            default: null
         }
     },
     {
@@ -117,9 +122,19 @@ riderSchema.post('save', async function (rider) {
                 role: 'rider',
                 owner: rider.id
             });
+
+            // Create a default KYC record with NIN "00000000000" for the new rider
+            const { default: KycModel } = await import('./Kyc');
+            await KycModel.create({
+                user: rider.userId,
+                role: 'rider',
+                nin: { nin: '00000000000' },
+                ninStatus: 'not_submitted',
+                status: 'not_submitted'
+            });
         }
     } catch (error: any) {
-        console.log(`Wallet not created: ${error.message}`);
+        console.log(`Wallet/KYC not created: ${error.message}`);
     }
 });
 

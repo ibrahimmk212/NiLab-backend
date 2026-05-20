@@ -38,6 +38,7 @@ export interface Order extends Document {
         weight?: number;
         size?: 'small' | 'medium' | 'large' | 'extra-large';
         isFragile?: boolean;
+        packageType?: string;
     };
     completedBy?: 'user' | 'vendor' | 'rider';
     amount: number;
@@ -85,6 +86,9 @@ export interface Order extends Document {
     refunded: boolean;
     refundedAt: Date;
     remark: string;
+    vendorNote?: string;
+    slaBreachAlerted?: boolean;
+    etaWarningAlerted?: boolean;
     isSettled: boolean;
     settledAt: Date;
     status:
@@ -120,7 +124,8 @@ const orderSchema = new Schema<Order>(
                 type: String,
                 enum: ['small', 'medium', 'large', 'extra-large']
             },
-            isFragile: { type: Boolean, default: false }
+            isFragile: { type: Boolean, default: false },
+            packageType: { type: String }
         },
         products: [
             {
@@ -269,7 +274,10 @@ const orderSchema = new Schema<Order>(
         canceledReason: { type: String },
         refunded: { type: Boolean, default: false },
         refundedAt: { type: Date },
-        remark: { type: String, required: false }
+        remark: { type: String, required: false },
+        vendorNote: { type: String, required: false },
+        slaBreachAlerted: { type: Boolean, default: false },
+        etaWarningAlerted: { type: Boolean, default: false }
     },
     {
         timestamps: true,

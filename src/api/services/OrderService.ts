@@ -22,6 +22,9 @@ import NotificationService from './NotificationService';
 import emails from '../libraries/emails';
 import VehicleTypeModel from '../models/VehicleType';
 import VehicleTypeService from './VehicleTypeService';
+import DispatchService from './DispatchService';
+import RiderModel from '../models/Rider';
+import RiderLocationModel from '../models/RiderLocation';
 
 class OrderService {
     private roundToTwo(num: number): number {
@@ -149,7 +152,9 @@ class OrderService {
                         role: 'vendor',
                         title: 'New Order',
                         message: `You have a new order: ${order.code}`,
-                        status: 'unread'
+                        status: 'unread',
+                        orderId: order._id.toString(),
+                        orderCode: order.code
                     });
                 }
 
@@ -503,10 +508,30 @@ class OrderService {
             // 2. Update Delivery if exists
             const delivery = await DeliveryRepository.getDeliveryByOrder(orderId);
             if (delivery) {
+                // 3. Manage Dispatch (Ensure DispatchService supports sessions)
+                let dispatch = await DispatchService.getActiveDispatch(riderId);
+                if (!dispatch) {
+                    dispatch = await DispatchService.createDispatch(
+                        { rider: new mongoose.Types.ObjectId(riderId) },
+                        session
+                    );
+                }
+
                 delivery.rider = new mongoose.Types.ObjectId(riderId);
+                delivery.dispatch = dispatch._id;
                 delivery.status = 'accepted';
                 await delivery.save({ session });
+
+                // 4. Add Delivery to Dispatch
+                await DispatchService.addDeliveriesToDispatch(
+                    dispatch._id,
+                    [delivery._id.toString()],
+                    session
+                );
             }
+
+            // Update rider's last assigned time for round-robin
+            await RiderModel.findByIdAndUpdate(riderId, { lastAssignedAt: new Date() }, { session });
 
             await session.commitTransaction();
             return order;
@@ -515,6 +540,73 @@ class OrderService {
             throw error;
         } finally {
             session.endSession();
+        }
+    }
+
+    async autoAssignRider(orderId: string) {
+        try {
+            const order: any = await OrderRepository.findOrderById(orderId);
+            if (!order) return;
+            if (order.rider) return; // Already assigned
+
+            // Get pickup coordinates
+            const orderLng = order.pickupLocation[0];
+            const orderLat = order.pickupLocation[1];
+            if (!orderLng || !orderLat) return;
+
+            // 1. Get all available riders
+            const availableRiders = await RiderModel.find({ status: 'verified', available: true }).select('_id lastAssignedAt');
+            if (availableRiders.length === 0) return;
+            const availableRiderIds = availableRiders.map((r) => r._id);
+
+            // 2. Find their latest locations within a 5km radius active in the last 30 minutes
+            const nearbyRiderLocations = await RiderLocationModel.aggregate([
+                {
+                    $geoNear: {
+                        near: { type: 'Point', coordinates: [orderLng, orderLat] },
+                        distanceField: 'distance',
+                        maxDistance: 5000, // 5km
+                        spherical: true,
+                        query: {
+                            rider: { $in: availableRiderIds },
+                            timestamp: { $gte: new Date(Date.now() - 30 * 60000) } // Active in last 30 mins
+                        }
+                    }
+                },
+                { $sort: { timestamp: -1 } },
+                {
+                    $group: {
+                        _id: '$rider',
+                        distance: { $first: '$distance' },
+                        timestamp: { $first: '$timestamp' }
+                    }
+                }
+            ]);
+
+            if (nearbyRiderLocations.length === 0) return;
+
+            // 3. Pick the nearby rider with the oldest lastAssignedAt
+            const nearbyIds = nearbyRiderLocations.map((l) => l._id.toString());
+            const candidates = availableRiders.filter((r) => nearbyIds.includes(r._id.toString()));
+
+            candidates.sort((a, b) => {
+                if (!a.lastAssignedAt) return -1; // Nulls (never assigned) go first
+                if (!b.lastAssignedAt) return 1;
+                return a.lastAssignedAt.getTime() - b.lastAssignedAt.getTime();
+            });
+
+            const selectedRider = candidates[0];
+            
+            // Assign them
+            await this.assignRider(orderId, selectedRider._id.toString());
+
+            // Notify Rider
+            const riderUser = await UserRepository.findUserById(selectedRider.userId?.toString());
+            if (riderUser && riderUser.deviceToken) {
+                // Send push notification...
+            }
+        } catch (error) {
+            console.error('Auto-assign rider failed:', error);
         }
     }
 
@@ -657,6 +749,15 @@ class OrderService {
                     );
                 }
                 update.preparedAt = Date.now();
+                
+                // Trigger auto-assignment asynchronously (outside of transaction)
+                if (!order.rider && !update.rider) {
+                    // Running this without await so it doesn't block the update response
+                    // and executes after the transaction
+                    setTimeout(() => {
+                        this.autoAssignRider(orderId).catch(err => console.error(err));
+                    }, 500);
+                }
             }
 
             // 3. Perform the actual update

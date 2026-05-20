@@ -10,6 +10,8 @@ import emails from '../../libraries/emails';
 import NotificationService from '../../services/NotificationService';
 import SettlementService from '../../services/SettlementService';
 import DeliveryModel from '../../models/Delivery';
+import RiderModel from '../../models/Rider';
+import RiderLocationModel from '../../models/RiderLocation';
 
 class VendorOrderController {
     getAll = asyncHandler(
@@ -291,6 +293,83 @@ class VendorOrderController {
         res.status(200).json({
             success: true,
             message: 'Order cancelled and funds returned to wallet'
+        });
+    });
+
+    assignRider = asyncHandler(async (req: any, res: Response) => {
+        const { id } = req.params;
+        const { riderId } = req.body;
+        const { vendor } = req;
+
+        const order = await OrderService.getOrderById(id);
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+        if (order.vendor._id.toString() !== vendor.id) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const updatedOrder = await OrderService.assignRider(id, riderId);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Rider assigned successfully',
+            data: updatedOrder
+        });
+    });
+
+    getAvailableRiders = asyncHandler(async (req: any, res: Response) => {
+        const { id } = req.params;
+        const { vendor } = req;
+
+        const order: any = await OrderService.getOrderById(id);
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+        if (order.vendor._id.toString() !== vendor.id) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        // Get riders in the same state that are available and verified
+        const availableRiders = await RiderModel.find({
+            state: order.vendor.state,
+            status: 'verified',
+            available: true
+        }).select('_id name phoneNumber ratings vehicleTypeId gender');
+
+        // Optional: We could sort them by distance here using RiderLocationModel
+        // but for now, we just return the available ones so the vendor can choose
+        
+        res.status(200).json({
+            success: true,
+            data: availableRiders
+        });
+    });
+
+    getRiderLocation = asyncHandler(async (req: any, res: Response) => {
+        const { id } = req.params;
+        const { vendor } = req;
+
+        const order = await OrderService.getOrderById(id);
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+        if (order.vendor._id.toString() !== vendor.id) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+        if (!order.rider) {
+            return res.status(200).json({ success: false, message: 'No rider assigned to this order' });
+        }
+        const latestLocation = await RiderLocationModel.findOne({
+            $or: [
+                { order: order._id },
+                { rider: (order.rider as any)._id || order.rider }
+            ]
+        }).sort({ timestamp: -1 });
+
+        res.status(STATUS.OK).send({
+            success: true,
+            data: latestLocation
         });
     });
 }

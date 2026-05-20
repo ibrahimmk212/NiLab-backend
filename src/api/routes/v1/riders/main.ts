@@ -49,7 +49,7 @@ mainRiderRouter
     .get(auth.isRider, ProfileController.currentUser);
 mainRiderRouter
     .route('/availability')
-    .get(auth.isRider, ProfileController.updateAvailability);
+    .patch(auth.isRider, ProfileController.updateAvailability);
 mainRiderRouter
     .route('/update-vehicle-type')
     .put(auth.isRider, ProfileController.updateVehicleType);

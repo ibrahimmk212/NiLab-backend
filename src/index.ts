@@ -65,6 +65,9 @@ function startServer(): Server {
     const { default: SocketService } = require('./api/services/SocketService');
     SocketService.init(server);
 
+    const { default: BackgroundTasks } = require('./api/cronJobs');
+    BackgroundTasks.init();
+
     // Legacy logic migration/placeholder
     // The SocketService now handles connection.
     // If we need to preserve strict backward compatibility for specific event handlers defined in index.ts:

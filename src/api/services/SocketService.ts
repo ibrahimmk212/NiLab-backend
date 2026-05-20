@@ -71,16 +71,40 @@ class SocketService {
     }
 
     private handleLegacyEvents(socket: Socket) {
-        // Re-implementing the location updates logic from index.ts
-        // This is a simplified version; in a real app, this should likely be in a controller
         socket.on(
             'updateLocation',
-            (location: { lat: number; long: number }) => {
-                // Logic to broadcast location to relevant customers
-                // This requires knowing which order the rider is on.
-                // For now, we can omit or migrate the exact logic from index.ts if we want to preserve it 1:1
-                // But the prompt implies focusing on Notifications.
-                // I will keep the structure open.
+            async (data: { lat: number; long?: number; lng?: number; orderId?: string; riderId?: string }) => {
+                const lat = data.lat;
+                const lng = data.long !== undefined ? data.long : data.lng;
+                const riderId = data.riderId || (socket.handshake.query.userId as string);
+                const orderId = data.orderId;
+
+                if (lat === undefined || lng === undefined || !riderId) return;
+
+                const locationData = {
+                    riderId,
+                    orderId: orderId || null,
+                    coordinates: [Number(lng), Number(lat)],
+                    timestamp: new Date()
+                };
+
+                // Broadcast location to relevant rooms
+                this.broadcastToRoom('global:admins', 'rider_location_updated', locationData);
+                this.broadcastToRoom(`rider:${riderId}`, 'rider_location_updated', locationData);
+
+                if (orderId) {
+                    this.broadcastToRoom(`order:${orderId}`, 'rider_location_updated', locationData);
+
+                    try {
+                        const { default: OrderModel } = await import('../models/Order');
+                        const order = await OrderModel.findById(orderId);
+                        if (order && order.vendor) {
+                            this.broadcastToRoom(`vendor:${order.vendor.toString()}`, 'rider_location_updated', locationData);
+                        }
+                    } catch (err) {
+                        Logger.error('Error fetching order for socket location updates: ' + err);
+                    }
+                }
             }
         );
     }

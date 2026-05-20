@@ -15,7 +15,8 @@ const orderRequirement = {
         body('paymentType')
             .isString()
             .withMessage('Please select mode of payment'),
-        body('addressId').isString()
+        body('addressId').isString(),
+        body('vendorNote').isString().optional()
         // body('deliveryLocation')
         //     .isArray({ min: 2, max: 2 })
         //     .withMessage('Both longitude and latitude are required')

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import RiderLocationModel from '../../models/RiderLocation';
 import { STATUS } from '../../../constants';
+import SocketService from '../../services/SocketService';
 
 class RiderLocationController {
     /**
@@ -29,6 +30,32 @@ class RiderLocationController {
             },
             timestamp: new Date()
         });
+
+        // Broadcast to socket rooms
+        const locationData = {
+            riderId: rider.id,
+            orderId: orderId || null,
+            coordinates: [Number(long), Number(lat)],
+            timestamp: new Date()
+        };
+
+        SocketService.broadcastToRoom('global:admins', 'rider_location_updated', locationData);
+        SocketService.broadcastToRoom(`rider:${rider.id}`, 'rider_location_updated', locationData);
+
+        if (orderId) {
+            SocketService.broadcastToRoom(`order:${orderId}`, 'rider_location_updated', locationData);
+            
+            // Broadcast to the vendor of this order
+            import('../../models/Order').then(({ default: OrderModel }) => {
+                OrderModel.findById(orderId).then((order) => {
+                    if (order && order.vendor) {
+                        SocketService.broadcastToRoom(`vendor:${order.vendor.toString()}`, 'rider_location_updated', locationData);
+                    }
+                }).catch((err) => {
+                    console.error('Error fetching order for location broadcast:', err);
+                });
+            });
+        }
 
         res.status(STATUS.CREATED).json({
             success: true,
