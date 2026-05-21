@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import PayoutService from '../../services/PayoutService';
 import RiderService from '../../services/RiderService';
+import BankAccountModel from '../../models/BankAccount';
 
 class RiderPayoutController {
     getPayout = asyncHandler(
@@ -13,7 +14,6 @@ class RiderPayoutController {
                 );
 
                 if (payout?.userId !== req.userdata.id)
-                    // throw new Error('Payout not found');
                     return res.status(404).send({
                         message: 'Payout not found',
                         success: false
@@ -44,6 +44,7 @@ class RiderPayoutController {
             }
         }
     );
+
     requestPayout = asyncHandler(
         async (req: any, res: Response, next: NextFunction): Promise<void> => {
             try {
@@ -52,21 +53,37 @@ class RiderPayoutController {
                 let { amount, bankName, accountNumber, accountName, bankCode } =
                     req.body;
 
+                // If bank details not provided in the request body, resolve them automatically
                 if (!accountNumber || !bankCode) {
-                    const rider = await RiderService.getRiderByUserId(id);
-                    if (rider?.bankAccount?.accountNumber) {
-                        accountNumber = rider.bankAccount.accountNumber;
-                        bankCode = rider.bankAccount.bankCode;
-                        bankName = rider.bankAccount.bankName;
-                        accountName = rider.bankAccount.accountName;
+                    // 1. Prefer the default account from the BankAccount collection (new system)
+                    const defaultBankAccount = await BankAccountModel.findOne({
+                        userId: id,
+                        isDefault: true
+                    });
+
+                    if (defaultBankAccount) {
+                        accountNumber = defaultBankAccount.accountNumber;
+                        bankCode = defaultBankAccount.bankCode;
+                        bankName = defaultBankAccount.bankName;
+                        accountName = defaultBankAccount.accountName;
+                    } else {
+                        // 2. Fall back to legacy embedded rider.bankAccount field
+                        const rider = await RiderService.getRiderByUserId(id);
+                        if (rider?.bankAccount?.accountNumber) {
+                            accountNumber = rider.bankAccount.accountNumber;
+                            bankCode = rider.bankAccount.bankCode;
+                            bankName = rider.bankAccount.bankName;
+                            accountName = rider.bankAccount.accountName;
+                        }
                     }
                 }
 
                 if (!accountNumber || !bankCode) {
                     throw new Error(
-                        'Bank details are required. Please update your profile or provide them in the request.'
+                        'No payout account found. Please add a bank account in your profile settings.'
                     );
                 }
+
                 const payout = await PayoutService.requestPayout({
                     userId: id,
                     amount,
@@ -76,7 +93,7 @@ class RiderPayoutController {
                     bankCode
                 });
                 res.status(200).send({
-                    message: 'Payout fetched successfully',
+                    message: 'Payout requested successfully',
                     data: payout
                 });
             } catch (error) {

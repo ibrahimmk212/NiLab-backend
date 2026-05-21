@@ -98,6 +98,42 @@ class OrderController {
         });
     });
 
+    previewPackageOrder = asyncHandler(async (req: Request, res: Response) => {
+        const {
+            pickup,
+            destination,
+            // minimal format
+            vehicleTypeId,
+            packageValue,
+            // full create-order format aliases
+            vehicleType,
+            amount,
+            package: pkg,
+            senderDetails,
+            receiverDetails,
+            pickupTime
+        } = req.body;
+
+        const preview = await OrderService.previewPackageOrder({
+            pickup,
+            destination,
+            // prefer explicit vehicleTypeId, fall back to vehicleType field
+            vehicleTypeId: vehicleTypeId ?? vehicleType,
+            // prefer explicit packageValue, fall back to amount (declared package value)
+            packageValue: packageValue != null ? Number(packageValue) : (amount != null ? Number(amount) : 0),
+            package: pkg,
+            senderDetails,
+            receiverDetails,
+            pickupTime
+        });
+
+        res.status(STATUS.OK).json({
+            success: true,
+            message: 'Package delivery quote calculated successfully',
+            data: preview
+        });
+    });
+
     // Parcel/Package Delivery
     createPackageDeliveryOrder = asyncHandler(
         async (req: Request, res: Response) => {

@@ -10,6 +10,7 @@ customerOrderRouter.route('/').get(orderController.getAllOrder).post(
     orderController.createOrder
 );
 customerOrderRouter.post('/preview', orderController.previewOrder);
+customerOrderRouter.post('/preview-package', orderController.previewPackageOrder);
 customerOrderRouter.get(
     '/delivery-vehicle-types',
     VehicleTypeController.getDeliveryVehicleTypes

@@ -14,6 +14,7 @@ import riderWalletRouter from './wallet';
 import riderKycRouter from './kyc';
 import riderPayoutRouter from './payout';
 import locationRouter from './locations';
+import riderBankAccountRouter from './bank-accounts';
 
 ridersRouter.use('/', mainRiderRouter);
 ridersRouter.use('/deliveries', auth.isRider, riderDeliveryRouter);
@@ -25,6 +26,7 @@ ridersRouter.use('/transactions', auth.isRider, riderTransactionRouter);
 ridersRouter.use('/wallet', auth.isRider, riderWalletRouter);
 ridersRouter.use('/kyc', auth.isRider, riderKycRouter);
 ridersRouter.use('/payouts', auth.isRider, riderPayoutRouter);
+ridersRouter.use('/bank-accounts', auth.isRider, riderBankAccountRouter);
 
 // ridersRouter
 //     .route('/update-password')

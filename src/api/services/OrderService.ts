@@ -247,6 +247,126 @@ class OrderService {
         });
     }
 
+    /**
+     * Package Delivery Preview — pure price calculation, no order is created.
+     *
+     * Accepts EITHER:
+     *   • Minimal:  { pickup, destination, vehicleTypeId?, packageValue? }
+     *   • Full:     The exact same payload as POST /orders/package
+     *               (vehicleType alias for vehicleTypeId, amount alias for packageValue)
+     *
+     * Returns pricing quotes + echoes back all submitted details so the client
+     * can display a full confirmation screen before placing the order.
+     */
+    async previewPackageOrder(data: {
+        pickup: { coordinates: [number, number]; address?: string; [key: string]: any };
+        destination: { coordinates: [number, number]; address?: string; [key: string]: any };
+        vehicleTypeId?: string;
+        packageValue?: number;
+        // full-payload extras (echoed back in response)
+        package?: {
+            description?: string;
+            image?: string;
+            weight?: number;
+            size?: 'small' | 'medium' | 'large' | 'extra-large';
+            isFragile?: boolean;
+            packageType?: string;
+        };
+        senderDetails?: { name?: string; contactNumber?: string };
+        receiverDetails?: { name?: string; contactNumber?: string };
+        pickupTime?: string;
+    }): Promise<any> {
+        const config = await ConfigurationService.getConfiguration();
+        if (!config) throw new Error('System configuration not found');
+
+        const {
+            pickup,
+            destination,
+            vehicleTypeId,
+            packageValue = 0,
+            package: pkg,
+            senderDetails,
+            receiverDetails,
+            pickupTime
+        } = data;
+
+        if (
+            !pickup?.coordinates ||
+            pickup.coordinates.length !== 2 ||
+            !destination?.coordinates ||
+            destination.coordinates.length !== 2
+        ) {
+            throw new Error(
+                'Both pickup.coordinates and destination.coordinates ([lng, lat]) are required.'
+            );
+        }
+
+        // Straight-line distance in km (same method used in createPackageOrder)
+        const distanceKm = calculateStraightDistance(
+            pickup.coordinates[1],   // lat
+            pickup.coordinates[0],   // lng
+            destination.coordinates[1],
+            destination.coordinates[0]
+        );
+        // Distance in meters (as stored on the order)
+        const distanceMeters = distanceKm * 1000;
+
+        const serviceFee = config.baseServiceFee || 100;
+
+        const buildQuote = (vehicle: any) => {
+            const calculatedFee = this.roundToTwo(distanceKm * vehicle.feePerKm);
+            const deliveryFee = this.roundToTwo(
+                Math.max(calculatedFee, vehicle.baseDeliveryFee ?? 0)
+            );
+            const totalAmount = this.roundToTwo(
+                packageValue + deliveryFee + serviceFee
+            );
+
+            return {
+                vehicleTypeId: vehicle._id,
+                vehicleType: vehicle.name,
+                vehicleSlug: vehicle.slug,
+                vehicleIcon: vehicle.icon ?? null,
+                feePerKm: vehicle.feePerKm,
+                deliveryFee,
+                serviceFee,
+                packageValue,
+                totalAmount
+            };
+        };
+
+        let quotes: any[];
+
+        if (vehicleTypeId) {
+            // Single vehicle quote
+            const vehicle = await VehicleTypeModel.findOne({
+                _id: vehicleTypeId,
+                active: true
+            });
+            if (!vehicle) throw new Error('Vehicle type not found or inactive');
+            quotes = [buildQuote(vehicle)];
+        } else {
+            // All active vehicle types — sorted cheapest first
+            const vehicles = await VehicleTypeModel.find({ active: true }).sort({ feePerKm: 1 });
+            if (!vehicles.length) throw new Error('No active vehicle types configured');
+            quotes = vehicles.map(buildQuote);
+        }
+
+        return {
+            // Addresses — pass through any extra fields (street, city, etc.) from the full payload
+            pickup,
+            destination,
+            distanceKm: this.roundToTwo(distanceKm),
+            distanceMeters: this.roundToTwo(distanceMeters),
+            // Echo back full-payload extras when provided
+            ...(pkg         && { package: pkg }),
+            ...(senderDetails   && { senderDetails }),
+            ...(receiverDetails && { receiverDetails }),
+            ...(pickupTime  && { pickupTime }),
+            quotes
+        };
+    }
+
     private async calculateProductOrderDetails(
         params: {
             vendorId: string;
