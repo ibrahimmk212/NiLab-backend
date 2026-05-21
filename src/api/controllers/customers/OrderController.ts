@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { STATUS } from '../../../constants';
 import { asyncHandler } from '../../middlewares/handlers/async';
 import OrderService from '../../services/OrderService';
+import DeliveryService from '../../services/DeliveryService';
 import PaymentService from '../../services/PaymentService';
 import UserService from '../../services/UserService';
 import ReviewService from '../../services/ReviewService';
@@ -131,6 +132,42 @@ class OrderController {
         res.status(STATUS.OK).json({
             success: true,
             message: 'Package delivery quote calculated successfully',
+            data: preview
+        });
+    });
+
+    previewDelivery = asyncHandler(async (req: Request, res: Response) => {
+        const {
+            pickup,
+            destination,
+            vehicleTypeId,
+            vehicleType,
+            amount,
+            packageValue,
+            package: pkg,
+            senderDetails,
+            receiverDetails,
+            pickupTime,
+            specialInstructions,
+            remark
+        } = req.body;
+
+        const preview = await DeliveryService.previewDelivery({
+            pickup,
+            destination,
+            vehicleTypeId: vehicleTypeId ?? vehicleType,
+            packageValue: packageValue != null ? Number(packageValue) : amount != null ? Number(amount) : 0,
+            package: pkg,
+            senderDetails,
+            receiverDetails,
+            pickupTime,
+            specialInstructions,
+            remark
+        });
+
+        res.status(STATUS.OK).json({
+            success: true,
+            message: 'Delivery quote calculated successfully',
             data: preview
         });
     });

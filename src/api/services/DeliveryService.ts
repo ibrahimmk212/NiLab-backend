@@ -2,7 +2,7 @@ import {
     generateReference,
     generateShortCode
 } from '../../utils/keygen/idGenerator';
-import { generateRandomNumbers } from '../../utils/helpers';
+import { generateRandomNumbers, calculateStraightDistance } from '../../utils/helpers';
 import emails from '../libraries/emails';
 import DeliveryModel, { Delivery } from '../models/Delivery';
 
@@ -12,6 +12,8 @@ import RiderService from './RiderService';
 import mongoose from 'mongoose';
 import DispatchService from './DispatchService';
 import OrderRepository from '../repositories/OrderRepository';
+import VehicleTypeModel from '../models/VehicleType';
+import ConfigurationService from './ConfigurationService';
 
 class DeliveryService {
     private async notifyAvailableRiders(order: any) {
@@ -204,6 +206,146 @@ class DeliveryService {
         } finally {
             session.endSession();
         }
+    }
+
+    /**
+     * Delivery Preview — pure price calculation, no records are created.
+     *
+     * Accepts EITHER:
+     *   • Minimal:  { pickup, destination, vehicleTypeId? }
+     *   • Full:     The exact same payload as POST /orders/package
+     *               (vehicleType alias for vehicleTypeId, amount alias for packageValue)
+     *
+     * Returns distance metrics, per-vehicle pricing quotes, and echoes back all
+     * submitted details so the client can render a full confirmation screen.
+     */
+    async previewDelivery(data: {
+        pickup: { coordinates: [number, number]; street?: string; city?: string; state?: string; [key: string]: any };
+        destination: { coordinates: [number, number]; street?: string; city?: string; state?: string; [key: string]: any };
+        /** Specific vehicle type ObjectId — omit to get quotes for all active types */
+        vehicleTypeId?: string;
+        /** Declared package/item value (added to total, not to delivery fee) */
+        packageValue?: number;
+        /** Full create-order payload aliases */
+        vehicleType?: string;
+        amount?: number;
+        package?: {
+            description?: string;
+            image?: string;
+            weight?: number;
+            size?: 'small' | 'medium' | 'large' | 'extra-large';
+            isFragile?: boolean;
+            packageType?: string;
+        };
+        senderDetails?: { name?: string; contactNumber?: string };
+        receiverDetails?: { name?: string; contactNumber?: string };
+        pickupTime?: string;
+        specialInstructions?: string;
+        remark?: string;
+    }): Promise<any> {
+        const config = await ConfigurationService.getConfiguration();
+        if (!config) throw new Error('System configuration not found');
+
+        const {
+            pickup,
+            destination,
+            vehicleTypeId,
+            vehicleType,
+            amount,
+            packageValue,
+            package: pkg,
+            senderDetails,
+            receiverDetails,
+            pickupTime,
+            specialInstructions,
+            remark
+        } = data;
+
+        // Resolve aliases: prefer explicit vehicleTypeId, fall back to vehicleType field
+        const resolvedVehicleTypeId = vehicleTypeId ?? vehicleType;
+        // Prefer explicit packageValue, fall back to amount (declared package value)
+        const resolvedPackageValue =
+            packageValue != null ? Number(packageValue) : amount != null ? Number(amount) : 0;
+
+        if (
+            !pickup?.coordinates ||
+            pickup.coordinates.length !== 2 ||
+            !destination?.coordinates ||
+            destination.coordinates.length !== 2
+        ) {
+            throw new Error(
+                'Both pickup.coordinates and destination.coordinates ([lng, lat]) are required.'
+            );
+        }
+
+        // Straight-line distance in km (same method used in createPackageOrder)
+        const distanceKm = calculateStraightDistance(
+            pickup.coordinates[1],   // lat
+            pickup.coordinates[0],   // lng
+            destination.coordinates[1],
+            destination.coordinates[0]
+        );
+        const distanceMeters = distanceKm * 1000;
+
+        const serviceFee = config.baseServiceFee || 100;
+
+        const roundToTwo = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+        const buildQuote = (vehicle: any) => {
+            const calculatedFee = roundToTwo(distanceKm * vehicle.feePerKm);
+            const deliveryFee = roundToTwo(
+                Math.max(calculatedFee, vehicle.baseDeliveryFee ?? 0)
+            );
+            const totalAmount = roundToTwo(
+                resolvedPackageValue + deliveryFee + serviceFee
+            );
+
+            return {
+                vehicleTypeId: vehicle._id,
+                vehicleType: vehicle.name,
+                vehicleSlug: vehicle.slug,
+                vehicleIcon: vehicle.icon ?? null,
+                feePerKm: vehicle.feePerKm,
+                baseDeliveryFee: vehicle.baseDeliveryFee ?? 0,
+                deliveryFee,
+                serviceFee,
+                packageValue: resolvedPackageValue,
+                totalAmount
+            };
+        };
+
+        let quotes: any[];
+
+        if (resolvedVehicleTypeId) {
+            // Single vehicle quote
+            const vehicle = await VehicleTypeModel.findOne({
+                _id: resolvedVehicleTypeId,
+                active: true
+            });
+            if (!vehicle) throw new Error('Vehicle type not found or inactive');
+            quotes = [buildQuote(vehicle)];
+        } else {
+            // All active vehicle types — sorted cheapest first
+            const vehicles = await VehicleTypeModel.find({ active: true }).sort({ feePerKm: 1 });
+            if (!vehicles.length) throw new Error('No active vehicle types configured');
+            quotes = vehicles.map(buildQuote);
+        }
+
+        return {
+            // Location details — pass through any extra address fields
+            pickup,
+            destination,
+            distanceKm: roundToTwo(distanceKm),
+            distanceMeters: roundToTwo(distanceMeters),
+            // Echo back full-payload extras when provided
+            ...(pkg              && { package: pkg }),
+            ...(senderDetails    && { senderDetails }),
+            ...(receiverDetails  && { receiverDetails }),
+            ...(pickupTime       && { pickupTime }),
+            ...(specialInstructions && { specialInstructions }),
+            ...(remark           && { remark }),
+            quotes
+        };
     }
 }
 //
