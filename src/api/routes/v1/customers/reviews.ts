@@ -1,18 +1,17 @@
 import { Router } from 'express';
-import { Validate, Requirements } from '../../../middlewares/validator';
-import Auth from '../../../middlewares/auth';
 import reviewController from '../../../controllers/customers/ReviewController';
-import advancedQuery from '../../../../api/middlewares/data/advancedQuery';
-import ReviewModel from '../../../../api/models/Review';
 
 const customerReviewRouter: Router = Router();
 
-customerReviewRouter.route('/').get(reviewController.getReviews);
-// .post(reviewController.createReview);
+// ─── Authenticated: Customer's own reviews ───────────────────────────────────
+customerReviewRouter.get('/', reviewController.getReviews);
+customerReviewRouter.get('/:reviewId', reviewController.getReviewDetails);
+customerReviewRouter.put('/:reviewId', reviewController.updateReview);
+customerReviewRouter.delete('/:reviewId', reviewController.deleteReview);
 
-customerReviewRouter
-    .route('/reviewId')
-    .get(reviewController.getReviewDetails)
-    .put(reviewController.updateReview);
+// ─── Public: Reviews by target ───────────────────────────────────────────────
+customerReviewRouter.get('/vendor/:vendorId', reviewController.getVendorReviews);
+customerReviewRouter.get('/rider/:riderId', reviewController.getRiderReviews);
+customerReviewRouter.get('/product/:productId', reviewController.getProductReviews);
 
 export default customerReviewRouter;

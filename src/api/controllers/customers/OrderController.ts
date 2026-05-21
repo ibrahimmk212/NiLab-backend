@@ -6,6 +6,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import OrderService from '../../services/OrderService';
 import PaymentService from '../../services/PaymentService';
 import UserService from '../../services/UserService';
+import ReviewService from '../../services/ReviewService';
 import { sendPushNotification } from '../../libraries/firebase';
 import { calculateStraightDistance } from '../../../utils/helpers';
 
@@ -219,11 +220,23 @@ class OrderController {
         res.status(STATUS.OK).json({ success: true, data: updatedOrder });
     });
 
-    // Stub for Review (Logic would go to ReviewService)
+    // Submit rating + review for a delivered order
     submitReview = asyncHandler(async (req: Request, res: Response) => {
-        res.status(STATUS.OK).json({
+        const { userdata }: any = req;
+        const { orderId } = req.params;
+
+        const reviews = await ReviewService.submitOrderReview(
+            orderId,
+            userdata.id,
+            req.body
+        );
+
+        res.status(STATUS.CREATED).json({
             success: true,
-            message: 'Review submitted'
+            message: reviews.length > 0
+                ? `${reviews.length} review(s) submitted successfully`
+                : 'All targets for this order have already been reviewed',
+            data: reviews
         });
     });
 

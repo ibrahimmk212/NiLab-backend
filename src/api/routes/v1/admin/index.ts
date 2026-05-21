@@ -27,6 +27,7 @@ import adminStaffRouter from './staffs';
 import adminLogRouter from './logs';
 import adminDeliverySubscriptionRouter from './delivery-subscriptions';
 import adminComplaintRoutes from './complaint';
+import adminReviewRouter from './reviews';
 
 const adminsRouter: Router = Router();
 
@@ -43,6 +44,7 @@ adminsRouter.use('/market-categories', auth.checkPermissions('manage_vendors'), 
 // --- Protected Routes: manage_orders ---
 adminsRouter.use('/orders', auth.checkPermissions('manage_orders'), adminOrderRouter);
 adminsRouter.use('/transactions', auth.checkPermissions('manage_orders'), adminTransactionRouter);
+adminsRouter.use('/reviews', auth.checkPermissions('manage_orders'), adminReviewRouter);
 
 // --- Protected Routes: manage_finance ---
 adminsRouter.use('/wallets', auth.checkPermissions('manage_finance'), adminWalletRouter);
