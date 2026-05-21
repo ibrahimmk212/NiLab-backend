@@ -183,7 +183,12 @@ class VendorWalletController {
     getVirtualAccount = asyncHandler(
         async (req: Request, res: Response, next: NextFunction): Promise<void> => {
             const { userdata }: any = req;
-            const virtualAccount = await VirtualAccountService.getOrCreateVirtualAccount(userdata.id);
+            // Vendors have a 'vendor'-role wallet, not a 'user' wallet
+            const virtualAccount = await VirtualAccountService.getOrCreateVirtualAccount(
+                userdata.id,
+                false,
+                'vendor'
+            );
             res.status(STATUS.OK).send({
                 success: true,
                 message: 'Virtual account fetched successfully',

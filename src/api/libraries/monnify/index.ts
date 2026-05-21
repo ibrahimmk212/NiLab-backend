@@ -379,6 +379,18 @@ class Monnify extends MonnifyApi {
         return data;
     }
 
+    async getReservedAccount(
+        accountReference: string,
+        accessToken: string
+    ): Promise<any> {
+        const path = `/api/v2/bank-transfer/reserved-accounts/${accountReference}`;
+        const headers = {
+            Authorization: `Bearer ${accessToken}`
+        };
+        const data = await this.makeRequest({ method: 'GET', path, headers });
+        return data;
+    }
+
     async createLimitProfile(
         requestBody: Record<string, unknown>,
         accessToken: string
