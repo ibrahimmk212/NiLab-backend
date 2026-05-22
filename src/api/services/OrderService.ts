@@ -674,8 +674,14 @@ class OrderService {
             const orderLat = order.pickupLocation[1];
             if (!orderLng || !orderLat) return;
 
-            // 1. Get all available riders
-            const availableRiders = await RiderModel.find({ status: 'verified', available: true }).select('_id lastAssignedAt');
+            // 1. Get all available riders in the vendor's state
+            const vendorState = order.vendor?.state;
+            const availableRiders = await RiderModel.find({
+                status: 'verified',
+                available: true,
+                ...(vendorState && { state: vendorState })
+            }).select('_id userId lastAssignedAt');
+            
             if (availableRiders.length === 0) return;
             const availableRiderIds = availableRiders.map((r) => r._id);
 
@@ -703,27 +709,47 @@ class OrderService {
                 }
             ]);
 
-            if (nearbyRiderLocations.length === 0) return;
+            let selectedRider;
 
-            // 3. Pick the nearby rider with the oldest lastAssignedAt
-            const nearbyIds = nearbyRiderLocations.map((l) => l._id.toString());
-            const candidates = availableRiders.filter((r) => nearbyIds.includes(r._id.toString()));
+            if (nearbyRiderLocations.length > 0) {
+                // 3a. Pick the nearby rider with the oldest lastAssignedAt
+                const nearbyIds = nearbyRiderLocations.map((l) => l._id.toString());
+                const candidates = availableRiders.filter((r) => nearbyIds.includes(r._id.toString()));
 
-            candidates.sort((a, b) => {
-                if (!a.lastAssignedAt) return -1; // Nulls (never assigned) go first
-                if (!b.lastAssignedAt) return 1;
-                return a.lastAssignedAt.getTime() - b.lastAssignedAt.getTime();
-            });
+                candidates.sort((a, b) => {
+                    if (!a.lastAssignedAt) return -1;
+                    if (!b.lastAssignedAt) return 1;
+                    return a.lastAssignedAt.getTime() - b.lastAssignedAt.getTime();
+                });
 
-            const selectedRider = candidates[0];
-            
+                selectedRider = candidates[0];
+            } else {
+                // 3b. Fallback: Pick any available rider in the state with the oldest lastAssignedAt
+                availableRiders.sort((a, b) => {
+                    if (!a.lastAssignedAt) return -1;
+                    if (!b.lastAssignedAt) return 1;
+                    return a.lastAssignedAt.getTime() - b.lastAssignedAt.getTime();
+                });
+                
+                selectedRider = availableRiders[0];
+            }
+
             // Assign them
             await this.assignRider(orderId, selectedRider._id.toString());
 
             // Notify Rider
-            const riderUser = await UserRepository.findUserById(selectedRider.userId?.toString());
-            if (riderUser && riderUser.deviceToken) {
-                // Send push notification...
+            if (selectedRider.userId) {
+                await NotificationService.create({
+                    userId: selectedRider.userId,
+                    riderId: selectedRider._id,
+                    role: 'rider',
+                    title: 'New Delivery Assigned',
+                    message: `You have been automatically assigned to order ${order.code}. Please proceed to pickup.`,
+                    channels: ['push', 'in_app'],
+                    status: 'unread',
+                    orderId: order._id,
+                    orderCode: order.code
+                });
             }
         } catch (error) {
             console.error('Auto-assign rider failed:', error);
