@@ -27,6 +27,7 @@ vendorOrderRouter.put(
 );
 // vendorOrderRouter.put('/:id/cancel', VendorOrderController.cancel);
 vendorOrderRouter.put('/:id/assign-rider', VendorOrderController.assignRider);
+vendorOrderRouter.put('/:id/notify-rider', VendorOrderController.notifyRider);
 vendorOrderRouter.get('/:id/available-riders', VendorOrderController.getAvailableRiders);
 vendorOrderRouter.get('/:id/rider-location', VendorOrderController.getRiderLocation);
 export default vendorOrderRouter;

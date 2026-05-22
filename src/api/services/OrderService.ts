@@ -208,7 +208,7 @@ class OrderService {
                 data.vehicleType
             );
 
-            const serviceFee = config.baseServiceFee || 100;
+            const serviceFee = 0; // Service fee is applicable to vendor orders only
             const totalAmount = this.roundToTwo(
                 (data.amount || 0) + deliveryFee + serviceFee
             );
@@ -311,7 +311,7 @@ class OrderService {
         // Distance in meters (as stored on the order)
         const distanceMeters = distanceKm * 1000;
 
-        const serviceFee = config.baseServiceFee || 100;
+        const serviceFee = 0; // Service fee is applicable to vendor orders only
 
         const buildQuote = (vehicle: any) => {
             const calculatedFee = this.roundToTwo(distanceKm * vehicle.feePerKm);
@@ -450,7 +450,7 @@ class OrderService {
         const estimatedRoadKm = straightKm; // Road Factor
         const feePerKm = config.feePerKm || 50;
         const baseDeliveryFee = config.baseDeliveryFee || 200;
-        const baseServiceFee = config.baseServiceFee || 200;
+        const baseServiceFee = 0; // Service fee removed entirely
 
         let deliveryFee = this.roundToTwo(feePerKm * estimatedRoadKm);
 
@@ -461,7 +461,7 @@ class OrderService {
 
         const vat = 0;
         const totalAmount = this.roundToTwo(
-            subtotal + deliveryFee + config.baseServiceFee + vat
+            subtotal + deliveryFee + baseServiceFee + vat
         );
 
         return {
@@ -676,81 +676,30 @@ class OrderService {
 
             // 1. Get all available riders in the vendor's state
             const vendorState = order.vendor?.state;
+            if (!vendorState) return;
+
             const availableRiders = await RiderModel.find({
                 status: 'verified',
                 available: true,
-                ...(vendorState && { state: vendorState })
+                state: vendorState
             }).select('_id userId lastAssignedAt');
             
             if (availableRiders.length === 0) return;
-            const availableRiderIds = availableRiders.map((r) => r._id);
 
-            // 2. Find their latest locations within a 5km radius active in the last 30 minutes
-            const nearbyRiderLocations = await RiderLocationModel.aggregate([
-                {
-                    $geoNear: {
-                        near: { type: 'Point', coordinates: [orderLng, orderLat] },
-                        distanceField: 'distance',
-                        maxDistance: 5000, // 5km
-                        spherical: true,
-                        query: {
-                            rider: { $in: availableRiderIds },
-                            timestamp: { $gte: new Date(Date.now() - 30 * 60000) } // Active in last 30 mins
-                        }
-                    }
-                },
-                { $sort: { timestamp: -1 } },
-                {
-                    $group: {
-                        _id: '$rider',
-                        distance: { $first: '$distance' },
-                        timestamp: { $first: '$timestamp' }
-                    }
-                }
-            ]);
+            // 2. Pick the available rider in the state with the oldest lastAssignedAt (Round-Robin)
+            availableRiders.sort((a, b) => {
+                if (!a.lastAssignedAt) return -1;
+                if (!b.lastAssignedAt) return 1;
+                return a.lastAssignedAt.getTime() - b.lastAssignedAt.getTime();
+            });
+            
+            const selectedRider = availableRiders[0];
 
-            let selectedRider;
-
-            if (nearbyRiderLocations.length > 0) {
-                // 3a. Pick the nearby rider with the oldest lastAssignedAt
-                const nearbyIds = nearbyRiderLocations.map((l) => l._id.toString());
-                const candidates = availableRiders.filter((r) => nearbyIds.includes(r._id.toString()));
-
-                candidates.sort((a, b) => {
-                    if (!a.lastAssignedAt) return -1;
-                    if (!b.lastAssignedAt) return 1;
-                    return a.lastAssignedAt.getTime() - b.lastAssignedAt.getTime();
-                });
-
-                selectedRider = candidates[0];
-            } else {
-                // 3b. Fallback: Pick any available rider in the state with the oldest lastAssignedAt
-                availableRiders.sort((a, b) => {
-                    if (!a.lastAssignedAt) return -1;
-                    if (!b.lastAssignedAt) return 1;
-                    return a.lastAssignedAt.getTime() - b.lastAssignedAt.getTime();
-                });
-                
-                selectedRider = availableRiders[0];
-            }
-
-            // Assign them
+            // 3. Assign them
             await this.assignRider(orderId, selectedRider._id.toString());
 
-            // Notify Rider
-            if (selectedRider.userId) {
-                await NotificationService.create({
-                    userId: selectedRider.userId,
-                    riderId: selectedRider._id,
-                    role: 'rider',
-                    title: 'New Delivery Assigned',
-                    message: `You have been automatically assigned to order ${order.code}. Please proceed to pickup.`,
-                    channels: ['push', 'in_app'],
-                    status: 'unread',
-                    orderId: order._id,
-                    orderCode: order.code
-                });
-            }
+            // NOTE: Notification is no longer sent automatically here. 
+            // The vendor must manually click "Send for Dispatch" to trigger the notification.
         } catch (error) {
             console.error('Auto-assign rider failed:', error);
         }

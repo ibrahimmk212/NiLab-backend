@@ -2,7 +2,10 @@ import {
     generateReference,
     generateShortCode
 } from '../../utils/keygen/idGenerator';
-import { generateRandomNumbers, calculateStraightDistance } from '../../utils/helpers';
+import {
+    generateRandomNumbers,
+    calculateStraightDistance
+} from '../../utils/helpers';
 import emails from '../libraries/emails';
 import DeliveryModel, { Delivery } from '../models/Delivery';
 
@@ -220,8 +223,20 @@ class DeliveryService {
      * submitted details so the client can render a full confirmation screen.
      */
     async previewDelivery(data: {
-        pickup: { coordinates: [number, number]; street?: string; city?: string; state?: string; [key: string]: any };
-        destination: { coordinates: [number, number]; street?: string; city?: string; state?: string; [key: string]: any };
+        pickup: {
+            coordinates: [number, number];
+            street?: string;
+            city?: string;
+            state?: string;
+            [key: string]: any;
+        };
+        destination: {
+            coordinates: [number, number];
+            street?: string;
+            city?: string;
+            state?: string;
+            [key: string]: any;
+        };
         /** Specific vehicle type ObjectId — omit to get quotes for all active types */
         vehicleTypeId?: string;
         /** Declared package/item value (added to total, not to delivery fee) */
@@ -265,7 +280,11 @@ class DeliveryService {
         const resolvedVehicleTypeId = vehicleTypeId ?? vehicleType;
         // Prefer explicit packageValue, fall back to amount (declared package value)
         const resolvedPackageValue =
-            packageValue != null ? Number(packageValue) : amount != null ? Number(amount) : 0;
+            packageValue != null
+                ? Number(packageValue)
+                : amount != null
+                ? Number(amount)
+                : 0;
 
         if (
             !pickup?.coordinates ||
@@ -280,16 +299,17 @@ class DeliveryService {
 
         // Straight-line distance in km (same method used in createPackageOrder)
         const distanceKm = calculateStraightDistance(
-            pickup.coordinates[1],   // lat
-            pickup.coordinates[0],   // lng
+            pickup.coordinates[1], // lat
+            pickup.coordinates[0], // lng
             destination.coordinates[1],
             destination.coordinates[0]
         );
         const distanceMeters = distanceKm * 1000;
 
-        const serviceFee = config.baseServiceFee || 100;
+        const serviceFee = 0; // Service fee is applicable to vendor orders only
 
-        const roundToTwo = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+        const roundToTwo = (n: number) =>
+            Math.round((n + Number.EPSILON) * 100) / 100;
 
         const buildQuote = (vehicle: any) => {
             const calculatedFee = roundToTwo(distanceKm * vehicle.feePerKm);
@@ -326,8 +346,11 @@ class DeliveryService {
             quotes = [buildQuote(vehicle)];
         } else {
             // All active vehicle types — sorted cheapest first
-            const vehicles = await VehicleTypeModel.find({ active: true }).sort({ feePerKm: 1 });
-            if (!vehicles.length) throw new Error('No active vehicle types configured');
+            const vehicles = await VehicleTypeModel.find({ active: true }).sort(
+                { feePerKm: 1 }
+            );
+            if (!vehicles.length)
+                throw new Error('No active vehicle types configured');
             quotes = vehicles.map(buildQuote);
         }
 
@@ -338,13 +361,14 @@ class DeliveryService {
             distanceKm: roundToTwo(distanceKm),
             distanceMeters: roundToTwo(distanceMeters),
             // Echo back full-payload extras when provided
-            ...(pkg              && { package: pkg }),
-            ...(senderDetails    && { senderDetails }),
-            ...(receiverDetails  && { receiverDetails }),
-            ...(pickupTime       && { pickupTime }),
+            ...(pkg && { package: pkg }),
+            ...(senderDetails && { senderDetails }),
+            ...(receiverDetails && { receiverDetails }),
+            ...(pickupTime && { pickupTime }),
             ...(specialInstructions && { specialInstructions }),
-            ...(remark           && { remark }),
-            quotes
+            ...(remark && { remark }),
+            // spread quotes
+            ...quotes[0]
         };
     }
 }

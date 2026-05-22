@@ -87,6 +87,7 @@ export interface Order extends Document {
     refundedAt: Date;
     remark: string;
     vendorNote?: string;
+    riderNotified?: boolean;
     slaBreachAlerted?: boolean;
     etaWarningAlerted?: boolean;
     isSettled: boolean;
@@ -276,6 +277,7 @@ const orderSchema = new Schema<Order>(
         refundedAt: { type: Date },
         remark: { type: String, required: false },
         vendorNote: { type: String, required: false },
+        riderNotified: { type: Boolean, default: false },
         slaBreachAlerted: { type: Boolean, default: false },
         etaWarningAlerted: { type: Boolean, default: false }
     },
