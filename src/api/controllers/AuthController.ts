@@ -72,11 +72,16 @@ class AuthController {
             notificationDetail.vendorId = vendor.id;
             NotificationService.create(notificationDetail);
 
+            const userWithPerms = {
+                ...user.toJSON(),
+                accountType: user.role
+            };
+
             return res.status(STATUS.OK).send({
                 message: 'Logged in successfully',
                 success: true,
-                data: user,
-                user: user,
+                data: userWithPerms,
+                user: userWithPerms,
                 vendor: vendor,
                 active: vendor.status === 'active',
                 token: token
