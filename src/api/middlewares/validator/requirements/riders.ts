@@ -7,7 +7,7 @@ const ridersRequirement = {
         body('name').isString().optional(),
         body('vehicle').isString().optional(),
         body('city').isString().optional(),
-        body('availability').isString().optional()
+        body('available').isBoolean().optional()
         // body('status').isString().optional()
     ],
     updateBank: [

@@ -684,11 +684,24 @@ class OrderService {
             if (!vendorState) return;
 
             const availableRiders = await RiderModel.find({
-                available: true,
-                state: vendorState
+                available: true
             }).select('_id userId lastAssignedAt');
             
-            if (availableRiders.length === 0) return;
+            if (availableRiders.length === 0) {
+                const vendorUserId = typeof order.vendor.user === 'object' ? order.vendor.user._id : order.vendor.user;
+                await NotificationService.create({
+                    userId: vendorUserId,
+                    vendorId: order.vendor._id,
+                    role: 'vendor',
+                    title: 'No Active Riders Available',
+                    message: `No active riders are currently available in your area for order ${order.code}. Please check back later.`,
+                    channels: ['in_app'],
+                    status: 'unread',
+                    orderId: order._id,
+                    orderCode: order.code
+                });
+                return;
+            }
 
             // 2. Pick the available rider in the state with the oldest lastAssignedAt (Round-Robin)
             availableRiders.sort((a, b) => {
