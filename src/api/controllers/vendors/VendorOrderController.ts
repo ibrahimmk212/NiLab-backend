@@ -353,9 +353,9 @@ class VendorOrderController {
         }
 
         // Get riders in the same state that are available and verified
+        // Get riders in the same state that are available
         const availableRiders = await RiderModel.find({
             state: order.vendor.state,
-            status: 'verified',
             available: true
         }).select('_id name phoneNumber ratings vehicleTypeId gender');
 

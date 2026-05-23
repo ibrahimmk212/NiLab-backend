@@ -669,17 +669,21 @@ class OrderService {
             if (!order) return;
             if (order.rider) return; // Already assigned
 
-            // Get pickup coordinates
-            const orderLng = order.pickupLocation[0];
-            const orderLat = order.pickupLocation[1];
-            if (!orderLng || !orderLat) return;
+            // Safely get pickup coordinates (fallback to new schema order.pickup.coordinates)
+            const pickupCoords = order.pickup?.coordinates || order.pickupLocation || [];
+            const orderLng = pickupCoords[0];
+            const orderLat = pickupCoords[1];
+            
+            if (!orderLng || !orderLat) {
+                console.log(`[AutoAssign] Skipped for order ${orderId}: Missing pickup coordinates`);
+                return;
+            }
 
             // 1. Get all available riders in the vendor's state
             const vendorState = order.vendor?.state;
             if (!vendorState) return;
 
             const availableRiders = await RiderModel.find({
-                status: 'verified',
                 available: true,
                 state: vendorState
             }).select('_id userId lastAssignedAt');

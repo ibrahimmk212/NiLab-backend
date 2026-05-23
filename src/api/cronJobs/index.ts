@@ -54,8 +54,7 @@ class BackgroundTasks {
                 const message = `SLA Breach: Order [${order.code}] not accepted by vendor [${vendorName}] after 3 min`;
                 console.log(`[SLA Alert] ${message}`);
                 await NotificationService.notifyAdmins('Vendor SLA Breach', message);
-                order.slaBreachAlerted = true;
-                await order.save();
+                await OrderModel.updateOne({ _id: order._id }, { $set: { slaBreachAlerted: true } });
             }
 
             // B. Rider Ride SLA Breach
@@ -71,8 +70,7 @@ class BackgroundTasks {
                 const message = `SLA Breach: Ride [${delivery.deliveryCode || delivery._id}] not accepted by any rider after 2 min`;
                 console.log(`[SLA Alert] ${message}`);
                 await NotificationService.notifyAdmins('Rider SLA Breach', message);
-                delivery.slaBreachAlerted = true;
-                await delivery.save();
+                await DeliveryModel.updateOne({ _id: delivery._id }, { $set: { slaBreachAlerted: true } });
             }
 
             // C. ETA Exhaustion Warning Trigger
@@ -112,8 +110,7 @@ class BackgroundTasks {
                     console.log(`[ETA Warning] ${message}`);
                     await NotificationService.notifyAdmins('ETA Warning Alert', message);
 
-                    delivery.etaWarningAlerted = true;
-                    await delivery.save();
+                    await DeliveryModel.updateOne({ _id: delivery._id }, { $set: { etaWarningAlerted: true } });
                 }
             }
         } catch (error) {

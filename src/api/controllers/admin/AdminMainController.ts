@@ -12,22 +12,21 @@ import DashboardRepository from '../../repositories/DashboardRepository';
 import emails from '../../libraries/emails';
 
 class AdminMainController {
-    stats = asyncHandler(
-        async (req: Request, res: Response): Promise<void> => {
-            const stats = await DashboardRepository.getAdminSummary();
-            res.status(STATUS.OK).send({
-                success: true,
-                data: stats
-            });
-        }
-    );
+    stats = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+        const stats = await DashboardRepository.getAdminSummary();
+        res.status(STATUS.OK).send({
+            success: true,
+            data: stats
+        });
+    });
 
     charts = asyncHandler(
         async (req: Request, res: Response): Promise<void> => {
             const { period }: any = req.query;
             const revenue = await DashboardRepository.getAdminAnalytics(period);
-            const orderStatusRaw = await DashboardRepository.getAdminOrderMetrics();
-            
+            const orderStatusRaw =
+                await DashboardRepository.getAdminOrderMetrics();
+
             res.status(STATUS.OK).send({
                 success: true,
                 data: {
@@ -155,7 +154,7 @@ class AdminMainController {
                     staffName: user.firstName,
                     email: user.email,
                     temporaryPassword: tempPassword,
-                    loginUrl: `${process.env.FRONTEND_URL}/admin/login`
+                    loginUrl: `${process.env.FRONTEND_URL}/login`
                 });
             } catch (err) {
                 console.error('Failed to send onboarding email to admin:', err);
@@ -268,7 +267,7 @@ class AdminMainController {
             next: NextFunction
         ): Promise<void> => {
             const { id } = req.params;
-            
+
             const admin = await AdminService.getById(id);
             if (!admin) throw new Error('Admin not found');
 
