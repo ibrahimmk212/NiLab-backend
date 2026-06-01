@@ -70,6 +70,14 @@ class OrderController {
             userdata
         );
 
+        if (!paymentResult.valid) {
+            return res.status(400).json({
+                success: false,
+                message: paymentResult.message || 'Payment initiation failed',
+                data: order
+            });
+        }
+
         res.status(STATUS.CREATED).json({
             message: 'Order created successfully',
             success: true,
@@ -188,11 +196,21 @@ class OrderController {
                     req.body.pickup.coordinates[0],
                     req.body.destination.coordinates[1],
                     req.body.destination.coordinates[0]
-                );
+                ) * 1000; // Convert km to meters for calculateDeliveryFee
             }
+
+            if (computedDistance === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid pickup or destination coordinates.'
+                });
+            }
+
+            const parsedAmount = Number(req.body.amount) || 0;
 
             const order = await OrderService.createPackageOrder({
                 ...req.body,
+                amount: parsedAmount,
                 distance: computedDistance,
                 user: userdata.id,
                 deliveryLocation: req.body.destination?.coordinates,
@@ -203,6 +221,14 @@ class OrderController {
                 order,
                 userdata
             );
+
+            if (!paymentResult.valid) {
+                return res.status(400).json({
+                    success: false,
+                    message: paymentResult.message || 'Payment initiation failed',
+                    data: order
+                });
+            }
 
             res.status(STATUS.CREATED).json({
                 success: true,
@@ -235,6 +261,15 @@ class OrderController {
             order,
             userdata
         );
+
+        if (!paymentResult.valid) {
+            return res.status(400).json({
+                success: false,
+                message: paymentResult.message || 'Payment initiation failed',
+                data: order
+            });
+        }
+
         res.status(STATUS.OK).json({
             success: true,
             data: {

@@ -117,6 +117,12 @@ class PaymentService {
                 collectionId: collection._id,
                 entityStatus: processedEntity ? 'Updated' : 'Not Found'
             });
+
+            // Trigger notifications for product orders
+            if (processedEntity && originalRef.startsWith('ORD')) {
+                const OrderService = require('./OrderService').default;
+                OrderService.triggerOrderNotifications(processedEntity._id.toString()).catch(console.error);
+            }
         } catch (error) {
             await session.abortTransaction();
             console.error('[PAYMENT_WEBHOOK_ERROR]:', error);
@@ -334,6 +340,12 @@ class PaymentService {
             return await this.processWalletPayment(order, userdata);
         }
 
+        if (order.paymentType === 'cash') {
+            const OrderService = require('./OrderService').default;
+            OrderService.triggerOrderNotifications(order._id.toString()).catch(console.error);
+            return { valid: true, message: 'Pay on delivery initiated' };
+        }
+
         if (order.paymentType === 'pay-for-me') {
             return {
                 valid: true,
@@ -364,6 +376,8 @@ class PaymentService {
 
             if (
                 !userWallet ||
+                isNaN(order.totalAmount) ||
+                order.totalAmount <= 0 ||
                 userWallet.availableBalance < order.totalAmount
             ) {
                 console.log('Insufficient wallet balance.');
@@ -400,6 +414,10 @@ class PaymentService {
             );
 
             await session.commitTransaction();
+
+            const OrderService = require('./OrderService').default;
+            OrderService.triggerOrderNotifications(order._id.toString()).catch(console.error);
+
             return { valid: true, message: 'Payment successful via wallet.' };
         } catch (error: any) {
             await session.abortTransaction();

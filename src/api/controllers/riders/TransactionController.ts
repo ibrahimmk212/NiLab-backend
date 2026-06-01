@@ -13,11 +13,11 @@ class TransactionController {
             const { rider }: any = req;
 
             const transactions =
-                await TransactionService.getTransactionsByRider(rider.id);
+                await TransactionService.getTransactionsByRider(rider.userId);
             // console.log(transactions);
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'Transactions Fetchd successfully',
+                message: 'Transactions Fetched successfully',
                 data: transactions
             });
         }
@@ -35,10 +35,18 @@ class TransactionController {
             const transaction = await TransactionService.getTransactionById(
                 transactionId
             );
-            // console.log(transaction);
+
+            if (!transaction || transaction.userId.toString() !== rider.userId.toString()) {
+                res.status(STATUS.NOT_FOUND).send({
+                    success: false,
+                    message: 'Transaction not found'
+                });
+                return;
+            }
+
             res.status(STATUS.OK).send({
                 success: true,
-                message: 'Transaction Fetchd successfully',
+                message: 'Transaction Fetched successfully',
                 data: transaction
             });
         }

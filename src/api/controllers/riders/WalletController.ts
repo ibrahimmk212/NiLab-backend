@@ -29,7 +29,7 @@ class RiderWalletController {
             }
 
             const transactions =
-                await TransactionService.getTransactionsByRider(rider.id);
+                await TransactionService.getTransactionsByRider(rider.userId);
             res.status(STATUS.OK).send({
                 message: 'Rider wallet Fetchd successfully',
                 data: {
@@ -50,7 +50,7 @@ class RiderWalletController {
             const { rider }: any = req;
 
             const transactions =
-                await TransactionService.getTransactionsByRider(rider.id);
+                await TransactionService.getTransactionsByRider(rider.userId);
             // console.log(transactions);
             res.status(STATUS.OK).send({
                 message: 'Transactions Fetchd successfully',

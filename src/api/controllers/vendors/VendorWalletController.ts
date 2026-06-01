@@ -28,7 +28,7 @@ class VendorWalletController {
             }
 
             const transactions =
-                await TransactionService.getTransactionsByVendor(vendor.id);
+                await TransactionService.getTransactionsByVendor(userdata.id);
             res.status(STATUS.OK).send({
                 message: 'Vendor wallet Fetchd successfully',
                 data: {
@@ -46,15 +46,16 @@ class VendorWalletController {
             res: Response,
             next: NextFunction
         ): Promise<void> => {
-            const { vendor }: any = req;
+            const { userdata }: any = req;
 
             const transactions =
-                // await TransactionService.getTransactionsByVendor(vendor.id);
-                await TransactionService.getAll({}); //{ vendorId: vendor.id });
-            // console.log(transactions);
+                await TransactionService.getTransactionsByVendor(userdata.id);
+
             res.status(STATUS.OK).send({
-                message: 'Transactions Fetchd successfully',
-                ...transactions
+                message: 'Transactions Fetched successfully',
+                success: true,
+                count: transactions?.length || 0,
+                data: transactions
             });
         }
     );

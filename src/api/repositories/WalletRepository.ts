@@ -84,7 +84,7 @@ class WalletRepository {
         amount: number,
         session?: mongoose.ClientSession
     ) {
-        if (amount <= 0) throw new Error('Invalid amount');
+        if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findByIdAndUpdate(
             walletId,
@@ -98,7 +98,7 @@ class WalletRepository {
         amount: number,
         session?: mongoose.ClientSession
     ) {
-        if (amount <= 0) throw new Error('Invalid amount');
+        if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findOneAndUpdate(
             { _id: walletId, availableBalance: { $gte: amount } },
@@ -116,7 +116,7 @@ class WalletRepository {
         amount: number,
         session?: mongoose.ClientSession
     ) {
-        if (amount <= 0) throw new Error('Invalid amount');
+        if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findByIdAndUpdate(
             walletId,
@@ -130,7 +130,7 @@ class WalletRepository {
         amount: number,
         session?: mongoose.ClientSession
     ) {
-        if (amount <= 0) throw new Error('Invalid amount');
+        if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findOneAndUpdate(
             { _id: walletId, pendingBalance: { $gte: amount } },
@@ -179,7 +179,7 @@ class WalletRepository {
         amount: number,
         session?: mongoose.ClientSession
     ) {
-        if (amount <= 0) throw new Error('Invalid amount');
+        if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findOneAndUpdate(
             {
@@ -201,7 +201,7 @@ class WalletRepository {
         amount: number,
         session?: mongoose.ClientSession
     ) {
-        if (amount <= 0) throw new Error('Invalid amount');
+        if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) throw new Error('Invalid amount');
 
         return WalletModel.findOneAndUpdate(
             {

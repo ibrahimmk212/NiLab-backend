@@ -105,19 +105,19 @@ class TransactionRepository {
     }
 
     async getTransactionsByCustomer(
-        user: string
+        userId: string
     ): Promise<Transaction[] | null> {
-        return await TransactionModel.find({ user }).sort({ createdAt: -1 });
+        return await TransactionModel.find({ userId, role: 'user' }).sort({ createdAt: -1 });
     }
 
     async getTransactionsByVendor(
-        vendor: string
+        userId: string
     ): Promise<Transaction[] | null> {
-        return await TransactionModel.find({ vendor }).sort({ createdAt: -1 });
+        return await TransactionModel.find({ userId, role: 'vendor' }).sort({ createdAt: -1 });
     }
 
-    async getTransactionsByRider(rider: string): Promise<Transaction[] | null> {
-        return await TransactionModel.find({ rider }).sort({ createdAt: -1 });
+    async getTransactionsByRider(userId: string): Promise<Transaction[] | null> {
+        return await TransactionModel.find({ userId, role: 'rider' }).sort({ createdAt: -1 });
     }
 
     async updateTransaction(

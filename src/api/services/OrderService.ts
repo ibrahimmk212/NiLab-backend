@@ -109,75 +109,8 @@ class OrderService {
             );
             await Promise.all(stockUpdatePromises);
 
-            // 6. IMMEDIATE WALLET PAYMENT
-            if (data.paymentType === 'wallet') {
-                // 1. Check & Debit the user's available balance
-                const debitResult = await WalletService.initDebitAccount({
-                    amount: pricing.totalAmount,
-                    owner: data.user,
-                    role: 'user'
-                });
-
-                if (!debitResult.success) {
-                    throw new Error(
-                        'Insufficient wallet balance to complete order'
-                    );
-                }
-
-                // 2. Mark the order as paid immediately
-                order.paymentCompleted = true;
-                await order.save({ session });
-
-                // 3. Move funds to System Escrow (Pending)
-                await WalletService.initCreditAccount({
-                    amount: pricing.totalAmount,
-                    owner: 'system', // This moves money into the system's "pendingBalance"
-                    role: 'system'
-                });
-            }
-
-            // Notifications (Trigger for all orders)
-            try {
-                // Admin
-                await NotificationService.notifyAdmins(
-                    'New Order Placed',
-                    `Order ${order.code} has been placed via ${data.paymentType}.`
-                );
-
-                // Vendor
-                if (pricing.vendor.userId) {
-                    await NotificationService.create({
-                        userId: pricing.vendor.userId,
-                        vendorId: pricing.vendor._id,
-                        role: 'vendor',
-                        title: 'New Order',
-                        message: `You have a new order: ${order.code}`,
-                        status: 'unread',
-                        orderId: order._id.toString(),
-                        orderCode: order.code
-                    });
-                }
-
-                // Customer
-                await NotificationService.create({
-                    userId: pricing.customer._id,
-                    title: 'Order Placed',
-                    message: `Your order ${order.code} has been placed successfully.`,
-                    status: 'unread'
-                });
-
-                // Vendor Email
-                if (pricing.vendor.email) {
-                    emails.vendorOrder(pricing.vendor.email, {
-                        vendorName: pricing.vendor.name,
-                        orderId: order.code,
-                        orderItems: pricing.enrichedProducts,
-                        orderDetailsUrl: `https://vendor.terminus.com/orders/${order._id}`
-                    });
-                }
-            } catch (notifErr) {
-                console.error('Notification Error:', notifErr);
-            }
+            // Payment handling and notifications are now deferred to PaymentService.
+            // Notifications are triggered externally when payment is completed.
 
             await session.commitTransaction();
             return order;
@@ -746,6 +679,10 @@ class OrderService {
         distanceInMeters: number,
         vehicleTypeId?: string
     ): Promise<number> {
+        if (typeof distanceInMeters !== 'number' || isNaN(distanceInMeters) || distanceInMeters < 0) {
+            throw new Error('Invalid distance provided for delivery fee calculation');
+        }
+
         const distanceInKm = distanceInMeters / 1000;
 
         // 1. If it's a product delivery (no vehicle specified), use global config
