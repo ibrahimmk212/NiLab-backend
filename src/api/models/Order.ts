@@ -323,7 +323,11 @@ orderSchema.pre<Order>('save', async function (next) {
     }
 
     // Logic for when food is ready
-    else if (this.isModified('status') && this.status === 'prepared') {
+    else if (
+        this.isModified('status') &&
+        this.status === 'prepared' &&
+        this.orderType === 'products'
+    ) {
         this.preparedAt = currentTimestamp();
         const customer = await UserService.getUserDetail(userId);
         if (customer?.deviceToken) {
