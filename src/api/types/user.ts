@@ -12,6 +12,11 @@ export type UpdateUserType = {
     firstName: string;
     lastName: string;
     bvnStatus?: string;
+    profilePicture: string;
+};
+
+export type UpdateProfilePictureType = {
+    profilePicture: string;
 };
 
 export type BanUserType = {

@@ -895,7 +895,7 @@ class OrderService {
             const payer = await UserRepository.findUserById(payerId);
             if (!payer) throw new Error('Payer account not found');
 
-            // Initiate Monnify Payment for this Payer
+            // Initiate Paystack Payment for this Payer
             // We need to ensure the webhook can identify this is a Pay For Me flow
             // The existing webhook checks "ORD-" reference.
             // If we use the SAME order reference, it will look like the original user paid.
@@ -905,7 +905,7 @@ class OrderService {
             // Or we rely on the webhook detecting it's consistent.
 
             // Calling existing service
-            return await PaymentService.initiateMonnifyPayment(order, payer);
+            return await PaymentService.initiatePaystackPayment(order, payer);
         }
 
         // Default: Wallet Payment

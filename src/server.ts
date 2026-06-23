@@ -49,10 +49,6 @@ export function createServer(): Application {
         );
     }
 
-    app.use('/monnify', (req: Request, res: Response) => {
-        return res.status(404).json({ success: false, message: 'MOnify' });
-    });
-
     app.use('/system-init', async (req: Request, res: Response) => {
         const init = await initializePointZero();
         return res

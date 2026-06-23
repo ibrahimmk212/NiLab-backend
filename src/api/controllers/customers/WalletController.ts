@@ -29,7 +29,7 @@ class CustomerWalletController {
     );
 
     /**
-     * NEW: Initiate Monnify Top-up
+     * Initiate Paystack Top-up
      * POST /api/v1/wallets/fund
      */
 

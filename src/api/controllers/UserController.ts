@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import UserService from '../services/UserService';
-import { CreateUserType, UpdateUserType } from '../types/user';
+import {
+    CreateUserType,
+    UpdateProfilePictureType,
+    UpdateUserType
+} from '../types/user';
 import { STATUS } from '../../constants';
 import { asyncHandler } from '../middlewares/handlers/async';
 
@@ -57,6 +61,25 @@ class UserController {
         }
     }
 
+    async updateProfilePicture(
+        req: any,
+        res: Response,
+        next: NextFunction
+    ): Promise<void> {
+        try {
+            const { userdata } = req;
+            const payload: UpdateProfilePictureType = req.body;
+            await UserService.updateUser(userdata?.id, payload);
+            res.status(200).send({
+                message: 'Profile picture updated successfully',
+                success: true,
+                data: payload
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async updateUser(
         req: Request,
         res: Response,
@@ -67,7 +90,8 @@ class UserController {
             const payload: UpdateUserType = req.body;
             await UserService.updateUser(userId, payload);
             res.status(200).send({
-                message: 'User updated successfully'
+                message: 'User updated successfully',
+                success: true
             });
         } catch (error) {
             next(error);

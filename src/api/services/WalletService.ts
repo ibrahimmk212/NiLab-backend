@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { randomBytes } from 'crypto';
-import monnify from '../libraries/monnify';
+import paystack from '../libraries/paystack';
 import { Wallet } from '../models/Wallet';
 import { Order } from '../models/Order';
 import TransactionRepository from '../repositories/TransactionRepository';
@@ -158,19 +158,19 @@ class WalletService {
         });
     }
     async getBanks(): Promise<any> {
-        const banks = await monnify.getBanks();
+        const banks = await paystack.getBanks();
 
-        if (!banks.requestSuccessful) {
+        if (!banks.status) {
             return {
                 success: false,
-                message: banks.responseMessage,
+                message: banks.message,
                 data: []
             };
         }
         return {
             success: true,
-            message: banks.responseMessage,
-            data: banks.responseBody
+            message: banks.message,
+            data: banks.data
         };
     }
 
@@ -178,21 +178,25 @@ class WalletService {
         accountNumber: string;
         bankCode: string;
     }): Promise<any> {
-        const account = await monnify.validateBankAccount(
+        const account = await paystack.resolveAccountNumber(
             data.accountNumber,
             data.bankCode
         );
-        if (!account.requestSuccessful) {
+        if (!account.status) {
             return {
                 success: false,
-                message: account.responseMessage,
+                message: account.message,
                 data: {}
             };
         }
         return {
             success: true,
-            message: account.responseMessage,
-            data: account.responseBody
+            message: account.message,
+            data: {
+                accountName: account.data.account_name,
+                accountNumber: account.data.account_number,
+                bankCode: data.bankCode
+            }
         };
     }
     async getMyWallet(payload: CreateWalletType): Promise<Wallet | any> {
@@ -392,25 +396,26 @@ class WalletService {
         return await WalletRepository.deleteWallet(walletId);
     }
 
-    async getSystemWalletBalance(walletAccountNumber: string) {
-        const token = await monnify.genToken();
-        const balance = await monnify.getWalletBalance(
-            walletAccountNumber,
-            token
-        );
+    async getSystemWalletBalance(walletAccountNumber?: string) {
+        const balance = await paystack.getWalletBalance();
 
-        if (!balance.requestSuccessful) {
+        if (!balance.status || !balance.data) {
             return {
                 success: false,
-                message: balance.responseMessage || 'Failed to fetch balance',
+                message: balance.message || 'Failed to fetch balance',
                 data: null
             };
         }
 
+        const formattedData = (balance.data || []).map((b: any) => ({
+            currency: b.currency,
+            balance: b.balance / 100
+        }));
+
         return {
             success: true,
             message: 'Balance fetched successfully',
-            data: balance.responseBody
+            data: formattedData
         };
     }
 }

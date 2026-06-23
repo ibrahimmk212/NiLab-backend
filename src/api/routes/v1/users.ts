@@ -23,6 +23,10 @@ usersRouter
 usersRouter.route('/me').get(Auth.authenticate, UserController.currentUser);
 
 usersRouter
+    .route('/profile-picture')
+    .put(Auth.authenticate, UserController.updateProfilePicture);
+
+usersRouter
     .route('/:id')
     .get(
         Auth.authenticate,

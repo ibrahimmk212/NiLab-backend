@@ -5,8 +5,8 @@ import AdminWalletController from '../../../controllers/admin/AdminWalletControl
 const adminWalletRouter: Router = Router();
 
 adminWalletRouter.get(
-    '/monnify/balance',
-    AdminWalletController.getMonnifyBalance
+    '/paystack/balance',
+    AdminWalletController.getPaystackBalance
 );
 adminWalletRouter.get('/:walletId', AdminWalletController.getWallet);
 adminWalletRouter.get('/:walletId/virtual-account', AdminWalletController.getVirtualAccount);

@@ -4,7 +4,7 @@ import { asyncHandler } from '../../middlewares/handlers/async';
 import WalletRepository from '../../repositories/WalletRepository';
 import WalletService from '../../services/WalletService';
 import TransactionService from '../../services/TransactionService';
-import monnify from '../../libraries/monnify';
+import paystack from '../../libraries/paystack';
 import { currentTimestamp } from '../../../utils/helpers';
 import appConfig from '../../../config/appConfig';
 import VirtualAccountService from '../../services/VirtualAccountService';
@@ -157,21 +157,51 @@ class VendorWalletController {
                 return res.status(STATUS.OK).json(debited);
             }
 
-            const transfer = await monnify.singleOutboundTransfer({
-                amount,
-                currency: 'NGN',
-                destinationAccountNumber: accountNumber,
-                destinationBankCode: bankCode,
-                narration: transaction.remark || '',
-                reference: transaction.reference,
-                sourceAccountNumber: appConfig.monnify.walletAccountNumber
-            });
+            try {
+                // 1. Create Paystack Transfer Recipient
+                const recipientRes = await paystack.createTransferRecipient(
+                    accountNumber,
+                    bankCode,
+                    result.data?.accountName || 'Vendor'
+                );
 
-            console.log(transfer);
+                if (!recipientRes.status || !recipientRes.data?.recipient_code) {
+                    console.error('Paystack Transfer Recipient Creation Failed:', recipientRes);
+                    transaction.status = 'failed';
+                    await transaction.save();
+                    return res.status(STATUS.OK).json({
+                        success: false,
+                        message: recipientRes.message || 'Failed to create transfer recipient'
+                    });
+                }
 
-            if (transfer.requestSuccessful) {
-                transaction.status = 'successful';
+                const recipientCode = recipientRes.data.recipient_code;
+
+                // 2. Initiate Transfer
+                const transfer = await paystack.initiateTransfer(
+                    amount,
+                    recipientCode,
+                    transaction.reference,
+                    transaction.remark || 'Withdrawal to bank'
+                );
+
+                console.log(transfer);
+
+                if (transfer.status) {
+                    transaction.status = 'successful';
+                    await transaction.save();
+                } else {
+                    transaction.status = 'failed';
+                    await transaction.save();
+                }
+            } catch (err: any) {
+                console.error('Vendor Transfer Error:', err);
+                transaction.status = 'failed';
                 await transaction.save();
+                return res.status(STATUS.OK).json({
+                    success: false,
+                    message: err.message || 'Transfer failed'
+                });
             }
             res.status(STATUS.OK).send({
                 message: 'Transactions completed',

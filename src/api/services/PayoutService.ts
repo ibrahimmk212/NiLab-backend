@@ -117,7 +117,7 @@ class PayoutService {
             if (payout.status !== 'pending')
                 throw new Error('Payout is not pending');
 
-            // 2. Process Transfer (Monnify)
+            // 2. Process Transfer (Paystack)
             // This is external, so if it fails we don't commit the DB transaction
             const transferResult = await PaymentService.processPayout(payout);
 

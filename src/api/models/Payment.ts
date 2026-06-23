@@ -4,7 +4,7 @@ export interface Payment extends Document {
     order: mongoose.Types.ObjectId;
     user: mongoose.Types.ObjectId;
 
-    provider: 'MONNIFY' | 'WALLET';
+    provider: 'PAYSTACK' | 'MONNIFY' | 'WALLET';
     channel?: 'CARD' | 'TRANSFER' | 'USSD';
 
     paymentReference: string;
@@ -23,7 +23,7 @@ const paymentSchema = new Schema<Payment>(
         order: { type: Schema.Types.ObjectId, ref: 'Order', required: true },
         user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 
-        provider: { type: String, enum: ['MONNIFY', 'WALLET'], required: true },
+        provider: { type: String, enum: ['PAYSTACK', 'MONNIFY', 'WALLET'], required: true },
         channel: { type: String },
 
         paymentReference: { type: String, required: true, unique: true },

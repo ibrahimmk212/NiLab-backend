@@ -5,7 +5,7 @@ import OrderRepository from '../repositories/OrderRepository';
 import mongoose from 'mongoose';
 import { Collection } from '../models/Collection';
 import { generateReference } from '../../utils/keygen/idGenerator';
-import monnify from '../libraries/monnify';
+import paystack from '../libraries/paystack';
 import appConfig from '../../config/appConfig';
 import CollectionRepository from '../repositories/CollectionRepository';
 import TransactionRepository from '../repositories/TransactionRepository';
@@ -17,35 +17,28 @@ import NotificationService from './NotificationService';
 import { sendPushNotification } from '../libraries/firebase';
 
 class PaymentService {
-    async handleMonnifyWebhook(payload: any) {
+    async handlePaystackWebhook(payload: any) {
+        if (payload.event !== 'charge.success') {
+            return;
+        }
+
         const session = await mongoose.startSession();
         session.startTransaction();
 
         console.log('Webhook Payload:', payload);
 
         try {
-            const {
-                transactionReference,
-                amountPaid,
-                paymentStatus,
-                settlementAmount,
-                paymentMethod,
-                customer,
-                metaData,
-                product
-            } = payload;
-
-            // Handle virtual account reference if missing top-level paymentReference
-            let paymentReference = payload.paymentReference;
-            if (!paymentReference && product && product.reference) {
-                paymentReference = product.reference;
-            }
-
-            if (!paymentReference) {
-                console.error('Monnify Webhook: Missing paymentReference', payload);
-                await session.abortTransaction();
-                return;
-            }
+            const data = payload.data;
+            const transactionReference = data.reference;
+            const paymentReference = data.reference;
+            const amountPaid = data.amount / 100;
+            const settlementAmount = (data.amount - (data.fees || 0)) / 100;
+            const paymentMethod = data.channel;
+            const customer = {
+                email: data.customer.email,
+                name: `${data.customer.first_name || ''} ${data.customer.last_name || ''}`.trim()
+            };
+            const metaData = data.metadata || {};
 
             // 1. Idempotency Check
             const exists = await PaymentRepository.findByTransactionReference(
@@ -60,18 +53,18 @@ class PaymentService {
                 };
             }
 
-            // 2. Comprehensive Mapping (Keeping all fields)
+            // 2. Comprehensive Mapping
             const collectionData: Partial<Collection> = {
                 transactionReference,
                 paymentReference,
                 internalReference: generateReference('COL'),
                 amountPaid,
-                settlementAmount, // Added
-                paymentMethod, // Added
-                paymentStatus,
+                settlementAmount,
+                paymentMethod,
+                paymentStatus: 'PAID',
                 customer: customer,
-                status: paymentStatus === 'PAID' ? 'success' : 'failed',
-                responseData: payload // This keeps everything else (product, bank info, etc)
+                status: 'success',
+                responseData: payload
             };
 
             // 3. Extract original reference
@@ -83,26 +76,23 @@ class PaymentService {
                 }
             }
 
-            // 4. Processing Logic (Fixed Variable Scoping)
+            // 4. Processing Logic
             let processedEntity = null;
 
-            if (paymentStatus === 'PAID') {
-                if (originalRef.startsWith('ORD')) {
-                    // Remove 'const' so it updates the variable in the outer scope
-                    processedEntity = await this.processOrderPayment(
-                        originalRef,
-                        payload,
-                        collectionData,
-                        session
-                    );
-                } else if (originalRef.startsWith('WAL')) {
-                    processedEntity = await this.processWalletTopUp(
-                        originalRef,
-                        payload,
-                        collectionData,
-                        session
-                    );
-                }
+            if (originalRef.startsWith('ORD')) {
+                processedEntity = await this.processOrderPayment(
+                    originalRef,
+                    { transactionReference, amountPaid },
+                    collectionData,
+                    session
+                );
+            } else if (originalRef.startsWith('WAL') || data.channel === 'dedicated_account') {
+                processedEntity = await this.processWalletTopUp(
+                    originalRef,
+                    { ...data, amountPaid, metaData },
+                    collectionData,
+                    session
+                );
             }
 
             // 5. Save the collection record
@@ -132,22 +122,26 @@ class PaymentService {
         }
     }
 
-    async handleMonnifyDisbursementWebhook(eventData: any) {
-        const { reference, status, amount, responseDescription } = eventData;
+    async handlePaystackDisbursementWebhook(payload: any) {
+        const event = payload.event;
+        const data = payload.data;
+        const { reference } = data;
+
+        if (!reference) return;
 
         // The reference we sent earlier was: `PAYOUT-${payout._id}-${Date.now()}`
-        const payoutId = reference.split('-')[1];
+        const parts = reference.split('-');
+        if (parts.length < 2) return;
+        const payoutId = parts[1];
+
         const payout = await PayoutRepository.findById(payoutId);
+        if (!payout) return;
 
-        if (!payout) return; // Or log for investigation
-
-        // if payout is pending
-        // If it's already completed, don't process again (Idempotency)
         if (payout.status === 'completed') return;
 
-        if (status === 'SUCCESS') {
+        if (event === 'transfer.success') {
             await PayoutRepository.update(payout._id, { status: 'completed' });
-        } else if (status === 'FAILED' || status === 'REVERSED') {
+        } else if (event === 'transfer.failed' || event === 'transfer.reversed') {
             const session = await mongoose.startSession();
             session.startTransaction();
 
@@ -160,12 +154,12 @@ class PaymentService {
                 );
 
                 // 2. Mark payout as rejected
+                const reason = data.failures?.message || 'Paystack Bank Transfer Failed';
                 await PayoutModel.findByIdAndUpdate(
                     payout._id,
                     {
                         status: 'rejected',
-                        rejectionReason:
-                            responseDescription || 'Bank Transfer Failed'
+                        rejectionReason: reason
                     },
                     { session }
                 );
@@ -177,7 +171,7 @@ class PaymentService {
                         amount: payout.amount,
                         type: 'CREDIT',
                         category: 'REVERSAL',
-                        remark: `Refund: ${responseDescription}`,
+                        remark: `Refund: ${reason}`,
                         reference: `REV-${reference}`
                     },
                     session
@@ -188,11 +182,7 @@ class PaymentService {
                     await NotificationService.create({
                         userId: payout.userId,
                         title: 'Payout Failed',
-                        message: `Your payout of ${
-                            payout.amount
-                        } failed and has been reversed to your wallet. Reason: ${
-                            responseDescription || 'Bank Transfer Failed'
-                        }`,
+                        message: `Your payout of ₦${payout.amount} failed and has been reversed to your wallet. Reason: ${reason}`,
                         status: 'unread'
                     });
                 } catch (err) {
@@ -209,9 +199,6 @@ class PaymentService {
         }
     }
 
-    /**
-     * Updated to return the order for the console log
-     */
     private async processOrderPayment(
         ref: string,
         payload: any,
@@ -257,10 +244,6 @@ class PaymentService {
         return order;
     }
 
-    /**
-     * Logic for processing Wallet Top-ups
-     */
-    // Inside processWalletTopUp
     private async processWalletTopUp(
         ref: string,
         payload: any,
@@ -269,11 +252,28 @@ class PaymentService {
     ) {
         let userId = payload.metaData?.userId;
 
-        // If it's a virtual account transfer, metadata might be missing
-        // Reference format: USER_WAL_[userId]
-        if (!userId && ref.startsWith('USER_WAL_')) {
-            userId = ref.replace('USER_WAL_', '');
+        // If it's a dedicated account transfer, find user wallet by Paystack customer code
+        if (!userId) {
+            const customerCode = payload.customer?.customer_code;
+            const customerEmail = payload.customer?.email;
+            
+            let wallet = null;
+            if (customerCode) {
+                wallet = await WalletModel.findOne({ 'virtualAccount.accountReference': customerCode }).session(session);
+            }
+            if (!wallet && customerEmail) {
+                const UserRepository = (await import('../repositories/UserRepository')).default;
+                const userObj = await UserRepository.findUserByEmail(customerEmail);
+                if (userObj) {
+                    wallet = await WalletRepository.getWalletByOwner('user', userObj._id.toString(), session);
+                }
+            }
+
+            if (wallet) {
+                userId = wallet.owner?.toString();
+            }
         }
+
         const amount = payload.amountPaid;
 
         if (userId) {
@@ -300,13 +300,13 @@ class PaymentService {
                         role: 'user',
                         amount: amount,
                         type: 'CREDIT',
-                        category: 'TOPUP', // Or add 'TOPUP' to your enum
+                        category: 'TOPUP',
                         status: 'successful',
                         reference: ref,
                         toWallet: userWallet._id,
                         balanceBefore: balanceBefore,
                         balanceAfter: balanceBefore + amount,
-                        remark: 'Wallet funding via Monnify'
+                        remark: 'Wallet funding via Paystack'
                     },
                     session
                 );
@@ -330,9 +330,6 @@ class PaymentService {
         return null;
     }
 
-    /**
-     * Main Checkout Entry Point
-     */
     async initiateCheckout(order: any, userdata: any) {
         if (!order) throw new Error('Order not found!');
 
@@ -352,17 +349,14 @@ class PaymentService {
                 payment: {
                     payForMeToken: order.payForMeToken,
                     expiresAt: order.payForMeExpiresAt,
-                    shareableLink: order.payForMeToken // Frontend to construct deep link
+                    shareableLink: order.payForMeToken
                 }
             };
         }
 
-        return await this.initiateMonnifyPayment(order, userdata);
+        return await this.initiatePaystackPayment(order, userdata);
     }
 
-    /**
-     * Internal: Process payment using User's internal wallet balance
-     */
     private async processWalletPayment(order: any, userdata: any) {
         const session = await mongoose.startSession();
         session.startTransaction();
@@ -427,91 +421,58 @@ class PaymentService {
         }
     }
 
-    /**
-     * Internal: Generate Monnify Gateway Details
-     */
-    async initiateMonnifyPayment(order: any, userdata: any) {
-        const monnifyToken = await monnify.genToken();
-
-        // Create unique reference for this specific attempt to avoid Monnify 422 errors
+    async initiatePaystackPayment(order: any, userdata: any) {
         const uniqueTransactionRef = `${order.paymentReference}-${Date.now()}`;
 
-        const paymentRequest = await monnify.initiatePayment(
+        const response = await paystack.initiatePayment(
+            order.totalAmount,
+            userdata.email,
+            uniqueTransactionRef,
+            undefined,
             {
-                amount: order.totalAmount,
-                customerName: `${userdata.firstName} ${userdata.lastName}`,
-                customerEmail: userdata.email,
-                paymentDescription: `Payment for Order ${order.code}`,
-                paymentReference: uniqueTransactionRef,
-                contractCode: appConfig.monnify.contractCode,
-                currencyCode: 'NGN',
-                redirectUrl: appConfig.monnify.redirectUrl,
-                paymentMethods: ['ACCOUNT_TRANSFER', 'CARD'],
-                // metadata helps in Webhook if string splitting fails
-                metaData: {
-                    orderId: order._id,
-                    userId: userdata.id
-                }
-            },
-            monnifyToken
+                orderId: order._id,
+                userId: userdata.id
+            }
         );
 
-        if (!paymentRequest.requestSuccessful) {
-            console.error('Monnify Rejection:', paymentRequest.responseMessage);
+        if (!response.status || !response.data) {
+            console.error('Paystack Rejection:', response.message);
             throw new Error('Could not initialize payment with gateway');
         }
-        console.log('Payment Request: ', paymentRequest);
+        console.log('Payment Request: ', response);
 
         return {
             valid: true,
             payment: {
-                merchantName:
-                    paymentRequest.responseBody.merchantName ||
-                    'Terminus Drive Payment',
-                checkoutUrl: paymentRequest.responseBody.checkoutUrl,
-                transactionReference:
-                    paymentRequest.responseBody.transactionReference,
-                paymentReference: order.paymentReference // Return the clean one to frontend
+                merchantName: 'Terminus Drive Payment',
+                checkoutUrl: response.data.authorization_url,
+                transactionReference: response.data.reference,
+                paymentReference: order.paymentReference
             }
         };
     }
 
-    /**
-     * External: Initiate a Wallet Top-up (Funding)
-     */
     async initiateWalletTopup(amount: number, userdata: any) {
         if (!amount || amount <= 0) throw new Error('Invalid top-up amount');
 
-        const monnifyToken = await monnify.genToken();
-
-        // Generate a unique WAL reference
-        // Format: WAL-USERID-TIMESTAMP
         const walletRef = `WAL-${userdata.id}-${Date.now()}`;
 
-        const paymentRequest = await monnify.initiatePayment(
+        const response = await paystack.initiatePayment(
+            amount,
+            userdata.email,
+            walletRef,
+            undefined,
             {
-                amount: amount,
-                customerName: `${userdata.firstName} ${userdata.lastName}`,
-                customerEmail: userdata.email,
-                paymentDescription: `Wallet Top-up for ${userdata.firstName}`,
-                paymentReference: walletRef,
-                contractCode: appConfig.monnify.contractCode,
-                currencyCode: 'NGN',
-                redirectUrl: appConfig.monnify.redirectUrl,
-                paymentMethods: ['ACCOUNT_TRANSFER', 'CARD'],
-                metaData: {
-                    userId: userdata.id,
-                    userRole: userdata.role,
-                    type: 'wallet_topup'
-                }
-            },
-            monnifyToken
+                userId: userdata.id,
+                userRole: userdata.role,
+                type: 'wallet_topup'
+            }
         );
 
-        if (!paymentRequest.requestSuccessful) {
+        if (!response.status || !response.data) {
             console.error(
-                'Monnify Top-up Rejection:',
-                paymentRequest.responseMessage
+                'Paystack Top-up Rejection:',
+                response.message
             );
             throw new Error('Could not initialize wallet top-up');
         }
@@ -519,60 +480,60 @@ class PaymentService {
         return {
             valid: true,
             payment: {
-                checkoutUrl: paymentRequest.responseBody.checkoutUrl,
-                transactionReference:
-                    paymentRequest.responseBody.transactionReference,
+                checkoutUrl: response.data.authorization_url,
+                transactionReference: response.data.reference,
                 paymentReference: walletRef
             }
         };
     }
-    /**
-     * Internal: Process Payout (Disbursement)
-     */
+
     async processPayout(payout: Payout) {
-        // 1. Construct Request Body
-        // Reference must be unique. We use PAYOUT-{id}-{timestamp}
-        // This is what we will parse in the webhook: handleMonnifyDisbursementWebhook
         const reference = `PAYOUT-${payout._id}-${Date.now()}`;
 
-        const requestBody = {
-            amount: payout.amount,
-            reference: reference,
-            narration: `Terminus Payout - ${new Date().toLocaleDateString('en-GB')}`,
-            destinationBankCode: payout.bankCode!, // Assumed present after validation
-            destinationAccountNumber: payout.accountNumber,
-            currency: (payout.currency || 'NGN') as 'NGN',
-            sourceAccountNumber: appConfig.monnify.walletAccountNumber // Merchant Wallet
-        };
-
         try {
-            // 2. Call Monnify
-            const response = await monnify.singleOutboundTransfer(requestBody);
+            const recipientRes = await paystack.createTransferRecipient(
+                payout.accountNumber,
+                payout.bankCode!,
+                payout.accountName
+            );
 
-            if (!response.requestSuccessful) {
-                console.error(
-                    'Monnify Payout Failed:',
-                    response.responseMessage
-                );
+            if (!recipientRes.status || !recipientRes.data?.recipient_code) {
+                console.error('Paystack Transfer Recipient Creation Failed:', recipientRes);
                 return {
                     success: false,
-                    message:
-                        response.responseMessage || 'Transfer initiation failed'
+                    message: recipientRes.message || 'Failed to create transfer recipient'
                 };
             }
 
-            console.log('Payout Initiated:', response);
+            const recipientCode = recipientRes.data.recipient_code;
+
+            const transferRes = await paystack.initiateTransfer(
+                payout.amount,
+                recipientCode,
+                reference,
+                `Terminus Payout - ${new Date().toLocaleDateString('en-GB')}`
+            );
+
+            if (!transferRes.status || !transferRes.data) {
+                console.error('Paystack Payout Failed:', transferRes);
+                return {
+                    success: false,
+                    message: transferRes.message || 'Transfer initiation failed'
+                };
+            }
+
+            console.log('Payout Initiated:', transferRes);
 
             return {
                 success: true,
                 message: 'Transfer initiated successfully',
-                data: response.responseBody
+                data: transferRes.data
             };
         } catch (error: any) {
-            console.error('Payout Error:', error);
+            console.error('Payout Error:', error.response?.data || error.message);
             return {
                 success: false,
-                message: error.message || 'An error occurred during payout'
+                message: error.response?.data?.message || error.message || 'An error occurred during payout'
             };
         }
     }

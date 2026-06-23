@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { asyncHandler } from '../middlewares/handlers/async';
 import BankAccountModel from '../models/BankAccount';
-import Monnify from '../libraries/monnify';
+import paystack from '../libraries/paystack';
 
 class BankAccountController {
     // Get all bank accounts for the logged-in user or specified user (if admin)
@@ -180,12 +180,12 @@ class BankAccountController {
         }
     );
 
-    // Get list of banks from Monnify
+    // Get list of banks from Paystack
     public getBanks = asyncHandler(
         async (req: any, res: Response, next: NextFunction): Promise<void> => {
             try {
-                const result = await Monnify.getBanks();
-                const banks = (result.responseBody || []).map((b: any) => ({
+                const result = await paystack.getBanks();
+                const banks = (result.data || []).map((b: any) => ({
                     name: b.name,
                     code: b.code
                 }));
@@ -200,7 +200,7 @@ class BankAccountController {
         }
     );
 
-    // Verify NUBAN account number with Monnify
+    // Verify NUBAN account number with Paystack
     public verifyAccount = asyncHandler(
         async (req: any, res: Response, next: NextFunction): Promise<void> => {
             try {
@@ -214,9 +214,9 @@ class BankAccountController {
                     return;
                 }
 
-                const result = await Monnify.validateBankAccount(accountNumber, bankCode);
+                const result = await paystack.resolveAccountNumber(accountNumber, bankCode);
 
-                if (!result?.requestSuccessful || !result?.responseBody?.accountName) {
+                if (!result?.status || !result?.data?.account_name) {
                     res.status(422).json({
                         success: false,
                         message: 'Could not verify account. Please check the details and try again.'
@@ -227,9 +227,9 @@ class BankAccountController {
                 res.status(200).json({
                     success: true,
                     data: {
-                        accountName: result.responseBody.accountName,
-                        accountNumber: result.responseBody.accountNumber,
-                        bankCode: result.responseBody.bankCode
+                        accountName: result.data.account_name,
+                        accountNumber: result.data.account_number,
+                        bankCode: bankCode
                     },
                     message: 'Account verified successfully'
                 });

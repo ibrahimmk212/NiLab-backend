@@ -25,6 +25,7 @@ export interface User extends Document {
     password: string;
     firstName: string;
     lastName: string;
+    profilePicture?: string;
     gender?: string;
     role: string;
     pin: string;
@@ -66,6 +67,7 @@ const userSchema = new Schema<User>(
                 'Enter a valid email address'
             ]
         },
+        profilePicture: { type: String, required: false },
         role: {
             type: String,
             enum: [

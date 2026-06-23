@@ -7,27 +7,14 @@ import appConfig from '../../../config/appConfig';
 import WalletModel from '../../models/Wallet';
 
 class AdminWalletController {
-    getMonnifyBalance = asyncHandler(
+    getPaystackBalance = asyncHandler(
         async (
             req: Request,
             res: Response,
             next: NextFunction
         ): Promise<void> => {
             try {
-                // Get the wallet account number from appConfig (or env)
-                // Assuming it's in appConfig.monnify.walletAccountNumber
-                const walletNumber = appConfig.monnify.walletAccountNumber;
-
-                if (!walletNumber) {
-                    throw new Error(
-                        'Monnify Wallet Account Number not configured'
-                    );
-                }
-
-                const balance = await WalletService.getSystemWalletBalance(
-                    walletNumber
-                );
-
+                const balance = await WalletService.getSystemWalletBalance();
                 res.status(200).send(balance);
             } catch (error) {
                 next(error);

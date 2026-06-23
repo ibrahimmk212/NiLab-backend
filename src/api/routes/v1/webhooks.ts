@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import MonnifyWebhookController from '../../../api/controllers/webhooks/MonifyWebhookController';
+import PaystackWebhookController from '../../../api/controllers/webhooks/PaystackWebhookController';
 
 const webhookRouter: Router = Router();
 
-webhookRouter.post('/monnify', MonnifyWebhookController.handleWebhook);
+webhookRouter.post('/paystack', PaystackWebhookController.handleWebhook);
 
 export default webhookRouter;

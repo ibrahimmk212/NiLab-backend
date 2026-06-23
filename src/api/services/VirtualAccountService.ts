@@ -1,7 +1,6 @@
 import WalletRepository from '../repositories/WalletRepository';
 import KycRepository from '../repositories/KycRepository';
-import monnify from '../libraries/monnify';
-import appConfig from '../../config/appConfig';
+import paystack from '../libraries/paystack';
 import { Types } from 'mongoose';
 
 class VirtualAccountService {
@@ -23,11 +22,8 @@ class VirtualAccountService {
             return wallet.virtualAccount;
         }
 
-        // 2. Fetch KYC for NIN (optional)
+        // 2. Fetch User & KYC details
         const kyc = await KycRepository.getKycByUser(userObjId);
-
-        const userNin = kyc?.nin?.nin || (kyc?.identity?.identityType === 'nin' ? kyc?.identity?.identityNumber : undefined);
-        const nin = appConfig.monnify.directorNin || userNin;
 
         let user: any = null;
         if (kyc && kyc.user) {
@@ -41,70 +37,71 @@ class VirtualAccountService {
             throw new Error('User details not found to generate virtual account');
         }
 
-        // 3. Initiate Monnify Reservation
-        // Scope the reference by role so vendor and customer accounts never collide
-        const accessToken = await monnify.genToken();
-        const accountReference = role === 'vendor'
-            ? `VENDOR_WAL_${userId}`
-            : `USER_WAL_${userId}`;
-
-        const payload: any = {
-            accountReference,
-            accountName: `Terminus - ${user.firstName} ${user.lastName}`,
-            currencyCode: 'NGN',
-            contractCode: appConfig.monnify.contractCode,
-            customerEmail: user.email,
-            customerName: `${user.firstName} ${user.lastName}`,
-            getAllAvailableBanks: true
-        };
-
-        if (nin) {
-            payload.nin = nin;
-        }
-
-        const response = await monnify.reserveAccount(payload, accessToken);
-
-        // Handle "already reserved" gracefully — fetch the existing reservation
-        if (
-            !response.requestSuccessful &&
-            typeof response.responseMessage === 'string' &&
-            response.responseMessage.toLowerCase().includes('already')
-        ) {
-            console.warn(`[VirtualAccountService] Account reference ${accountReference} already exists, fetching existing reservation.`);
-            const existing = await monnify.getReservedAccount(accountReference, accessToken);
-            if (existing?.requestSuccessful && existing.responseBody?.accounts?.length) {
-                const acc = existing.responseBody.accounts[0];
-                const virtualAccountData = {
-                    bankName: acc.bankName,
-                    accountNumber: acc.accountNumber,
-                    accountName: existing.responseBody.accountName,
-                    accountReference: existing.responseBody.accountReference,
-                    bankCode: acc.bankCode
-                };
-                await WalletRepository.updateWallet(wallet._id, { virtualAccount: virtualAccountData });
-                return virtualAccountData;
+        // 3. Register or get Paystack Customer
+        let customerCode = '';
+        try {
+            const customerRes = await paystack.createCustomer(
+                user.email,
+                user.firstName || 'Terminus',
+                user.lastName || 'User',
+                user.phoneNumber
+            );
+            if (customerRes?.status && customerRes.data?.customer_code) {
+                customerCode = customerRes.data.customer_code;
+            }
+        } catch (err: any) {
+            // If customer already exists, fetch existing customer detail
+            const errMessage = err.response?.data?.message || err.message || '';
+            if (errMessage.toLowerCase().includes('exists') || errMessage.toLowerCase().includes('duplicate') || err.response?.status === 400) {
+                try {
+                    const existingCustomer = await paystack.getCustomer(user.email);
+                    if (existingCustomer?.status && existingCustomer.data?.customer_code) {
+                        customerCode = existingCustomer.data.customer_code;
+                    }
+                } catch (fetchErr) {
+                    console.error('Error fetching existing Paystack customer:', fetchErr);
+                }
+            }
+            if (!customerCode) {
+                console.error('Paystack Customer Registration Failed:', err.response?.data || err.message);
+                throw new Error(errMessage || 'Failed to create Paystack customer');
             }
         }
 
-        if (!response.requestSuccessful) {
-            console.error('Monnify Reservation Failed:', response.responseMessage);
-            throw new Error(response.responseMessage || 'Failed to generate virtual account');
+        // 4. Create Dedicated Virtual Account
+        const dvaResponse = await paystack.createDedicatedAccount(customerCode, 'wema-bank');
+        if (!dvaResponse?.status || !dvaResponse.data) {
+            console.error('Paystack DVA Creation Failed:', dvaResponse);
+            throw new Error(dvaResponse?.message || 'Failed to create dedicated virtual account');
         }
 
-        // 4. Extract account details
-        const accounts = response.responseBody.accounts;
-        if (!accounts || accounts.length === 0) {
-            throw new Error('No virtual accounts generated by provider');
-        }
+        const data = dvaResponse.data;
+        let bankName = '';
+        let accountNumber = '';
+        let accountName = '';
+        let bankCode = '';
 
-        const primaryAccount = accounts[0];
+        if (data.bank) {
+            bankName = data.bank.name;
+            accountNumber = data.account_number;
+            accountName = data.account_name;
+            bankCode = data.bank.slug;
+        } else if (data.bank_accounts && data.bank_accounts.length > 0) {
+            const acc = data.bank_accounts[0];
+            bankName = acc.bank.name;
+            accountNumber = acc.account_number;
+            accountName = acc.account_name;
+            bankCode = acc.bank.slug;
+        } else {
+            throw new Error('No dedicated virtual accounts assigned by Paystack');
+        }
 
         const virtualAccountData = {
-            bankName: primaryAccount.bankName,
-            accountNumber: primaryAccount.accountNumber,
-            accountName: response.responseBody.accountName,
-            accountReference: response.responseBody.accountReference,
-            bankCode: primaryAccount.bankCode
+            bankName,
+            accountNumber,
+            accountName,
+            accountReference: customerCode,
+            bankCode
         };
 
         // 5. Update Wallet
@@ -117,4 +114,3 @@ class VirtualAccountService {
 }
 
 export default new VirtualAccountService();
-

@@ -4,8 +4,7 @@ import PayoutModel, { Payout } from '../models/Payout';
 import WalletModel from '../models/Wallet';
 import TransactionModel from '../models/Transaction';
 import { generateReference } from '../../utils/keygen/idGenerator';
-import appConfig from '../../config/appConfig';
-import monnify from '../libraries/monnify';
+import paystack from '../libraries/paystack';
 
 class PayoutRepository {
     //  Request a payout
@@ -21,18 +20,18 @@ class PayoutRepository {
         session.startTransaction();
 
         try {
-            const validation = await monnify.validateBankAccount(
+            const validation = await paystack.resolveAccountNumber(
                 accountNumber,
                 bankCode
             );
 
-            if (!validation.requestSuccessful) {
+            if (!validation.status || !validation.data?.account_name) {
                 throw new Error(
                     'Invalid bank account details. Please check and try again.'
                 );
             }
 
-            const accountName = validation.responseBody.accountName;
+            const accountName = validation.data.account_name;
             // 1. Atomic Balance Check and Move to Pending
             const wallet = await WalletModel.findOneAndUpdate(
                 {
@@ -119,18 +118,18 @@ class PayoutRepository {
         session.startTransaction();
 
         try {
-            const validation = await monnify.validateBankAccount(
+            const validation = await paystack.resolveAccountNumber(
                 accountNumber,
                 bankCode
             );
 
-            if (!validation.requestSuccessful) {
+            if (!validation.status || !validation.data?.account_name) {
                 throw new Error(
                     'Invalid bank account details. Please check and try again.'
                 );
             }
 
-            const accountName = validation.responseBody.accountName;
+            const accountName = validation.data.account_name;
             
             // 1. Atomic Balance Check and Move to Pending for system wallet
             const wallet = await WalletModel.findOneAndUpdate(

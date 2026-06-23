@@ -25,15 +25,9 @@ const AppConfig = {
     db: {
         mongo_url: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/mds-food'
     },
-    monnify: {
-        baseUrl: process.env.MONNIFY_API_URL as string,
-        monnifyApiKey: process.env.MONNIFY_API_KEY as string,
-        monnifySecretKey: process.env.MONNIFY_SECRET_KEY as string,
-        accessToken: '',
-        contractCode: process.env.CONTRACT_CODE as string,
-        walletAccountNumber: process.env.WALLET_NUMBER as string,
-        sourceAccountNumber: process.env.MONNIFY_SOURCE_ACCOUNT as string, // TODO add to env
-        directorNin: process.env.DIRECTOR_NIN as string,
+    paystack: {
+        secretKey: process.env.PAYSTACK_SECRET_KEY as string,
+        publicKey: process.env.PAYSTACK_PUBLIC_KEY as string,
         redirectUrl: 'https://dashboard.terminusdrive.com/checkout/success'
     },
     mailer: {
