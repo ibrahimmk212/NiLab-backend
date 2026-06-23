@@ -15,6 +15,7 @@ import VendorDashboardRouter from './dashboard';
 import vendorPayoutRouter from './payout';
 import vendorKycRouter from './kyc';
 import { upload } from '../../../services/FileService';
+import UserController from '../../../controllers/UserController';
 
 const vendorsRouter: Router = Router();
 vendorsRouter.post('/login', VendorInfoController.login);
@@ -44,6 +45,9 @@ vendorsRouter.put(
 
 vendorsRouter.put('/banner', upload.single('file'), VendorInfoController.uploadBanner);
 
+// Profile picture update — writes to the User table (shared with admin/user portals)
+vendorsRouter.put('/profile-picture', UserController.updateProfilePicture);
+
 vendorsRouter.use('/products', auth.checkPermissions('manage_inventory'), vendorProductRouter);
 vendorsRouter.use('/orders', auth.checkPermissions('manage_orders'), vendorOrderRouter);
 vendorsRouter.use('/staffs', auth.checkPermissions('manage_staff'), vendorStaffRouter);
@@ -57,3 +61,4 @@ vendorsRouter.use('/payouts', auth.checkPermissions('manage_finance'), vendorPay
 vendorsRouter.use('/kyc', vendorKycRouter);
 
 export default vendorsRouter;
+

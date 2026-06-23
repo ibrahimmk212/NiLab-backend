@@ -12,6 +12,7 @@ import adminTransactionRouter from './transactions';
 import adminOrderRouter from './orders';
 import AdminUserController from '../../../controllers/admin/AdminUserController';
 import AdminMainController from '../../../controllers/admin/AdminMainController';
+import UserController from '../../../controllers/UserController';
 import adminRouter from './admins';
 import adminPromotionRouter from './promotions';
 import adminKycRouter from './kyc';
@@ -34,6 +35,7 @@ const adminsRouter: Router = Router();
 // --- Generalized Routes (Open to all authenticated admins) ---
 adminsRouter.get('/', AdminMainController.currentUser);
 adminsRouter.post('/login', AdminUserController.login);
+adminsRouter.put('/profile-picture', UserController.updateProfilePicture);
 adminsRouter.use('/dashboard', adminDashboardRouter);
 adminsRouter.use('/notifications', adminNotificationRouter);
 

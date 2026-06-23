@@ -1,4 +1,5 @@
 {
+    "preset": "ts-jest",
     "displayName": "project-structure-api-test",
     "verbose": true,
     "roots": ["src/"],

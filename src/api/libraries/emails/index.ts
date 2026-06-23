@@ -116,9 +116,9 @@ class EmailTemplate {
     };
 
     orderConfirmation = async (email: string, data: IOrderConfirmation) => {
-        const welcomeTemplate = getTemplate('customerWelcome');
-        const htmlContent = welcomeTemplate(data);
-        await sendEmail(email, 'Welcome to Terminus', htmlContent);
+        const template = getTemplate('orderConfirmation');
+        const htmlContent = template(data);
+        await sendEmail(email, 'Terminus: Order Confirmed', htmlContent);
     };
 
     availableDelivery = async (

@@ -121,8 +121,8 @@ class SettlementService {
         riderUserId: string,
         externalSession?: ClientSession
     ) {
-        const session = await mongoose.startSession();
-        session.startTransaction();
+        const session = externalSession || (await mongoose.startSession());
+        if (!externalSession) session.startTransaction();
 
         try {
             const config = await ConfigurationModel.findOne().session(session);
@@ -151,12 +151,23 @@ class SettlementService {
                 session
             );
 
-            await session.commitTransaction();
+            // 3. Mark Order as Settled
+            await OrderModel.findByIdAndUpdate(
+                order._id,
+                {
+                    isSettled: true,
+                    settledAt: new Date()
+                },
+                { session }
+            );
+
+            if (!externalSession) await session.commitTransaction();
+            return { success: true };
         } catch (e) {
-            await session.abortTransaction();
+            if (!externalSession) await session.abortTransaction();
             throw e;
         } finally {
-            session.endSession();
+            if (!externalSession) session.endSession();
         }
     }
 

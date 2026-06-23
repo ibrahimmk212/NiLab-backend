@@ -1,181 +1,174 @@
 import UserRepository from '../UserRepository';
-import User from '../../models/User';
-import Role from '../../models/Role';
-import mockResource from './mockResource';
+import UserModel from '../../models/User';
 
-jest.mock('../../models/User');
+// Mock User Model
+jest.mock('../../models/User', () => {
+    const mockSave = jest.fn();
+    const mockUserInstance = {
+        save: mockSave
+    };
 
-const MockedUser = jest.mocked(User, true);
+    const mockSelect = jest.fn().mockReturnThis();
+    const mockPopulate = jest.fn().mockReturnThis();
+    const mockSort = jest.fn().mockReturnThis();
+    const mockSkip = jest.fn().mockReturnThis();
+    const mockLimit = jest.fn().mockReturnThis();
+    
+    // For query chaining
+    const mockQuery = {
+        select: mockSelect,
+        populate: mockPopulate,
+        sort: mockSort,
+        skip: mockSkip,
+        limit: mockLimit,
+        then: jest.fn(),
+        catch: jest.fn()
+    };
+
+    // A helper to make mockQuery thenable/awaitable
+    const makeQueryAwaitable = (resolvedValue: any) => {
+        const query = { ...mockQuery };
+        (query as any).then = (resolve: any) => resolve(resolvedValue);
+        return query;
+    };
+
+    const mockModel: any = jest.fn().mockImplementation(() => mockUserInstance);
+    mockModel.findById = jest.fn();
+    mockModel.find = jest.fn();
+    mockModel.findOne = jest.fn();
+    mockModel.findByIdAndUpdate = jest.fn();
+    mockModel.findByIdAndDelete = jest.fn();
+    mockModel.countDocuments = jest.fn();
+    
+    return {
+        __esModule: true,
+        default: mockModel,
+        mockUserInstance,
+        mockSave,
+        mockSelect,
+        mockPopulate,
+        mockSort,
+        mockSkip,
+        mockLimit,
+        makeQueryAwaitable
+    };
+});
 
 describe('UserRepository', () => {
-    describe('UserRepository.__createUser', () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
-        it('should return user created', async () => {
-            //arrange
-            const mockInput =
-                mockResource.UserRepository.createUser.POSITIVE_CASE_INPUT;
-            const mockOutput =
-                mockResource.UserRepository.createUser.POSITIVE_CASE_OUTPUT;
+    describe('createUser', () => {
+        it('should create a user', async () => {
+            const userData = { email: 'test@example.com', firstName: 'Test' };
+            const mockSavedUser = { ...userData, _id: '123' };
+            
+            const { mockSave } = require('../../models/User');
+            mockSave.mockResolvedValue(mockSavedUser);
 
-            MockedUser.create.mockResolvedValue(mockOutput);
+            const result = await UserRepository.createUser(userData);
 
-            //act
-            const result = await UserRepository.createUser(mockInput);
-
-            //assert
-            expect(result).toEqual(mockOutput);
-            expect(MockedUser.create).toHaveBeenCalledTimes(1);
-            expect(MockedUser.create).toBeCalledWith(mockInput);
+            expect(result).toEqual(mockSavedUser);
+            expect(UserModel).toHaveBeenCalledWith(userData);
+            expect(mockSave).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('UserRepository.__getUsers', () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
+    describe('findUserById', () => {
+        it('should find user by ID and populate wallet', async () => {
+            const userId = '123';
+            const mockUser = { _id: userId, email: 'test@example.com' };
+            
+            const { makeQueryAwaitable } = require('../../models/User');
+            const query = makeQueryAwaitable(mockUser);
+            (UserModel.findById as jest.Mock).mockReturnValue(query);
 
-        it('should return list users', async () => {
-            //arrange
-            const mockModelOptions =
-                mockResource.UserRepository.getUsers.MODEL_OPTIONS;
-            const mockOutput: any =
-                mockResource.UserRepository.getUsers.POSITIVE_CASE_OUTPUT;
+            const result = await UserRepository.findUserById(userId);
 
-            MockedUser.findAll.mockResolvedValue(mockOutput);
-
-            //act
-            const result = await UserRepository.getUsers();
-
-            //assert
-            expect(result).toEqual(mockOutput);
-            expect(MockedUser.findAll).toHaveBeenCalledTimes(1);
-            expect(MockedUser.findAll).toBeCalledWith(mockModelOptions);
+            expect(result).toEqual(mockUser);
+            expect(UserModel.findById).toHaveBeenCalledWith(userId);
+            expect(query.select).toHaveBeenCalled();
+            expect(query.populate).toHaveBeenCalledWith('wallet');
         });
     });
 
-    describe('UserRepository.__getUserDetail', () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
+    describe('findAll', () => {
+        it('should find all users with pagination', async () => {
+            const mockUsers = [{ _id: '123', email: 'test@example.com' }];
+            const mockTotal = 1;
+            
+            const { makeQueryAwaitable } = require('../../models/User');
+            const query = makeQueryAwaitable(mockUsers);
+            (UserModel.find as jest.Mock).mockReturnValue(query);
+            (UserModel.countDocuments as jest.Mock).mockResolvedValue(mockTotal);
 
-        it('should return user detail', async () => {
-            //arrange
-            const mockInput =
-                mockResource.UserRepository.getUserDetail.POSITIVE_CASE_INPUT;
-            const mockModelOptions =
-                mockResource.UserRepository.getUserDetail.MODEL_OPTIONS;
-            const mockOutput: any =
-                mockResource.UserRepository.getUserDetail.POSITIVE_CASE_OUTPUT;
+            const result = await UserRepository.findAll({ page: 1, limit: 10, role: 'user' });
 
-            MockedUser.findByPk.mockResolvedValue(mockOutput);
-
-            //act
-            const result = await UserRepository.getUserDetail(mockInput.userId);
-
-            //assert
-            expect(result).toEqual(mockOutput);
-            expect(MockedUser.findByPk).toHaveBeenCalledTimes(1);
-            expect(MockedUser.findByPk).toBeCalledWith(mockInput.userId, {
-                ...mockModelOptions,
-                include: [
-                    {
-                        model: Role,
-                        as: 'role',
-                        required: false
-                    }
-                ]
+            expect(result).toEqual({
+                total: mockTotal,
+                count: mockUsers.length,
+                pagination: {
+                    page: 1,
+                    limit: 10,
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPrevPage: false
+                },
+                data: mockUsers
             });
+            expect(UserModel.find).toHaveBeenCalledWith({ role: 'user' });
+            expect(UserModel.countDocuments).toHaveBeenCalledWith({ role: 'user' });
+            expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
+            expect(query.skip).toHaveBeenCalledWith(0);
+            expect(query.limit).toHaveBeenCalledWith(10);
         });
     });
 
-    describe('UserRepository.__getUserByEmail', () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
+    describe('findUserByEmail', () => {
+        it('should find user by email and populate kyc and wallet', async () => {
+            const email = 'test@example.com';
+            const mockUser = { _id: '123', email };
+            
+            const { makeQueryAwaitable } = require('../../models/User');
+            const query = makeQueryAwaitable(mockUser);
+            (UserModel.findOne as jest.Mock).mockReturnValue(query);
 
-        it('should return user detail', async () => {
-            //arrange
-            const mockInput =
-                mockResource.UserRepository.getUserByEmail.POSITIVE_CASE_INPUT;
-            const mockModelOptions =
-                mockResource.UserRepository.getUserByEmail.MODEL_OPTIONS;
-            const mockOutput: any =
-                mockResource.UserRepository.getUserByEmail.POSITIVE_CASE_OUTPUT;
+            const result = await UserRepository.findUserByEmail(email);
 
-            MockedUser.findOne.mockResolvedValue(mockOutput);
-
-            //act
-            const result = await UserRepository.getUserByEmail(mockInput.email);
-
-            //assert
-            expect(result).toEqual(mockOutput);
-            expect(MockedUser.findOne).toHaveBeenCalledTimes(1);
-            expect(MockedUser.findOne).toBeCalledWith(mockModelOptions);
+            expect(result).toEqual(mockUser);
+            expect(UserModel.findOne).toHaveBeenCalledWith({ email });
+            expect(query.select).toHaveBeenCalledWith('+password');
+            expect(query.populate).toHaveBeenCalledWith('kyc wallet');
         });
     });
 
-    describe('UserRepository.__updateUser', () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
+    describe('updateUser', () => {
+        it('should update a user by ID', async () => {
+            const userId = '123';
+            const updateData = { firstName: 'Updated' };
+            const mockUpdatedUser = { _id: userId, ...updateData };
 
-        it('should return update success', async () => {
-            //arrange
-            const mockInput =
-                mockResource.UserRepository.updateUser.POSITIVE_CASE_INPUT;
-            const mockModelOptions =
-                mockResource.UserRepository.updateUser.MODEL_OPTIONS;
-            const mockModelOutput: any =
-                mockResource.UserRepository.updateUser.POSITIVE_MODEL_OUTPUT;
-            const mockOutput =
-                mockResource.UserRepository.updateUser.POSITIVE_CASE_OUTPUT;
+            (UserModel.findByIdAndUpdate as jest.Mock).mockResolvedValue(mockUpdatedUser);
 
-            MockedUser.update.mockResolvedValue(mockModelOutput);
+            const result = await UserRepository.updateUser(userId, updateData);
 
-            //act
-            const result = await UserRepository.updateUser(
-                mockInput.userId,
-                mockInput.payload
-            );
-
-            //assert
-            expect(result).toEqual(mockOutput);
-            expect(MockedUser.update).toHaveBeenCalledTimes(1);
-            expect(MockedUser.update).toBeCalledWith(
-                mockInput.payload,
-                mockModelOptions
-            );
+            expect(result).toEqual(mockUpdatedUser);
+            expect(UserModel.findByIdAndUpdate).toHaveBeenCalledWith(userId, updateData, { new: true });
         });
     });
 
-    describe('UserRepository.__deleteUser', () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
+    describe('deleteUser', () => {
+        it('should delete a user by ID', async () => {
+            const userId = '123';
+            const mockDeletedUser = { _id: userId };
 
-        it('should return delete success', async () => {
-            //arrange
-            const mockInput =
-                mockResource.UserRepository.deleteUser.POSITIVE_CASE_INPUT;
-            const mockModelOptions =
-                mockResource.UserRepository.deleteUser.MODEL_OPTIONS;
-            const mockModelOutput: any =
-                mockResource.UserRepository.deleteUser.POSITIVE_MODEL_OUTPUT;
-            const mockOutput =
-                mockResource.UserRepository.deleteUser.POSITIVE_CASE_OUTPUT;
+            (UserModel.findByIdAndDelete as jest.Mock).mockResolvedValue(mockDeletedUser);
 
-            MockedUser.destroy.mockResolvedValue(mockModelOutput);
+            const result = await UserRepository.deleteUser(userId);
 
-            //act
-            const result = await UserRepository.deleteUser(mockInput.userId);
-
-            //assert
-            expect(result).toEqual(mockOutput);
-            expect(MockedUser.destroy).toHaveBeenCalledTimes(1);
-            expect(MockedUser.destroy).toBeCalledWith(mockModelOptions);
+            expect(result).toEqual(mockDeletedUser);
+            expect(UserModel.findByIdAndDelete).toHaveBeenCalledWith(userId, { new: true });
         });
     });
 });

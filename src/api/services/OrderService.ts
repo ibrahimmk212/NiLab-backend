@@ -25,6 +25,7 @@ import VehicleTypeService from './VehicleTypeService';
 import DispatchService from './DispatchService';
 import RiderModel from '../models/Rider';
 import RiderLocationModel from '../models/RiderLocation';
+import AppConfig from '../../config/appConfig';
 
 class OrderService {
     private roundToTwo(num: number): number {
@@ -670,6 +671,100 @@ class OrderService {
         }
 
         return this.updateOrder(orderId, { status: updateData.status });
+    }
+
+    /**
+     * Called by PaymentService after a successful payment to trigger all
+     * order-related notifications. Handles both product and package orders.
+     */
+    async triggerOrderNotifications(orderId: string): Promise<void> {
+        try {
+            const order: any = await OrderRepository.findOrderById(orderId);
+            if (!order) {
+                console.warn(`[Notifications] Order ${orderId} not found.`);
+                return;
+            }
+
+            const isProductOrder = order.orderType === 'products';
+
+            // --- Customer Notification ---
+            const customer = order.user;
+            if (customer) {
+                const customerId = customer._id?.toString() || customer.toString();
+                const customerName = customer.firstName || 'Customer';
+                const customerEmail = customer.email;
+
+                // In-app
+                await NotificationService.create({
+                    userId: customerId,
+                    title: 'Order Confirmed',
+                    message: `Your order ${order.code} has been confirmed and is being processed.`,
+                    status: 'unread'
+                });
+
+                // Email
+                if (customerEmail && isProductOrder) {
+                    const orderItems = (order.products || []).map((p: any) => ({
+                        name: p.name,
+                        quantity: p.quantity
+                    }));
+
+                    emails.orderConfirmation(customerEmail, {
+                        name: customerName,
+                        orderId: order.code,
+                        orderItems,
+                        total: `₦${order.totalAmount.toFixed(2)}`,
+                        deliveryTime: '30–45 minutes'
+                    }).catch((err: any) =>
+                        console.error('[Email] orderConfirmation failed:', err)
+                    );
+                }
+            }
+
+            // --- Vendor Notification (product orders only) ---
+            if (isProductOrder && order.vendor) {
+                const vendorUserId =
+                    order.vendor.userId?._id?.toString() ||
+                    order.vendor.userId?.toString() ||
+                    order.vendor.toString();
+                const vendorId = order.vendor._id?.toString() || order.vendor.toString();
+                const vendorName = order.vendor.name || 'Vendor';
+                const vendorEmail = order.vendor.userId?.email;
+
+                // In-app
+                await NotificationService.create({
+                    userId: vendorUserId,
+                    vendorId,
+                    role: 'vendor',
+                    title: 'New Order Received',
+                    message: `You have a new order (${order.code}). Please confirm it.`,
+                    status: 'unread',
+                    orderId: order._id,
+                    orderCode: order.code
+                });
+
+                // Email
+                if (vendorEmail) {
+                    const orderItems = (order.products || []).map((p: any) => ({
+                        name: p.name,
+                        quantity: p.quantity
+                    }));
+
+                    emails.vendorOrder(vendorEmail, {
+                        vendorName,
+                        orderId: order.code,
+                        orderItems,
+                        orderDetailsUrl: `${AppConfig.app.frontendUrl}/orders/${order._id}`
+                    }).catch((err: any) =>
+                        console.error('[Email] vendorOrder failed:', err)
+                    );
+                }
+            }
+
+            console.log(`[Notifications] Triggered for order ${order.code} (type: ${order.orderType})`);
+        } catch (err) {
+            console.error('[Notifications] triggerOrderNotifications error:', err);
+        }
     }
 
     /**
